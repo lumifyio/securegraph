@@ -3,9 +3,25 @@ package com.altamiracorp.securegraph;
 public interface Element {
     Object getId();
 
-    Property getProperty(String name);
-
     Visibility getVisibility();
 
-    Object getPropertyValue(String name);
+    Iterable<Property> getProperties();
+
+    Iterable<Property> getProperties(String name);
+
+    Iterable<Object> getPropertyValues(String name);
+
+    /**
+     * Adds or updates existing properties.
+     *
+     * @param properties properties to add or update.
+     */
+    void setProperties(Property... properties);
+
+    /**
+     * Adds properties.
+     *
+     * @param properties properties to add or update.
+     */
+    void addProperties(Property... properties);
 }

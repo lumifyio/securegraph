@@ -1,15 +1,22 @@
 package com.altamiracorp.securegraph.util;
 
-import java.util.Iterator;
+import static org.junit.Assert.assertTrue;
 
 public class IterableUtils {
     public static <T> int count(Iterable<T> iterable) {
-        Iterator<T> it = iterable.iterator();
         int count = 0;
-        while (it.hasNext()) {
+        for (T ignore : iterable) {
             count++;
-            it.next();
         }
         return count;
+    }
+
+    public static <T> void assertContains(Object expected, Iterable<T> iterable) {
+        for (T o : iterable) {
+            if (expected.equals(o)) {
+                return;
+            }
+        }
+        assertTrue("Iterable does not contain: " + expected, false);
     }
 }

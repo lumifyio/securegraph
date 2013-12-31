@@ -1,18 +1,16 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.util.WrappingIterable;
+
 public abstract class ElementBase implements Element {
-    public abstract Object getId();
-
-    public abstract Property getProperty(String name);
-
-    public abstract Visibility getVisibility();
-
-    public Object getPropertyValue(String name) {
-        Property prop = getProperty(name);
-        if (prop == null) {
-            return null;
-        }
-        return prop.getValue();
+    @Override
+    public Iterable<Object> getPropertyValues(final String name) {
+        return new WrappingIterable<Property, Object>(getProperties(name)) {
+            @Override
+            protected Object convert(Property p) {
+                return p.getValue();
+            }
+        };
     }
 
     @Override

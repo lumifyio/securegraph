@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import static com.altamiracorp.securegraph.util.IterableUtils.assertContains;
 import static com.altamiracorp.securegraph.util.IterableUtils.count;
 import static org.junit.Assert.*;
 
@@ -55,16 +56,46 @@ public abstract class GraphTestBase {
         Vertex v = graph.addVertex("v1", VISIBILITY_A,
                 new Property("prop1", "value1", VISIBILITY_A),
                 new Property("prop2", "value2", VISIBILITY_B));
-        assertNotNull(v.getProperty("prop1"));
-        assertEquals("value1", v.getPropertyValue("prop1"));
-        assertNotNull(v.getProperty("prop2"));
-        assertEquals("value2", v.getPropertyValue("prop2"));
+        assertEquals(1, count(v.getProperties("prop1")));
+        assertEquals("value1", v.getPropertyValues("prop1").iterator().next());
+        assertEquals(1, count(v.getProperties("prop2")));
+        assertEquals("value2", v.getPropertyValues("prop2").iterator().next());
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
-        assertNotNull(v.getProperty("prop1"));
-        assertEquals("value1", v.getPropertyValue("prop1"));
-        assertNotNull(v.getProperty("prop2"));
-        assertEquals("value2", v.getPropertyValue("prop2"));
+        assertEquals(1, count(v.getProperties("prop1")));
+        assertEquals("value1", v.getPropertyValues("prop1").iterator().next());
+        assertEquals(1, count(v.getProperties("prop2")));
+        assertEquals("value2", v.getPropertyValues("prop2").iterator().next());
+    }
+
+    @Test
+    public void testMultivaluedProperties() {
+        Vertex v = graph.addVertex("v1", VISIBILITY_A);
+
+        v.addProperties(
+                new Property("prop1", "value1a", VISIBILITY_A),
+                new Property("prop2", "value2a", VISIBILITY_A),
+                new Property("prop3", "value3a", VISIBILITY_A));
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("value1a", v.getPropertyValues("prop1").iterator().next());
+        assertEquals("value2a", v.getPropertyValues("prop2").iterator().next());
+        assertEquals("value3a", v.getPropertyValues("prop3").iterator().next());
+        assertEquals(3, count(v.getProperties()));
+
+        v.setProperties(
+                new Property("prop1", "value1b", VISIBILITY_A),
+                new Property("prop2", "value2b", VISIBILITY_A));
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("value1b", v.getPropertyValues("prop1").iterator().next());
+        assertEquals("value2b", v.getPropertyValues("prop2").iterator().next());
+        assertEquals("value3a", v.getPropertyValues("prop3").iterator().next());
+        assertEquals(3, count(v.getProperties()));
+
+        v.addProperties(new Property("prop1", "value1a-new", VISIBILITY_A));
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertContains("value1a", v.getPropertyValues("prop1"));
+        assertContains("value1a-new", v.getPropertyValues("prop1"));
+        assertEquals(4, count(v.getProperties()));
     }
 
     @Test
@@ -151,12 +182,12 @@ public abstract class GraphTestBase {
                 new Property("propB", "valueB", VISIBILITY_B));
 
         Edge e = graph.getEdge("e1", AUTHORIZATIONS_A);
-        assertEquals("valueA", e.getPropertyValue("propA"));
-        assertNull(e.getPropertyValue("propB"));
+        assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
+        assertEquals(1, count(e.getPropertyValues("propB")));
 
         e = graph.getEdge("e1", AUTHORIZATIONS_A_AND_B);
-        assertEquals("valueA", e.getPropertyValue("propA"));
-        assertEquals("valueB", e.getPropertyValue("propB"));
+        assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
+        assertEquals("valueB", e.getPropertyValues("propB").iterator().next());
     }
 
     @Test
