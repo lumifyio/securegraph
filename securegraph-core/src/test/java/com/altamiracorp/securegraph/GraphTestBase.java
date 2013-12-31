@@ -223,4 +223,35 @@ public abstract class GraphTestBase {
         Iterable<Edge> allEdges = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH);
         assertEquals(2, count(allEdges));
     }
+
+    @Test
+    public void testGraphQuery() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
+        graph.addEdge(v1, v2, "edgeA", VISIBILITY_A);
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A).vertices();
+        assertEquals(2, count(vertices));
+
+        Iterable<Edge> edges = graph.query(AUTHORIZATIONS_A).edges();
+        assertEquals(1, count(edges));
+    }
+
+    @Test
+    public void testVertexQuery() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
+        graph.addEdge(v1, v2, "edgeA", VISIBILITY_A);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        Iterable<Vertex> vertices = v1.query().vertices();
+        assertEquals(1, count(vertices));
+        assertEquals("v2", vertices.iterator().next().getId());
+
+        Iterable<Edge> edges = v1.query().edges();
+        assertEquals(1, count(edges));
+
+        edges = v1.query().edges(Direction.OUT);
+        assertEquals(1, count(edges));
+    }
 }

@@ -20,4 +20,6 @@ public interface Graph {
     void removeEdge(Object edgeId, Authorizations authorizations);
 
     Edge getEdge(Object edgeId, Authorizations authorizations);
+
+    GraphQuery query(Authorizations authorizations);
 }
