@@ -238,6 +238,52 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGraphQueryHas() {
+        graph.addVertex("v1", VISIBILITY_A,
+                new Property("age", 25, VISIBILITY_A));
+        graph.addVertex("v2", VISIBILITY_A,
+                new Property("age", 30, VISIBILITY_A));
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.GREATER_THAN_EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryRange() {
+        graph.addVertex("v1", VISIBILITY_A,
+                new Property("age", 25, VISIBILITY_A));
+        graph.addVertex("v2", VISIBILITY_A,
+                new Property("age", 30, VISIBILITY_A));
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .range("age", 25, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .range("age", 20, 29)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .range("age", 25, 30)
+                .vertices();
+        assertEquals(2, count(vertices));
+    }
+
+    @Test
     public void testVertexQuery() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
