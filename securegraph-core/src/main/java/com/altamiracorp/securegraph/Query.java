@@ -18,4 +18,8 @@ public interface Query {
     <T> Query has(String propertyName, T value);
 
     <T> Query has(String propertyName, Predicate predicate, T value);
+
+    Query skip(int count);
+
+    Query limit(int count);
 }

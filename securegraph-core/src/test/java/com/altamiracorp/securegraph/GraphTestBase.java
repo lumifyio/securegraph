@@ -233,6 +233,21 @@ public abstract class GraphTestBase {
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A).vertices();
         assertEquals(2, count(vertices));
 
+        vertices = graph.query(AUTHORIZATIONS_A).skip(1).vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A).limit(1).vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A).skip(1).limit(1).vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A).skip(2).vertices();
+        assertEquals(0, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A).skip(1).limit(2).vertices();
+        assertEquals(1, count(vertices));
+
         Iterable<Edge> edges = graph.query(AUTHORIZATIONS_A).edges();
         assertEquals(1, count(edges));
     }
