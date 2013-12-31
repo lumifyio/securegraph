@@ -5,6 +5,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.altamiracorp.securegraph.util.IterableUtils.assertContains;
 import static com.altamiracorp.securegraph.util.IterableUtils.count;
 import static org.junit.Assert.*;
@@ -49,6 +52,31 @@ public abstract class GraphTestBase {
         v = graph.getVertex(vertexId, AUTHORIZATIONS_A);
         assertNotNull(v);
         assertNotNull(vertexId);
+    }
+
+    @Test
+    public void testAddVertexPropertyWithMetadata() {
+        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
+        prop1Metadata.put("metadata1", "metadata1Value");
+
+        graph.addVertex("v1", VISIBILITY_A,
+                new Property("prop1", "value1", VISIBILITY_A, prop1Metadata));
+
+        Vertex v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        Property prop1 = v.getProperties("prop1").iterator().next();
+        prop1Metadata = prop1.getMetadata();
+        assertEquals(1, prop1Metadata.keySet().size());
+        assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
+
+        prop1Metadata.put("metadata2", "metadata2Value");
+        v.setProperties(new Property("prop1", "value1", VISIBILITY_A, prop1Metadata));
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        prop1 = v.getProperties("prop1").iterator().next();
+        prop1Metadata = prop1.getMetadata();
+        assertEquals(2, prop1Metadata.keySet().size());
+        assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
+        assertEquals("metadata2Value", prop1Metadata.get("metadata2"));
     }
 
     @Test
