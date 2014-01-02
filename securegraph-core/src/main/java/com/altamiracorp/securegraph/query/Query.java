@@ -1,4 +1,7 @@
-package com.altamiracorp.securegraph;
+package com.altamiracorp.securegraph.query;
+
+import com.altamiracorp.securegraph.Edge;
+import com.altamiracorp.securegraph.Vertex;
 
 public interface Query {
     Iterable<Vertex> vertices();

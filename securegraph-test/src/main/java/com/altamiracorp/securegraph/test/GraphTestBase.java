@@ -1,5 +1,7 @@
-package com.altamiracorp.securegraph;
+package com.altamiracorp.securegraph.test;
 
+import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.query.Compare;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,8 +10,8 @@ import org.junit.runners.JUnit4;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.altamiracorp.securegraph.util.IterableUtils.assertContains;
-import static com.altamiracorp.securegraph.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
+import static com.altamiracorp.securegraph.test.util.IterableUtils.count;
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)

@@ -11,5 +11,7 @@
 
     <modules>
         <module>securegraph-core</module>
+        <module>securegraph-accumulo</module>
+        <module>securegraph-test</module>
     </modules>
 </project>

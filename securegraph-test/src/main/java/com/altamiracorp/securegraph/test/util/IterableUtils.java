@@ -1,4 +1,4 @@
-package com.altamiracorp.securegraph.util;
+package com.altamiracorp.securegraph.test.util;
 
 import static org.junit.Assert.assertTrue;
 
