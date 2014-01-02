@@ -3,8 +3,13 @@ package com.altamiracorp.securegraph.accumulo.serializer;
 import org.apache.accumulo.core.data.Value;
 
 import java.io.*;
+import java.util.Map;
 
 public class JavaValueSerializer implements ValueSerializer {
+    public JavaValueSerializer(Map configuration) {
+
+    }
+
     @Override
     public Value objectToValue(Object value) {
         return new Value(objectToBytes(value));

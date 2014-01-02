@@ -8,23 +8,14 @@ import org.apache.hadoop.io.Text;
 
 public abstract class AccumuloElement extends ElementBase {
     public static final Text CF_PROPERTY = new Text("PROP");
+    public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
 
-    protected AccumuloElement(Graph graph, Object id, Visibility visibility) {
-        super(graph, id, visibility);
-    }
-
-    @Override
-    public Iterable<Property> getProperties() {
-        throw new RuntimeException("not implemented");
+    protected AccumuloElement(Graph graph, Object id, Visibility visibility, Property[] properties) {
+        super(graph, id, visibility, properties);
     }
 
     @Override
     public void setProperties(Property... properties) {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public void addProperties(Property... properties) {
         throw new RuntimeException("not implemented");
     }
 }

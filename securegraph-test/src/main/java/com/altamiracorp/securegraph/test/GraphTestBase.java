@@ -25,10 +25,10 @@ public abstract class GraphTestBase {
 
     private Graph graph;
 
-    protected abstract Graph createGraph();
+    protected abstract Graph createGraph() throws Exception;
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         graph = createGraph();
     }
 
@@ -102,10 +102,10 @@ public abstract class GraphTestBase {
     public void testMultivaluedProperties() {
         Vertex v = graph.addVertex("v1", VISIBILITY_A);
 
-        v.addProperties(
-                new Property("prop1", "value1a", VISIBILITY_A),
-                new Property("prop2", "value2a", VISIBILITY_A),
-                new Property("prop3", "value3a", VISIBILITY_A));
+        v.setProperties(
+                new Property("propid1a", "prop1", "value1a", VISIBILITY_A),
+                new Property("propid2a", "prop2", "value2a", VISIBILITY_A),
+                new Property("propid3a", "prop3", "value3a", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals("value1a", v.getPropertyValues("prop1").iterator().next());
         assertEquals("value2a", v.getPropertyValues("prop2").iterator().next());
@@ -113,15 +113,15 @@ public abstract class GraphTestBase {
         assertEquals(3, count(v.getProperties()));
 
         v.setProperties(
-                new Property("prop1", "value1b", VISIBILITY_A),
-                new Property("prop2", "value2b", VISIBILITY_A));
+                new Property("propid1a", "prop1", "value1b", VISIBILITY_A),
+                new Property("propid2a", "prop2", "value2b", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals("value1b", v.getPropertyValues("prop1").iterator().next());
         assertEquals("value2b", v.getPropertyValues("prop2").iterator().next());
         assertEquals("value3a", v.getPropertyValues("prop3").iterator().next());
         assertEquals(3, count(v.getProperties()));
 
-        v.addProperties(new Property("prop1", "value1a-new", VISIBILITY_A));
+        v.setProperties(new Property("propid1b", "prop1", "value1a-new", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertContains("value1a", v.getPropertyValues("prop1"));
         assertContains("value1a-new", v.getPropertyValues("prop1"));
@@ -335,14 +335,14 @@ public abstract class GraphTestBase {
         graph.addEdge(v1, v2, "edgeA", VISIBILITY_A);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        Iterable<Vertex> vertices = v1.query().vertices();
+        Iterable<Vertex> vertices = v1.query(AUTHORIZATIONS_A).vertices();
         assertEquals(1, count(vertices));
         assertEquals("v2", vertices.iterator().next().getId());
 
-        Iterable<Edge> edges = v1.query().edges();
+        Iterable<Edge> edges = v1.query(AUTHORIZATIONS_A).edges();
         assertEquals(1, count(edges));
 
-        edges = v1.query().edges(Direction.OUT);
+        edges = v1.query(AUTHORIZATIONS_A).edges(Direction.OUT);
         assertEquals(1, count(edges));
     }
 }

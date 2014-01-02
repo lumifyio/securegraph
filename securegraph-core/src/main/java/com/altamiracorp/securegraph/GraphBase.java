@@ -5,7 +5,13 @@ import com.altamiracorp.securegraph.query.DefaultGraphQuery;
 import com.altamiracorp.securegraph.query.GraphQuery;
 
 public abstract class GraphBase implements Graph {
-    private IdGenerator idGenerator;
+    private final GraphConfiguration configuration;
+    private final IdGenerator idGenerator;
+
+    protected GraphBase(GraphConfiguration configuration, IdGenerator idGenerator) {
+        this.configuration = configuration;
+        this.idGenerator = idGenerator;
+    }
 
     @Override
     public Vertex addVertex(Visibility visibility, Property... properties) {
@@ -16,7 +22,7 @@ public abstract class GraphBase implements Graph {
     public abstract Vertex addVertex(Object vertexId, Visibility visibility, Property... properties);
 
     @Override
-    public Vertex getVertex(Object vertexId, Authorizations authorizations) {
+    public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
         for (Vertex vertex : getVertices(authorizations)) {
             if (vertex.getId().equals(vertexId)) {
                 return vertex;
@@ -26,7 +32,7 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public abstract Iterable<Vertex> getVertices(Authorizations authorizations);
+    public abstract Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException;
 
     @Override
     public abstract void removeVertex(Object vertexId, Authorizations authorizations);
@@ -64,7 +70,7 @@ public abstract class GraphBase implements Graph {
         return idGenerator;
     }
 
-    public void setIdGenerator(IdGenerator idGenerator) {
-        this.idGenerator = idGenerator;
+    public GraphConfiguration getConfiguration() {
+        return configuration;
     }
 }

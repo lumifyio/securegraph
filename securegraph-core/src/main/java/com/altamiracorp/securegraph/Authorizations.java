@@ -6,4 +6,8 @@ public class Authorizations {
     public Authorizations(String... authorizations) {
         this.authorizations = authorizations;
     }
+
+    public String[] getAuthorizations() {
+        return authorizations;
+    }
 }

@@ -3,15 +3,22 @@ package com.altamiracorp.securegraph;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public abstract class ElementBase implements Element {
     private final Graph graph;
     private final Object id;
     private final Visibility visibility;
+    private final List<Property> properties;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility) {
+    protected ElementBase(Graph graph, Object id, Visibility visibility, Property[] properties) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
+        this.properties = new ArrayList<Property>();
+        Collections.addAll(this.properties, properties);
     }
 
     @Override
@@ -35,7 +42,9 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
-    public abstract Iterable<Property> getProperties();
+    public Iterable<Property> getProperties() {
+        return this.properties;
+    }
 
     @Override
     public Iterable<Property> getProperties(final String name) {
@@ -49,9 +58,6 @@ public abstract class ElementBase implements Element {
 
     @Override
     public abstract void setProperties(Property... properties);
-
-    @Override
-    public abstract void addProperties(Property... properties);
 
     public Graph getGraph() {
         return graph;

@@ -59,7 +59,7 @@ public class DefaultGraphQuery extends GraphQueryBase {
                         return;
                     }
 
-                    if (this.count >= parameters.getLimit()) {
+                    if (this.count >= getParameters().getLimit()) {
                         return;
                     }
 
@@ -67,7 +67,7 @@ public class DefaultGraphQuery extends GraphQueryBase {
                         T elem = it.next();
 
                         boolean match = true;
-                        for (HasContainer has : parameters.getHasContainers()) {
+                        for (HasContainer has : getParameters().getHasContainers()) {
                             if (!has.isMatch(elem)) {
                                 match = false;
                                 break;
@@ -78,7 +78,7 @@ public class DefaultGraphQuery extends GraphQueryBase {
                         }
 
                         this.count++;
-                        if (this.count <= parameters.getSkip()) {
+                        if (this.count <= getParameters().getSkip()) {
                             continue;
                         }
 
@@ -90,17 +90,17 @@ public class DefaultGraphQuery extends GraphQueryBase {
         }
 
         @SuppressWarnings("unchecked")
-        private Iterator<T> getIterator() {
+        private Iterator<T> getIterator() throws SecureGraphException {
             Iterator<T> it;
             switch (elementType) {
                 case VERTEX:
-                    it = (Iterator<T>) graph.getVertices(parameters.getAuthorizations()).iterator();
+                    it = (Iterator<T>) getGraph().getVertices(getParameters().getAuthorizations()).iterator();
                     break;
                 case EDGE:
-                    it = (Iterator<T>) graph.getVertices(parameters.getAuthorizations()).iterator();
+                    it = (Iterator<T>) getGraph().getVertices(getParameters().getAuthorizations()).iterator();
                     break;
                 default:
-                    throw new RuntimeException("Unexpected element type: " + elementType);
+                    throw new SecureGraphException("Unexpected element type: " + elementType);
             }
             return it;
         }
