@@ -2,10 +2,10 @@ package com.altamiracorp.securegraph.util;
 
 import java.util.Iterator;
 
-public abstract class WrappingIterable<TSource, TDest> implements Iterable<TDest> {
+public abstract class ConvertingIterable<TSource, TDest> implements Iterable<TDest> {
     private final Iterable<TSource> iterable;
 
-    public WrappingIterable(Iterable<TSource> iterable) {
+    public ConvertingIterable(Iterable<TSource> iterable) {
         this.iterable = iterable;
     }
 

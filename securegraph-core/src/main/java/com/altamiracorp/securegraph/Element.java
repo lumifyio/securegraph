@@ -19,9 +19,9 @@ public interface Element {
     void setProperties(Property... properties);
 
     /**
-     * Adds properties.
+     * Adds properties if a property with the given name already exists it will add a duplicate property with a different value.
      *
-     * @param properties properties to add or update.
+     * @param properties properties to add.
      */
     void addProperties(Property... properties);
 }

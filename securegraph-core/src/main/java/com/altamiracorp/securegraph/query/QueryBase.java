@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class QueryBase implements Query {
-    protected final Graph graph;
-    protected final Parameters parameters;
+    private final Graph graph;
+    private final Parameters parameters;
 
     protected QueryBase(Graph graph, Authorizations authorizations) {
         this.graph = graph;
@@ -53,6 +53,14 @@ public abstract class QueryBase implements Query {
     public Query limit(int count) {
         this.parameters.setLimit(count);
         return this;
+    }
+
+    public Graph getGraph() {
+        return graph;
+    }
+
+    public Parameters getParameters() {
+        return parameters;
     }
 
     public static class HasContainer {
