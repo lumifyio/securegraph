@@ -7,6 +7,7 @@ import com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
 
 public class TestHelpers {
     public static Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException {
@@ -15,7 +16,9 @@ public class TestHelpers {
 
     public static void before() throws AccumuloSecurityException, AccumuloException {
         ensureAccumuloIsStarted();
-        ensureTableExists(TestAccumuloCluster.getConfig().createConnector(), AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
+        Connector connector = TestAccumuloCluster.getConfig().createConnector();
+        ensureTableExists(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
+        connector.securityOperations().changeUserAuthorizations(AccumuloGraphConfiguration.DEFAULT_ACCUMULO_USERNAME, new Authorizations("a", "b", "c"));
     }
 
     private static void ensureTableExists(Connector connector, String tableName) {
