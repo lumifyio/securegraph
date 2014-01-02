@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Property {
-    private final String id;
+    private Object id;
     private final String name;
     private final Object value;
     private final Visibility visibility;
@@ -14,7 +14,7 @@ public class Property {
         this(null, name, value, visibility);
     }
 
-    public Property(String id, String name, Object value, Visibility visibility) {
+    public Property(Object id, String name, Object value, Visibility visibility) {
         this(id, name, value, visibility, new HashMap<String, Object>());
     }
 
@@ -22,7 +22,7 @@ public class Property {
         this(null, name, value, visibility, metadata);
     }
 
-    public Property(String id, String name, Object value, Visibility visibility, Map<String, Object> metadata) {
+    public Property(Object id, String name, Object value, Visibility visibility, Map<String, Object> metadata) {
         this.id = id;
         this.name = name;
         this.value = value;
@@ -30,8 +30,13 @@ public class Property {
         this.metadata = metadata;
     }
 
-    public String getId() {
+    public Object getId() {
         return id;
+    }
+
+    // TODO this seems a little dirty to allow setting the id
+    public void setId(Object id) {
+        this.id = id;
     }
 
     public String getName() {

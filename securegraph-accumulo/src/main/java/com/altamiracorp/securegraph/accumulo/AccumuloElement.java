@@ -16,6 +16,7 @@ public abstract class AccumuloElement extends ElementBase {
 
     @Override
     public void setProperties(Property... properties) {
-        throw new RuntimeException("not implemented");
+        ((AccumuloGraph) getGraph()).setPropertiesOnElement(this, properties);
+        super.setPropertiesInternal(properties);
     }
 }

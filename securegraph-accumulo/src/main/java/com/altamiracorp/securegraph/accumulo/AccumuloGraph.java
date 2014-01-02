@@ -7,7 +7,6 @@ import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.accumulo.core.client.*;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -17,13 +16,17 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 public class AccumuloGraph extends GraphBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
 
     private static final Text EMPTY_TEXT = new Text("");
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
+    public static final String PROPERTY_ID_NAME_SEPERATOR = "\u001f";
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private final SearchIndex searchIndex;
@@ -54,6 +57,7 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Property... properties) {
+        ensureIdsOnProperties(properties);
         AccumuloVertex vertex = new AccumuloVertex(this, vertexId, vertexVisibility, properties);
 
         Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + vertex.getId());
@@ -70,7 +74,7 @@ public class AccumuloGraph extends GraphBase {
 
     private void addPropertyToMutation(Mutation m, Property property) {
         Text cf = AccumuloElement.CF_PROPERTY;
-        Text columnQualifier = new Text(property.getName());
+        Text columnQualifier = new Text(property.getName() + PROPERTY_ID_NAME_SEPERATOR + property.getId());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         Value value = new Value(getValueSerializer().objectToValue(property.getValue()));
         m.put(cf, columnQualifier, columnVisibility, value);
@@ -117,6 +121,7 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Property... properties) {
+        ensureIdsOnProperties(properties);
         AccumuloEdge edge = new AccumuloEdge(this, edgeId, outVertex.getId(), inVertex.getId(), label, edgeVisibility, properties);
 
         Mutation addEdgeMutation = new Mutation(AccumuloEdge.ROW_KEY_PREFIX + edge.getId());
@@ -148,6 +153,14 @@ public class AccumuloGraph extends GraphBase {
         getSearchIndex().addElement(edge);
 
         return edge;
+    }
+
+    private void ensureIdsOnProperties(Property[] properties) {
+        for (Property property : properties) {
+            if (property.getId() == null) {
+                property.setId(getIdGenerator().nextId());
+            }
+        }
     }
 
     @Override
@@ -212,13 +225,17 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private Property[] toProperties(Map<String, Object> propertyValues, Map<String, Visibility> propertyVisibilities, Map<String, Map<String, Object>> propertyMetadata) {
+    private Property[] toProperties(Map<String, String> propertyNames, Map<String, Object> propertyValues, Map<String, Visibility> propertyVisibilities, Map<String, Map<String, Object>> propertyMetadata) {
         Property[] results = new Property[propertyValues.size()];
         int i = 0;
         for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
-            String propertyName = propertyValueEntry.getKey();
+            String propertyNameAndId = propertyValueEntry.getKey();
+            Object propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
+            String propertyName = propertyNames.get(propertyNameAndId);
             Object propertyValue = propertyValueEntry.getValue();
-            results[i++] = new Property(propertyName, propertyValue, propertyVisibilities.get(propertyName), propertyMetadata.get(propertyName));
+            Visibility visibility = propertyVisibilities.get(propertyNameAndId);
+            Map<String, Object> metadata = propertyMetadata.get(propertyNameAndId);
+            results[i++] = new Property(propertyId, propertyName, propertyValue, visibility, metadata);
         }
         return results;
     }
@@ -306,6 +323,7 @@ public class AccumuloGraph extends GraphBase {
 
     private Vertex createVertexFromRow(Iterator<Map.Entry<Key, Value>> row) throws SecureGraphException {
         String id = null;
+        Map<String, String> propertyNames = new HashMap<String, String>();
         Map<String, Object> propertyValues = new HashMap<String, Object>();
         Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
         Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
@@ -325,6 +343,8 @@ public class AccumuloGraph extends GraphBase {
 
             if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
                 Object v = getValueSerializer().valueToObject(value);
+                String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
+                propertyNames.put(columnQualifier.toString(), propertyName);
                 propertyValues.put(columnQualifier.toString(), v);
                 propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
                 continue;
@@ -364,12 +384,29 @@ public class AccumuloGraph extends GraphBase {
         if (vertexVisibility == null) {
             throw new SecureGraphException("Invalid vertex visibility. This could occur if other columns are returned without the vertex signal column being returned.");
         }
-        Property[] properties = toProperties(propertyValues, propertyVisibilities, propertyMetadata);
+        Property[] properties = toProperties(propertyNames, propertyValues, propertyVisibilities, propertyMetadata);
         return new AccumuloVertex(this, id, vertexVisibility, properties, inEdgeIds, outEdgeIds);
+    }
+
+    private Object getPropertyIdFromColumnQualifier(String columnQualifier) {
+        int i = columnQualifier.indexOf(PROPERTY_ID_NAME_SEPERATOR);
+        if (i < 0) {
+            throw new SecureGraphException("Invalid property column qualifier");
+        }
+        return columnQualifier.substring(i);
+    }
+
+    private String getPropertyNameFromColumnQualifier(String columnQualifier) {
+        int i = columnQualifier.indexOf(PROPERTY_ID_NAME_SEPERATOR);
+        if (i < 0) {
+            throw new SecureGraphException("Invalid property column qualifier");
+        }
+        return columnQualifier.substring(0, i);
     }
 
     private Edge createEdgeFromRow(Iterator<Map.Entry<Key, Value>> row) {
         String id = null;
+        Map<String, String> propertyNames = new HashMap<String, String>();
         Map<String, Object> propertyValues = new HashMap<String, Object>();
         Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
         Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
@@ -391,6 +428,8 @@ public class AccumuloGraph extends GraphBase {
             // TODO this is duplicate logic from createVertexFromRow
             if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
                 Object v = getValueSerializer().valueToObject(value);
+                String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
+                propertyNames.put(columnQualifier.toString(), propertyName);
                 propertyValues.put(columnQualifier.toString(), v);
                 propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
                 continue;
@@ -432,7 +471,7 @@ public class AccumuloGraph extends GraphBase {
         if (edgeVisibility == null) {
             throw new SecureGraphException("Invalid vertex visibility. This could occur if other columns are returned without the vertex signal column being returned.");
         }
-        Property[] properties = toProperties(propertyValues, propertyVisibilities, propertyMetadata);
+        Property[] properties = toProperties(propertyNames, propertyValues, propertyVisibilities, propertyMetadata);
         return new AccumuloEdge(this, id, outVertexId, inVertexId, label, edgeVisibility, properties);
     }
 
@@ -442,5 +481,9 @@ public class AccumuloGraph extends GraphBase {
             return new Visibility(columnVisibilityString.substring(1, columnVisibilityString.length() - 1));
         }
         return new Visibility(columnVisibilityString);
+    }
+
+    void setPropertiesOnElement(AccumuloElement element, Property[] properties) {
+        throw new RuntimeException("not implemented");
     }
 }

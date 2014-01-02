@@ -3,22 +3,21 @@ package com.altamiracorp.securegraph;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class ElementBase implements Element {
     private final Graph graph;
     private final Object id;
     private final Visibility visibility;
-    private final List<Property> properties;
+    private final Map<Object, Property> properties;
 
     protected ElementBase(Graph graph, Object id, Visibility visibility, Property[] properties) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
-        this.properties = new ArrayList<Property>();
-        Collections.addAll(this.properties, properties);
+        this.properties = new HashMap<Object, Property>();
+        setPropertiesInternal(properties);
     }
 
     @Override
@@ -43,7 +42,7 @@ public abstract class ElementBase implements Element {
 
     @Override
     public Iterable<Property> getProperties() {
-        return this.properties;
+        return this.properties.values();
     }
 
     @Override
@@ -58,6 +57,17 @@ public abstract class ElementBase implements Element {
 
     @Override
     public abstract void setProperties(Property... properties);
+
+    // this method differs setProperties in that it only updates the in memory representation of the properties
+    protected void setPropertiesInternal(Property[] properties) {
+        for (Property property : properties) {
+            Object propertyId = property.getId();
+            if (propertyId == null) {
+                throw new IllegalArgumentException("id is required for property");
+            }
+            this.properties.put(propertyId, property);
+        }
+    }
 
     public Graph getGraph() {
         return graph;
