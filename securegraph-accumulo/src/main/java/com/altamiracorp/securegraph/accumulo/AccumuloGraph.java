@@ -243,6 +243,10 @@ public class AccumuloGraph extends GraphBase {
         return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES);
     }
 
+    private Scanner createEdgeScanner(Authorizations authorizations) throws SecureGraphException {
+        return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_EDGES);
+    }
+
     private Scanner createElementVisibilityScanner(Authorizations authorizations, String elementMode) throws SecureGraphException {
         try {
             Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
@@ -264,7 +268,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private Iterable<Edge> getEdgesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
-        final Scanner scanner = createVertexScanner(authorizations);
+        final Scanner scanner = createEdgeScanner(authorizations);
 
         Key startKey;
         if (startId == null) {
@@ -324,7 +328,7 @@ public class AccumuloGraph extends GraphBase {
             if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
                 Object v = getValueSerializer().valueToObject(value);
                 propertyValues.put(columnQualifier.toString(), v);
-                propertyVisibilities.put(columnQualifier.toString(), new Visibility(columnVisibility.toString()));
+                propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
                 continue;
             }
 
@@ -342,7 +346,7 @@ public class AccumuloGraph extends GraphBase {
             }
 
             if (AccumuloVertex.CF_SIGNAL.toString().equals(columnFamily.toString())) {
-                vertexVisibility = new Visibility(columnVisibility.toString());
+                vertexVisibility = accumuloVisibilityToVisibility(columnVisibility);
                 continue;
             }
 
@@ -390,7 +394,7 @@ public class AccumuloGraph extends GraphBase {
             if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
                 Object v = getValueSerializer().valueToObject(value);
                 propertyValues.put(columnQualifier.toString(), v);
-                propertyVisibilities.put(columnQualifier.toString(), new Visibility(columnVisibility.toString()));
+                propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
                 continue;
             }
 
@@ -409,7 +413,7 @@ public class AccumuloGraph extends GraphBase {
             }
 
             if (AccumuloEdge.CF_SIGNAL.toString().equals(columnFamily.toString())) {
-                edgeVisibility = new Visibility(columnVisibility.toString());
+                edgeVisibility = accumuloVisibilityToVisibility(columnVisibility);
                 label = columnQualifier.toString();
                 continue;
             }
@@ -432,5 +436,13 @@ public class AccumuloGraph extends GraphBase {
         }
         Property[] properties = toProperties(propertyValues, propertyVisibilities, propertyMetadata);
         return new AccumuloEdge(this, id, outVertexId, inVertexId, label, edgeVisibility, properties);
+    }
+
+    private Visibility accumuloVisibilityToVisibility(ColumnVisibility columnVisibility) {
+        String columnVisibilityString = columnVisibility.toString();
+        if (columnVisibilityString.startsWith("[") && columnVisibilityString.endsWith("]")) {
+            return new Visibility(columnVisibilityString.substring(1, columnVisibilityString.length() - 1));
+        }
+        return new Visibility(columnVisibilityString);
     }
 }

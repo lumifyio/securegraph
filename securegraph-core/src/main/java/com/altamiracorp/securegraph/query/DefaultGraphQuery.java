@@ -1,21 +1,27 @@
 package com.altamiracorp.securegraph.query;
 
 import com.altamiracorp.securegraph.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 
 public class DefaultGraphQuery extends GraphQueryBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGraphQuery.class);
+
     public DefaultGraphQuery(Graph graph, Authorizations authorizations) {
         super(graph, authorizations);
     }
 
     @Override
     public Iterable<Vertex> vertices() {
+        LOGGER.warn("scanning all vertices! create your own GraphQuery.");
         return new DefaultGraphQueryIterable<Vertex>(ElementType.VERTEX);
     }
 
     @Override
     public Iterable<Edge> edges() {
+        LOGGER.warn("scanning all edges! create your own GraphQuery.");
         return new DefaultGraphQueryIterable<Edge>(ElementType.EDGE);
     }
 

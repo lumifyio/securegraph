@@ -20,4 +20,13 @@ public class Visibility {
     public int hashCode() {
         return visibilityString.hashCode();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Visibility) {
+            Visibility objVisibility = (Visibility) obj;
+            return getVisibilityString().equals(objVisibility.getVisibilityString());
+        }
+        return super.equals(obj);
+    }
 }

@@ -3,8 +3,11 @@ package com.altamiracorp.securegraph;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.query.DefaultGraphQuery;
 import com.altamiracorp.securegraph.query.GraphQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class GraphBase implements Graph {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
     private final GraphConfiguration configuration;
     private final IdGenerator idGenerator;
 
@@ -23,6 +26,7 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
+        LOGGER.warn("Performing scan of all vertices! Override getVertex.");
         for (Vertex vertex : getVertices(authorizations)) {
             if (vertex.getId().equals(vertexId)) {
                 return vertex;
@@ -47,6 +51,7 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public Edge getEdge(Object edgeId, Authorizations authorizations) {
+        LOGGER.warn("Performing scan of all edges! Override getEdge.");
         for (Edge edge : getEdges(authorizations)) {
             if (edge.getId().equals(edgeId)) {
                 return edge;
