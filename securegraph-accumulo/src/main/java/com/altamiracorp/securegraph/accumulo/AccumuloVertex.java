@@ -6,9 +6,9 @@ import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 
 public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
@@ -16,14 +16,14 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_IN_EDGE = new Text("VIN");
     public static final String ROW_KEY_PREFIX = "V";
     public static final String AFTER_ROW_KEY_PREFIX = "W";
-    private final List<Object> inEdgeIds;
-    private final List<Object> outEdgeIds;
+    private final Set<Object> inEdgeIds;
+    private final Set<Object> outEdgeIds;
 
     AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Property[] properties) {
-        this(graph, vertexId, vertexVisibility, properties, new ArrayList<Object>(), new ArrayList<Object>());
+        this(graph, vertexId, vertexVisibility, properties, new HashSet<Object>(), new HashSet<Object>());
     }
 
-    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Property[] properties, List<Object> inEdgeIds, List<Object> outEdgeIds) {
+    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Property[] properties, Set<Object> inEdgeIds, Set<Object> outEdgeIds) {
         super(graph, vertexId, vertexVisibility, properties);
         this.inEdgeIds = inEdgeIds;
         this.outEdgeIds = outEdgeIds;
@@ -34,7 +34,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         switch (direction) {
             case BOTH:
                 // TODO it would be nice if we didn't have to create a new list here
-                List<Object> ids = new ArrayList<Object>();
+                Set<Object> ids = new HashSet<Object>();
                 ids.addAll(inEdgeIds);
                 ids.addAll(outEdgeIds);
                 return new EdgesByIdsIterable(getGraph(), ids, authorizations);
@@ -62,10 +62,10 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     private static class EdgesByIdsIterable extends LookAheadIterable<Object, Edge> {
         private final Graph graph;
-        private final List<Object> idsList;
+        private final Set<Object> idsList;
         private final Authorizations authorizations;
 
-        public EdgesByIdsIterable(Graph graph, List<Object> idsList, Authorizations authorizations) {
+        public EdgesByIdsIterable(Graph graph, Set<Object> idsList, Authorizations authorizations) {
             this.graph = graph;
             this.idsList = idsList;
             this.authorizations = authorizations;

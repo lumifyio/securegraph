@@ -7,6 +7,7 @@ import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -16,10 +17,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class AccumuloGraph extends GraphBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
@@ -311,8 +309,8 @@ public class AccumuloGraph extends GraphBase {
         Map<String, Object> propertyValues = new HashMap<String, Object>();
         Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
         Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
-        ArrayList<Object> inEdgeIds = new ArrayList<Object>();
-        ArrayList<Object> outEdgeIds = new ArrayList<Object>();
+        HashSet<Object> inEdgeIds = new HashSet<Object>();
+        HashSet<Object> outEdgeIds = new HashSet<Object>();
         Visibility vertexVisibility = null;
 
         while (row.hasNext()) {
