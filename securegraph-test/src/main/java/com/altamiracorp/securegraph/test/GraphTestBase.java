@@ -239,18 +239,18 @@ public abstract class GraphTestBase {
     public void testAddEdgeWithVisibility() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
-        graph.addEdge(v1, v2, "edgeA", VISIBILITY_A);
-        graph.addEdge(v1, v2, "edgeB", VISIBILITY_B);
+        graph.addEdge("e1", v1, v2, "edgeA", VISIBILITY_A);
+        graph.addEdge("e2", v1, v2, "edgeB", VISIBILITY_B);
 
-        Iterable<Edge> aEdges = graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH);
+        Iterable<Edge> aEdges = graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A);
         assertEquals(1, count(aEdges));
         assertEquals("edgeA", aEdges.iterator().next().getLabel());
 
-        Iterable<Edge> bEdges = graph.getVertex("v1", AUTHORIZATIONS_B).getEdges(Direction.BOTH);
+        Iterable<Edge> bEdges = graph.getVertex("v1", AUTHORIZATIONS_B).getEdges(Direction.BOTH, AUTHORIZATIONS_B);
         assertEquals(1, count(bEdges));
         assertEquals("edgeB", bEdges.iterator().next().getLabel());
 
-        Iterable<Edge> allEdges = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH);
+        Iterable<Edge> allEdges = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_A_AND_B);
         assertEquals(2, count(allEdges));
     }
 

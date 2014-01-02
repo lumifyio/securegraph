@@ -311,8 +311,8 @@ public class AccumuloGraph extends GraphBase {
         Map<String, Object> propertyValues = new HashMap<String, Object>();
         Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
         Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
-        ArrayList<String> inEdgeIds = new ArrayList<String>();
-        ArrayList<String> outEdgeIds = new ArrayList<String>();
+        ArrayList<Object> inEdgeIds = new ArrayList<Object>();
+        ArrayList<Object> outEdgeIds = new ArrayList<Object>();
         Visibility vertexVisibility = null;
 
         while (row.hasNext()) {
