@@ -118,13 +118,43 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties) {
-        throw new RuntimeException("Not implemented");
+    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Property... properties) {
+        AccumuloEdge edge = new AccumuloEdge(this, edgeId, outVertex.getId(), inVertex.getId(), label, edgeVisibility, properties);
+
+        Mutation addEdgeMutation = new Mutation(AccumuloEdge.ROW_KEY_PREFIX + edge.getId());
+        ColumnVisibility edgeColumnVisibility = new ColumnVisibility(edgeVisibility.getVisibilityString());
+        addEdgeMutation.put(AccumuloEdge.CF_SIGNAL, new Text(label), edgeColumnVisibility, EMPTY_VALUE);
+        addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(outVertex.getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
+        addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(inVertex.getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
+        for (Property property : edge.getProperties()) {
+            addPropertyToMutation(addEdgeMutation, property);
+        }
+
+        // Update out vertex.
+        Mutation addEdgeToOutMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + outVertex.getId());
+        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, new Value(label.getBytes()));
+
+        // Update in vertex.
+        Mutation addEdgeToInMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + inVertex.getId());
+        addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, new Value(label.getBytes()));
+
+        addMutations(addEdgeMutation, addEdgeToOutMutation, addEdgeToInMutation);
+
+        if (outVertex instanceof AccumuloVertex) {
+            ((AccumuloVertex) outVertex).addOutEdge(edge);
+        }
+        if (inVertex instanceof AccumuloVertex) {
+            ((AccumuloVertex) inVertex).addInEdge(edge);
+        }
+
+        getSearchIndex().addElement(edge);
+
+        return edge;
     }
 
     @Override
     public Iterable<Edge> getEdges(Authorizations authorizations) {
-        throw new RuntimeException("Not implemented");
+        return getEdgesInRange(null, null, authorizations);
     }
 
     @Override
@@ -175,6 +205,94 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
                 return createVertexFromRow(next);
+            }
+
+            @Override
+            protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
+                return new RowIterator(scanner.iterator());
+            }
+        };
+    }
+
+    private Property[] toProperties(Map<String, Object> propertyValues, Map<String, Visibility> propertyVisibilities, Map<String, Map<String, Object>> propertyMetadata) {
+        Property[] results = new Property[propertyValues.size()];
+        int i = 0;
+        for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
+            String propertyName = propertyValueEntry.getKey();
+            Object propertyValue = propertyValueEntry.getValue();
+            results[i++] = new Property(propertyName, propertyValue, propertyVisibilities.get(propertyName), propertyMetadata.get(propertyName));
+        }
+        return results;
+    }
+
+    private String vertexIdFromRowKey(String rowKey) throws SecureGraphException {
+        if (rowKey.startsWith(AccumuloVertex.ROW_KEY_PREFIX)) {
+            return rowKey.substring(AccumuloVertex.ROW_KEY_PREFIX.length());
+        }
+        throw new SecureGraphException("Invalid row key for vertex: " + rowKey);
+    }
+
+    private String edgeIdFromRowKey(String rowKey) throws SecureGraphException {
+        if (rowKey.startsWith(AccumuloEdge.ROW_KEY_PREFIX)) {
+            return rowKey.substring(AccumuloEdge.ROW_KEY_PREFIX.length());
+        }
+        throw new SecureGraphException("Invalid row key for edge: " + rowKey);
+    }
+
+    private Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
+        return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES);
+    }
+
+    private Scanner createElementVisibilityScanner(Authorizations authorizations, String elementMode) throws SecureGraphException {
+        try {
+            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
+            IteratorSetting iteratorSetting = new IteratorSetting(
+                    100,
+                    ElementVisibilityRowFilter.class.getSimpleName(),
+                    ElementVisibilityRowFilter.class
+            );
+            iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
+            scanner.addScanIterator(iteratorSetting);
+            return scanner;
+        } catch (TableNotFoundException e) {
+            throw new SecureGraphException(e);
+        }
+    }
+
+    private org.apache.accumulo.core.security.Authorizations toAccumuloAuthorizations(Authorizations authorizations) {
+        return new org.apache.accumulo.core.security.Authorizations(authorizations.getAuthorizations());
+    }
+
+    private Iterable<Edge> getEdgesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
+        final Scanner scanner = createVertexScanner(authorizations);
+
+        Key startKey;
+        if (startId == null) {
+            startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX);
+        } else {
+            startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + startId);
+        }
+
+        Key endKey;
+        if (endId == null) {
+            endKey = new Key(AccumuloEdge.AFTER_ROW_KEY_PREFIX);
+        } else {
+            endKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + endId + "~");
+        }
+
+        scanner.setRange(new Range(startKey, endKey));
+        scanner.clearColumns();
+
+        return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Edge>() {
+
+            @Override
+            protected boolean isIncluded(Edge obj) {
+                return obj != null;
+            }
+
+            @Override
+            protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
+                return createEdgeFromRow(next);
             }
 
             @Override
@@ -248,45 +366,71 @@ public class AccumuloGraph extends GraphBase {
         return new AccumuloVertex(this, id, vertexVisibility, properties, inEdgeIds, outEdgeIds);
     }
 
-    private Property[] toProperties(Map<String, Object> propertyValues, Map<String, Visibility> propertyVisibilities, Map<String, Map<String, Object>> propertyMetadata) {
-        Property[] results = new Property[propertyValues.size()];
-        int i = 0;
-        for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
-            String propertyName = propertyValueEntry.getKey();
-            Object propertyValue = propertyValueEntry.getValue();
-            results[i++] = new Property(propertyName, propertyValue, propertyVisibilities.get(propertyName), propertyMetadata.get(propertyName));
+    private Edge createEdgeFromRow(Iterator<Map.Entry<Key, Value>> row) {
+        String id = null;
+        Map<String, Object> propertyValues = new HashMap<String, Object>();
+        Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
+        Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
+        String outVertexId = null;
+        String inVertexId = null;
+        String label = null;
+        Visibility edgeVisibility = null;
+
+        while (row.hasNext()) {
+            Map.Entry<Key, Value> col = row.next();
+            if (id == null) {
+                id = edgeIdFromRowKey(col.getKey().getRow().toString());
+            }
+            Text columnFamily = col.getKey().getColumnFamily();
+            Text columnQualifier = col.getKey().getColumnQualifier();
+            ColumnVisibility columnVisibility = new ColumnVisibility(col.getKey().getColumnVisibility().toString());
+            Value value = col.getValue();
+
+            // TODO this is duplicate logic from createVertexFromRow
+            if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
+                Object v = getValueSerializer().valueToObject(value);
+                propertyValues.put(columnQualifier.toString(), v);
+                propertyVisibilities.put(columnQualifier.toString(), new Visibility(columnVisibility.toString()));
+                continue;
+            }
+
+            // TODO this is duplicate logic from createVertexFromRow
+            if (AccumuloElement.CF_PROPERTY_METADATA.toString().equals(columnFamily.toString())) {
+                Object o = getValueSerializer().valueToObject(value);
+                if (o == null) {
+                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found null.");
+                } else if (o instanceof Map) {
+                    Map v = (Map) o;
+                    propertyMetadata.put(columnQualifier.toString(), v);
+                } else {
+                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found " + o.getClass().getName() + ".");
+                }
+                continue;
+            }
+
+            if (AccumuloEdge.CF_SIGNAL.toString().equals(columnFamily.toString())) {
+                edgeVisibility = new Visibility(columnVisibility.toString());
+                label = columnQualifier.toString();
+                continue;
+            }
+
+            if (AccumuloEdge.CF_IN_VERTEX.toString().equals(columnFamily.toString())) {
+                inVertexId = columnQualifier.toString();
+                continue;
+            }
+
+            if (AccumuloEdge.CF_OUT_VERTEX.toString().equals(columnFamily.toString())) {
+                outVertexId = columnQualifier.toString();
+                continue;
+            }
+
+            LOGGER.debug("Unhandled column {} {}", columnFamily, columnQualifier);
         }
-        return results;
-    }
 
-    private String vertexIdFromRowKey(String rowKey) throws SecureGraphException {
-        if (rowKey.startsWith(AccumuloVertex.ROW_KEY_PREFIX)) {
-            return rowKey.substring(AccumuloVertex.ROW_KEY_PREFIX.length());
+        if (edgeVisibility == null) {
+            throw new SecureGraphException("Invalid vertex visibility. This could occur if other columns are returned without the vertex signal column being returned.");
         }
-        throw new SecureGraphException("Invalid row key for vertex: " + rowKey);
-    }
-
-    private Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
-        return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES);
-    }
-
-    private Scanner createElementVisibilityScanner(Authorizations authorizations, String elementMode) throws SecureGraphException {
-        try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
-            IteratorSetting iteratorSetting = new IteratorSetting(
-                    100,
-                    ElementVisibilityRowFilter.class.getSimpleName(),
-                    ElementVisibilityRowFilter.class
-            );
-            iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
-            scanner.addScanIterator(iteratorSetting);
-            return scanner;
-        } catch (TableNotFoundException e) {
-            throw new SecureGraphException(e);
-        }
-    }
-
-    private org.apache.accumulo.core.security.Authorizations toAccumuloAuthorizations(Authorizations authorizations) {
-        return new org.apache.accumulo.core.security.Authorizations(authorizations.getAuthorizations());
+        Property[] properties = toProperties(propertyValues, propertyVisibilities, propertyMetadata);
+        return new AccumuloEdge(this, id, outVertexId, inVertexId, label, edgeVisibility, properties);
     }
 }

@@ -18,10 +18,10 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
             @Override
             protected Vertex convert(Edge edge) {
                 if (edge.getInVertexId().equals(sourceVertex.getId())) {
-                    return edge.getOutVertex();
+                    return edge.getOutVertex(getParameters().getAuthorizations());
                 }
                 if (edge.getOutVertexId().equals(sourceVertex.getId())) {
-                    return edge.getInVertex();
+                    return edge.getInVertex(getParameters().getAuthorizations());
                 }
                 throw new IllegalStateException("Neither the in vertex or the out vertex of edge [" + edge + "] equals the source vertex.");
             }

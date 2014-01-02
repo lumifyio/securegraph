@@ -5,33 +5,43 @@ import org.apache.hadoop.io.Text;
 
 public class AccumuloEdge extends AccumuloElement implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
+    public static final Text CF_OUT_VERTEX = new Text("EOUT");
+    public static final Text CF_IN_VERTEX = new Text("EIN");
+    public static final String ROW_KEY_PREFIX = "E";
+    public static final String AFTER_ROW_KEY_PREFIX = "F";
+    private final Object outVertexId;
+    private final Object inVertexId;
+    private final String label;
 
-    protected AccumuloEdge(Graph graph, Object id, Visibility visibility, Property[] properties) {
+    AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, Property[] properties) {
         super(graph, id, visibility, properties);
+        this.outVertexId = outVertexId;
+        this.inVertexId = inVertexId;
+        this.label = label;
     }
 
     @Override
     public String getLabel() {
-        throw new RuntimeException("Not implemented");
+        return label;
     }
 
     @Override
     public Object getOutVertexId() {
-        throw new RuntimeException("Not implemented");
+        return outVertexId;
     }
 
     @Override
-    public Vertex getOutVertex() {
-        throw new RuntimeException("Not implemented");
+    public Vertex getOutVertex(Authorizations authorizations) {
+        return getGraph().getVertex(getOutVertexId(), authorizations);
     }
 
     @Override
     public Object getInVertexId() {
-        throw new RuntimeException("Not implemented");
+        return inVertexId;
     }
 
     @Override
-    public Vertex getInVertex() {
-        throw new RuntimeException("Not implemented");
+    public Vertex getInVertex(Authorizations authorizations) {
+        return getGraph().getVertex(getInVertexId(), authorizations);
     }
 }

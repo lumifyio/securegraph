@@ -5,9 +5,9 @@ public interface Edge extends Element {
 
     Object getOutVertexId();
 
-    Vertex getOutVertex();
+    Vertex getOutVertex(Authorizations authorizations);
 
     Object getInVertexId();
 
-    Vertex getInVertex();
+    Vertex getInVertex(Authorizations authorizations);
 }

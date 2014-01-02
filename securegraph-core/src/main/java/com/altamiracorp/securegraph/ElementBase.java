@@ -75,4 +75,13 @@ public abstract class ElementBase implements Element {
         }
         return getId().toString();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Element) {
+            Element objElem = (Element) obj;
+            return getId().equals(objElem.getId());
+        }
+        return super.equals(obj);
+    }
 }

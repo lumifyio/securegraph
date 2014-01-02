@@ -184,9 +184,9 @@ public abstract class GraphTestBase {
         assertEquals("e1", e.getId());
         assertEquals("label1", e.getLabel());
         assertEquals("v1", e.getOutVertexId());
-        assertEquals(v1, e.getOutVertex());
+        assertEquals(v1, e.getOutVertex(AUTHORIZATIONS_A));
         assertEquals("v2", e.getInVertexId());
-        assertEquals(v2, e.getInVertex());
+        assertEquals(v2, e.getInVertex(AUTHORIZATIONS_A));
         assertEquals(VISIBILITY_A, e.getVisibility());
 
         e = graph.getEdge("e1", AUTHORIZATIONS_B);
@@ -197,9 +197,9 @@ public abstract class GraphTestBase {
         assertEquals("e1", e.getId());
         assertEquals("label1", e.getLabel());
         assertEquals("v1", e.getOutVertexId());
-        assertEquals(v1, e.getOutVertex());
+        assertEquals(v1, e.getOutVertex(AUTHORIZATIONS_A));
         assertEquals("v2", e.getInVertexId());
-        assertEquals(v2, e.getInVertex());
+        assertEquals(v2, e.getInVertex(AUTHORIZATIONS_A));
         assertEquals(VISIBILITY_A, e.getVisibility());
     }
 

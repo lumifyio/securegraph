@@ -36,4 +36,12 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     public VertexQuery query(Authorizations authorizations) {
         return new DefaultVertexQuery(getGraph(), authorizations, this);
     }
+
+    void addOutEdge(AccumuloEdge edge) {
+        this.outEdgeIds.add(edge.getId().toString());
+    }
+
+    void addInEdge(AccumuloEdge edge) {
+        this.inEdgeIds.add(edge.getId().toString());
+    }
 }
