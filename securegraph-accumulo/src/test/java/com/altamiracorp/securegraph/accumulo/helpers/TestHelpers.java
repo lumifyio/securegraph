@@ -18,7 +18,22 @@ public class TestHelpers {
         ensureAccumuloIsStarted();
         Connector connector = TestAccumuloCluster.getConfig().createConnector();
         ensureTableExists(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
+        dropGraph(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
         connector.securityOperations().changeUserAuthorizations(AccumuloGraphConfiguration.DEFAULT_ACCUMULO_USERNAME, new Authorizations("a", "b", "c"));
+    }
+
+    public static void after() {
+    }
+
+    public static void dropGraph(Connector connector, String graphDirectoryName) {
+        try {
+            if (connector.tableOperations().exists(graphDirectoryName)) {
+                connector.tableOperations().delete(graphDirectoryName);
+            }
+            connector.tableOperations().create(graphDirectoryName);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to drop graph: " + graphDirectoryName, e);
+        }
     }
 
     private static void ensureTableExists(Connector connector, String tableName) {

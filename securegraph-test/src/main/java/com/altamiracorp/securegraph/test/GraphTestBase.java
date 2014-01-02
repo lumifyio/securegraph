@@ -2,6 +2,7 @@ package com.altamiracorp.securegraph.test;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.Compare;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,6 +31,11 @@ public abstract class GraphTestBase {
     @Before
     public void before() throws Exception {
         graph = createGraph();
+    }
+
+    @After
+    public void after() throws Exception {
+        graph = null;
     }
 
     @Test
@@ -258,7 +264,7 @@ public abstract class GraphTestBase {
     public void testGraphQuery() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
-        graph.addEdge(v1, v2, "edgeA", VISIBILITY_A);
+        graph.addEdge("e1", v1, v2, "edgeA", VISIBILITY_A);
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A).vertices();
         assertEquals(2, count(vertices));
@@ -332,7 +338,7 @@ public abstract class GraphTestBase {
     public void testVertexQuery() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
-        graph.addEdge(v1, v2, "edgeA", VISIBILITY_A);
+        graph.addEdge("e1", v1, v2, "edgeA", VISIBILITY_A);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         Iterable<Vertex> vertices = v1.query(AUTHORIZATIONS_A).vertices();

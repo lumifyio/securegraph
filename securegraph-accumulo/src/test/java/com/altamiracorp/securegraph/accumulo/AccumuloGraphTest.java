@@ -6,6 +6,8 @@ import com.altamiracorp.securegraph.accumulo.helpers.TestHelpers;
 import com.altamiracorp.securegraph.test.GraphTestBase;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -16,9 +18,16 @@ public class AccumuloGraphTest extends GraphTestBase {
         return TestHelpers.createGraph();
     }
 
+    @Before
     @Override
     public void before() throws Exception {
         TestHelpers.before();
         super.before();
+    }
+
+    @After
+    public void after() throws Exception {
+        super.after();
+        TestHelpers.after();
     }
 }
