@@ -3,6 +3,7 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.DefaultVertexQuery;
 import com.altamiracorp.securegraph.query.VertexQuery;
+import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
 
@@ -45,6 +46,22 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
+        return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
+            @Override
+            protected Vertex convert(Edge o) {
+                if (o.getOutVertexId().equals(getId())) {
+                    return o.getInVertex(authorizations);
+                }
+                if (o.getInVertexId().equals(getId())) {
+                    return o.getOutVertex(authorizations);
+                }
+                throw new IllegalStateException("Neither the out or the in side of the edge [" + o + "] equals the current vertex [" + AccumuloVertex.this + "]");
+            }
+        };
     }
 
     @Override

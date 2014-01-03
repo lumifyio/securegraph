@@ -21,6 +21,7 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -38,8 +39,10 @@
 
     <modules>
         <module>securegraph-core</module>
-        <module>securegraph-accumulo</module>
         <module>securegraph-test</module>
         <module>securegraph-blueprints</module>
+        <module>securegraph-accumulo</module>
+        <module>securegraph-accumulo-blueprints</module>
+        <module>securegraph-blueprints-test</module>
     </modules>
 </project>

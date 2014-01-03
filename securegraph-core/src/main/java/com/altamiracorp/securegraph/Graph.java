@@ -28,4 +28,6 @@ public interface Graph {
     void removeEdge(String edgeId, Authorizations authorizations);
 
     GraphQuery query(Authorizations authorizations);
+
+    void shutdown();
 }

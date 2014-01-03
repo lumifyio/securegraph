@@ -17,6 +17,10 @@ public abstract class GraphConfiguration {
         this.config = config;
     }
 
+    public void set(String key, Object value) {
+        this.config.put(key, value);
+    }
+
     public Map getConfig() {
         return config;
     }

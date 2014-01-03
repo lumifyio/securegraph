@@ -56,6 +56,10 @@ public class AccumuloGraph extends GraphBase {
     @Override
     public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Property... properties) {
         ensureIdsOnProperties(properties);
+        if (vertexId == null) {
+            vertexId = getIdGenerator().nextId();
+        }
+
         AccumuloVertex vertex = new AccumuloVertex(this, vertexId, vertexVisibility, properties);
 
         Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + vertex.getId());
@@ -176,6 +180,16 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Property... properties) {
+        if (outVertex == null) {
+            throw new IllegalArgumentException("outVertex is required");
+        }
+        if (inVertex == null) {
+            throw new IllegalArgumentException("inVertex is required");
+        }
+        if (edgeId == null) {
+            edgeId = getIdGenerator().nextId();
+        }
+
         ensureIdsOnProperties(properties);
         AccumuloEdge edge = new AccumuloEdge(this, edgeId, outVertex.getId(), inVertex.getId(), label, edgeVisibility, properties);
 
@@ -228,6 +242,17 @@ public class AccumuloGraph extends GraphBase {
         List<Mutation> mutations = new ArrayList<Mutation>();
         removeEdge(mutations, edge, authorizations);
         addMutations(mutations);
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            if (this.writer != null) {
+                this.writer.flush();
+            }
+        } catch (Exception ex) {
+            throw new SecureGraphException(ex);
+        }
     }
 
     private void removeEdge(List<Mutation> mutations, Edge edge, Authorizations authorizations) {

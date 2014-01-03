@@ -9,52 +9,35 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>securegraph-accumulo</artifactId>
+    <artifactId>securegraph-accumulo-blueprints</artifactId>
 
     <properties>
         <accumulo.version>1.5.0</accumulo.version>
-        <zookeeper.version>3.4.5</zookeeper.version>
-        <hadoop.version>0.23.10</hadoop.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.altamiracorp.securegraph</groupId>
-            <artifactId>securegraph-core</artifactId>
+            <artifactId>securegraph-accumulo</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.altamiracorp.securegraph</groupId>
-            <artifactId>securegraph-test</artifactId>
+            <artifactId>securegraph-blueprints</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.altamiracorp.securegraph</groupId>
+            <artifactId>securegraph-blueprints-test</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo-core</artifactId>
-            <version>${accumulo.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-minicluster</artifactId>
             <version>${accumulo.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-            <version>${hadoop.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
 </project>
