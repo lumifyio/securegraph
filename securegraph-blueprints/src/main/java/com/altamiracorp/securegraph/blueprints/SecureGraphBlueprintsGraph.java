@@ -1,6 +1,5 @@
 package com.altamiracorp.securegraph.blueprints;
 
-import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.query.Compare;
@@ -13,12 +12,14 @@ import com.tinkerpop.blueprints.util.DefaultGraphQuery;
 
 public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.blueprints.Graph {
     private static final SecureGraphBlueprintsGraphFeatures FEATURES = new SecureGraphBlueprintsGraphFeatures();
-    private static final Visibility DEFAULT_VISIBILITY = new Visibility("");
-    private static final Authorizations DEFAULT_AUTHORIZATIONS = new Authorizations();
     private final Graph secureGraph;
+    private final VisibilityProvider visibilityProvider;
+    private final AuthorizationsProvider authorizationsProvider;
 
-    protected SecureGraphBlueprintsGraph(Graph secureGraph) {
+    protected SecureGraphBlueprintsGraph(Graph secureGraph, VisibilityProvider visibilityProvider, AuthorizationsProvider authorizationsProvider) {
         this.secureGraph = secureGraph;
+        this.visibilityProvider = visibilityProvider;
+        this.authorizationsProvider = authorizationsProvider;
     }
 
     @Override
@@ -28,7 +29,8 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
 
     @Override
     public Vertex addVertex(Object id) {
-        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().addVertex(SecureGraphBlueprintsConvert.idToString(id), getVisibility()));
+        Visibility visibility = getVisibilityProvider().getVisibilityForVertex(id);
+        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().addVertex(SecureGraphBlueprintsConvert.idToString(id), visibility));
     }
 
     @Override
@@ -36,18 +38,18 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
         if (id == null) {
             throw new IllegalArgumentException("Id cannot be null");
         }
-        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().getVertex(SecureGraphBlueprintsConvert.idToString(id), getAuthorizations()));
+        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().getVertex(SecureGraphBlueprintsConvert.idToString(id), getAuthorizationsProvider().getAuthorizations()));
     }
 
     @Override
     public void removeVertex(Vertex vertex) {
         com.altamiracorp.securegraph.Vertex sgVertex = SecureGraphBlueprintsConvert.toSecureGraph(vertex);
-        getSecureGraph().removeVertex(sgVertex, getAuthorizations());
+        getSecureGraph().removeVertex(sgVertex, getAuthorizationsProvider().getAuthorizations());
     }
 
     @Override
     public Iterable<Vertex> getVertices() {
-        return new ConvertingIterable<com.altamiracorp.securegraph.Vertex, Vertex>(getSecureGraph().getVertices(getAuthorizations())) {
+        return new ConvertingIterable<com.altamiracorp.securegraph.Vertex, Vertex>(getSecureGraph().getVertices(getAuthorizationsProvider().getAuthorizations())) {
             @Override
             protected Vertex convert(com.altamiracorp.securegraph.Vertex vertex) {
                 return SecureGraphBlueprintsVertex.create(SecureGraphBlueprintsGraph.this, vertex);
@@ -57,7 +59,7 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
 
     @Override
     public Iterable<Vertex> getVertices(final String key, final Object value) {
-        return new ConvertingIterable<com.altamiracorp.securegraph.Vertex, Vertex>(getSecureGraph().query(getAuthorizations()).has(key, Compare.EQUAL, value).vertices()) {
+        return new ConvertingIterable<com.altamiracorp.securegraph.Vertex, Vertex>(getSecureGraph().query(getAuthorizationsProvider().getAuthorizations()).has(key, Compare.EQUAL, value).vertices()) {
             @Override
             protected Vertex convert(com.altamiracorp.securegraph.Vertex vertex) {
                 return SecureGraphBlueprintsVertex.create(SecureGraphBlueprintsGraph.this, vertex);
@@ -73,7 +75,8 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
         }
         com.altamiracorp.securegraph.Vertex sgOutVertex = SecureGraphBlueprintsConvert.toSecureGraph(outVertex);
         com.altamiracorp.securegraph.Vertex sgInVertex = SecureGraphBlueprintsConvert.toSecureGraph(inVertex);
-        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().addEdge(SecureGraphBlueprintsConvert.idToString(id), sgOutVertex, sgInVertex, label, getVisibility()));
+        Visibility visibility = getVisibilityProvider().getVisibilityForEdge(id, sgOutVertex, sgInVertex, label);
+        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().addEdge(SecureGraphBlueprintsConvert.idToString(id), sgOutVertex, sgInVertex, label, visibility));
     }
 
     @Override
@@ -81,18 +84,18 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
         if (id == null) {
             throw new IllegalArgumentException("Id cannot be null");
         }
-        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().getEdge(SecureGraphBlueprintsConvert.idToString(id), getAuthorizations()));
+        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().getEdge(SecureGraphBlueprintsConvert.idToString(id), getAuthorizationsProvider().getAuthorizations()));
     }
 
     @Override
     public void removeEdge(Edge edge) {
         com.altamiracorp.securegraph.Edge sgEdge = SecureGraphBlueprintsConvert.toSecureGraph(edge);
-        getSecureGraph().removeEdge(sgEdge, getAuthorizations());
+        getSecureGraph().removeEdge(sgEdge, getAuthorizationsProvider().getAuthorizations());
     }
 
     @Override
     public Iterable<Edge> getEdges() {
-        return new ConvertingIterable<com.altamiracorp.securegraph.Edge, Edge>(getSecureGraph().getEdges(getAuthorizations())) {
+        return new ConvertingIterable<com.altamiracorp.securegraph.Edge, Edge>(getSecureGraph().getEdges(getAuthorizationsProvider().getAuthorizations())) {
             @Override
             protected Edge convert(com.altamiracorp.securegraph.Edge edge) {
                 return SecureGraphBlueprintsEdge.create(SecureGraphBlueprintsGraph.this, edge);
@@ -102,7 +105,7 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
 
     @Override
     public Iterable<Edge> getEdges(final String key, final Object value) {
-        return new ConvertingIterable<com.altamiracorp.securegraph.Edge, Edge>(getSecureGraph().query(getAuthorizations()).has(key, Compare.EQUAL, value).edges()) {
+        return new ConvertingIterable<com.altamiracorp.securegraph.Edge, Edge>(getSecureGraph().query(getAuthorizationsProvider().getAuthorizations()).has(key, Compare.EQUAL, value).edges()) {
             @Override
             protected Edge convert(com.altamiracorp.securegraph.Edge edge) {
                 return SecureGraphBlueprintsEdge.create(SecureGraphBlueprintsGraph.this, edge);
@@ -129,11 +132,11 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
         return secureGraph;
     }
 
-    Visibility getVisibility() {
-        return DEFAULT_VISIBILITY; // TODO should we load this from thread local or something
+    public VisibilityProvider getVisibilityProvider() {
+        return visibilityProvider;
     }
 
-    Authorizations getAuthorizations() {
-        return DEFAULT_AUTHORIZATIONS; // TODO should we load this from thread local or something
+    public AuthorizationsProvider getAuthorizationsProvider() {
+        return authorizationsProvider;
     }
 }

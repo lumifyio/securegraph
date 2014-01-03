@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.blueprints;
 
 import com.altamiracorp.securegraph.Property;
+import com.altamiracorp.securegraph.Visibility;
 import com.tinkerpop.blueprints.Element;
 
 import java.util.HashSet;
@@ -49,7 +50,8 @@ public abstract class SecureGraphBlueprintsElement implements Element {
         if ("".equals(propertyName)) {
             throw new IllegalArgumentException("Property Name cannot be empty.");
         }
-        getSecureGraphElement().setProperties(new Property(DEFAULT_PROPERTY_ID, propertyName, value, getGraph().getVisibility()));
+        Visibility visibility = getGraph().getVisibilityProvider().getVisibilityForProperty(propertyName, value);
+        getSecureGraphElement().setProperties(new Property(DEFAULT_PROPERTY_ID, propertyName, value, visibility));
     }
 
     @Override

@@ -3,6 +3,10 @@ package com.altamiracorp.securegraph.accumulo.blueprints.util;
 import com.altamiracorp.securegraph.accumulo.AccumuloGraph;
 import com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration;
 import com.altamiracorp.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraph;
+import com.altamiracorp.securegraph.blueprints.AuthorizationsProvider;
+import com.altamiracorp.securegraph.blueprints.DefaultAuthorizationsProvider;
+import com.altamiracorp.securegraph.blueprints.DefaultVisibilityProvider;
+import com.altamiracorp.securegraph.blueprints.VisibilityProvider;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TestSuite;
 import com.tinkerpop.blueprints.impls.GraphTest;
@@ -12,6 +16,8 @@ import org.junit.Ignore;
 @Ignore
 public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     private final AccumuloSecureGraphBlueprintsGraph defaultGraph;
+    private final VisibilityProvider visibilityProvider = new DefaultVisibilityProvider();
+    private final AuthorizationsProvider authorizationsProvider = new DefaultAuthorizationsProvider();
 
     public AccumuloBlueprintsGraphTestHelper() {
         try {
@@ -19,7 +25,7 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
             AccumuloGraphConfiguration config = this.getGraphConfig(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
             Connector connector = config.createConnector();
             this.ensureTableExists(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
-            this.defaultGraph = new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config));
+            this.defaultGraph = new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config), visibilityProvider, authorizationsProvider);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -36,7 +42,7 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
             AccumuloGraphConfiguration config = this.getGraphConfig(graphDirectoryName);
             Connector connector = config.createConnector();
             this.ensureTableExists(connector, graphDirectoryName);
-            return new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config));
+            return new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config), visibilityProvider, authorizationsProvider);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

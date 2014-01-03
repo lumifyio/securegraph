@@ -46,7 +46,7 @@ public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement im
 
             @Override
             protected Iterator<com.altamiracorp.securegraph.Edge> createIterator() {
-                return getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizations()).iterator();
+                return getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizationsProvider().getAuthorizations()).iterator();
             }
         };
     }
@@ -72,9 +72,9 @@ public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement im
             protected Vertex convert(com.altamiracorp.securegraph.Edge edge) {
                 com.altamiracorp.securegraph.Vertex vertex;
                 if (edge.getVertexId(com.altamiracorp.securegraph.Direction.OUT).equals(getId())) {
-                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.IN, getGraph().getAuthorizations());
+                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.IN, getGraph().getAuthorizationsProvider().getAuthorizations());
                 } else if (edge.getVertexId(com.altamiracorp.securegraph.Direction.IN).equals(getId())) {
-                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.OUT, getGraph().getAuthorizations());
+                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.OUT, getGraph().getAuthorizationsProvider().getAuthorizations());
                 } else {
                     throw new SecureGraphException("Could not find current vertex on either side of edge");
                 }
@@ -83,7 +83,7 @@ public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement im
 
             @Override
             protected Iterator<com.altamiracorp.securegraph.Edge> createIterator() {
-                return getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizations()).iterator();
+                return getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizationsProvider().getAuthorizations()).iterator();
             }
         };
     }
