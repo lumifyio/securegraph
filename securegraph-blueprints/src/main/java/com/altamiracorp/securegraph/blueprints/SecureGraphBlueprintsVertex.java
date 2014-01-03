@@ -1,11 +1,14 @@
 package com.altamiracorp.securegraph.blueprints;
 
-import com.altamiracorp.securegraph.util.ConvertingIterable;
+import com.altamiracorp.securegraph.SecureGraphException;
+import com.altamiracorp.securegraph.util.LookAheadIterable;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.util.DefaultVertexQuery;
+
+import java.util.Iterator;
 
 public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement implements Vertex {
     protected SecureGraphBlueprintsVertex(SecureGraphBlueprintsGraph graph, com.altamiracorp.securegraph.Vertex vertex) {
@@ -20,24 +23,67 @@ public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement im
     }
 
     @Override
-    public Iterable<Edge> getEdges(Direction direction, String... labels) {
-        // TODO filter by labels
-        com.altamiracorp.securegraph.Direction sgDirection = SecureGraphBlueprintsConvert.toSecureGraph(direction);
-        return new ConvertingIterable<com.altamiracorp.securegraph.Edge, Edge>(getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizations())) {
+    public Iterable<Edge> getEdges(Direction direction, final String... labels) {
+        final com.altamiracorp.securegraph.Direction sgDirection = SecureGraphBlueprintsConvert.toSecureGraph(direction);
+        return new LookAheadIterable<com.altamiracorp.securegraph.Edge, Edge>() {
+            @Override
+            protected boolean isIncluded(com.altamiracorp.securegraph.Edge src, Edge edge) {
+                if (labels.length == 0) {
+                    return true;
+                }
+                for (String label : labels) {
+                    if (label.equals(edge.getLabel())) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             @Override
             protected Edge convert(com.altamiracorp.securegraph.Edge edge) {
                 return SecureGraphBlueprintsEdge.create(getGraph(), edge);
+            }
+
+            @Override
+            protected Iterator<com.altamiracorp.securegraph.Edge> createIterator() {
+                return getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizations()).iterator();
             }
         };
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Direction direction, String... labels) {
-        com.altamiracorp.securegraph.Direction sgDirection = SecureGraphBlueprintsConvert.toSecureGraph(direction);
-        return new ConvertingIterable<com.altamiracorp.securegraph.Vertex, Vertex>(getSecureGraphElement().getVertices(sgDirection, getGraph().getAuthorizations())) {
+    public Iterable<Vertex> getVertices(Direction direction, final String... labels) {
+        final com.altamiracorp.securegraph.Direction sgDirection = SecureGraphBlueprintsConvert.toSecureGraph(direction);
+        return new LookAheadIterable<com.altamiracorp.securegraph.Edge, Vertex>() {
             @Override
-            protected Vertex convert(com.altamiracorp.securegraph.Vertex vertex) {
+            protected boolean isIncluded(com.altamiracorp.securegraph.Edge edge, Vertex vertex) {
+                if (labels.length == 0) {
+                    return true;
+                }
+                for (String label : labels) {
+                    if (label.equals(edge.getLabel())) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            protected Vertex convert(com.altamiracorp.securegraph.Edge edge) {
+                com.altamiracorp.securegraph.Vertex vertex;
+                if (edge.getVertexId(com.altamiracorp.securegraph.Direction.OUT).equals(getId())) {
+                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.IN, getGraph().getAuthorizations());
+                } else if (edge.getVertexId(com.altamiracorp.securegraph.Direction.IN).equals(getId())) {
+                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.OUT, getGraph().getAuthorizations());
+                } else {
+                    throw new SecureGraphException("Could not find current vertex on either side of edge");
+                }
                 return SecureGraphBlueprintsVertex.create(getGraph(), vertex);
+            }
+
+            @Override
+            protected Iterator<com.altamiracorp.securegraph.Edge> createIterator() {
+                return getSecureGraphElement().getEdges(sgDirection, getGraph().getAuthorizations()).iterator();
             }
         };
     }
@@ -49,7 +95,15 @@ public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement im
 
     @Override
     public Edge addEdge(String label, Vertex inVertex) {
-        throw new RuntimeException("not implemented");
+        if (label == null) {
+            throw new IllegalArgumentException("Cannot add edge with null label");
+        }
+        return getGraph().addEdge(null, this, inVertex, label);
+    }
+
+    @Override
+    public void remove() {
+        getGraph().removeVertex(this);
     }
 
     @Override

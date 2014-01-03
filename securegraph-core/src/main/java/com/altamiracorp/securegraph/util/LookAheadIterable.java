@@ -36,8 +36,9 @@ public abstract class LookAheadIterable<TSource, TDest> implements Iterable<TDes
                 }
 
                 while (it.hasNext()) {
-                    TDest obj = convert(it.next());
-                    if (!isIncluded(obj)) {
+                    TSource n = it.next();
+                    TDest obj = convert(n);
+                    if (!isIncluded(n, obj)) {
                         continue;
                     }
 
@@ -48,7 +49,7 @@ public abstract class LookAheadIterable<TSource, TDest> implements Iterable<TDes
         };
     }
 
-    protected abstract boolean isIncluded(TDest obj);
+    protected abstract boolean isIncluded(TSource src, TDest dest);
 
     protected abstract TDest convert(TSource next);
 

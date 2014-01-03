@@ -36,23 +36,35 @@ public abstract class SecureGraphBlueprintsElement implements Element {
     }
 
     @Override
-    public void setProperty(String key, Object value) {
-        element.setProperties(new Property(DEFAULT_PROPERTY_ID, key, value, getGraph().getVisibility()));
+    public void setProperty(String propertyName, Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null.");
+        }
+        if (propertyName == null) {
+            throw new IllegalArgumentException("Property Name cannot be null.");
+        }
+        if ("id".equals(propertyName)) {
+            throw new IllegalArgumentException("Property Name cannot be \"id\"");
+        }
+        if ("".equals(propertyName)) {
+            throw new IllegalArgumentException("Property Name cannot be empty.");
+        }
+        getSecureGraphElement().setProperties(new Property(DEFAULT_PROPERTY_ID, propertyName, value, getGraph().getVisibility()));
     }
 
     @Override
     public <T> T removeProperty(String key) {
-        throw new RuntimeException("Not implemented");
+        T old = getProperty(key);
+        getSecureGraphElement().removeProperty(DEFAULT_PROPERTY_ID, key);
+        return old;
     }
 
     @Override
-    public void remove() {
-        throw new RuntimeException("Not implemented");
-    }
+    public abstract void remove();
 
     @Override
     public Object getId() {
-        return element.getId();
+        return getSecureGraphElement().getId();
     }
 
     public SecureGraphBlueprintsGraph getGraph() {

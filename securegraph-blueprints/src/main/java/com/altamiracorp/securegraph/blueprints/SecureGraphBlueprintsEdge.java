@@ -28,7 +28,20 @@ public class SecureGraphBlueprintsEdge extends SecureGraphBlueprintsElement impl
     }
 
     @Override
+    public void remove() {
+        getGraph().removeEdge(this);
+    }
+
+    @Override
     public com.altamiracorp.securegraph.Edge getSecureGraphElement() {
         return (com.altamiracorp.securegraph.Edge) super.getSecureGraphElement();
+    }
+
+    @Override
+    public void setProperty(String propertyName, Object value) {
+        if ("label".equals(propertyName)) {
+            throw new IllegalArgumentException("Property Name cannot be \"label\"");
+        }
+        super.setProperty(propertyName, value);
     }
 }

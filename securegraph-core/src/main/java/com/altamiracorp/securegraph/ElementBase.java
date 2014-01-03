@@ -10,6 +10,8 @@ public abstract class ElementBase implements Element {
     private final Graph graph;
     private final Object id;
     private final Visibility visibility;
+
+    // The key to this map is the property id + property name
     private final Map<Object, Property> properties;
 
     protected ElementBase(Graph graph, Object id, Visibility visibility, Property[] properties) {
@@ -49,8 +51,8 @@ public abstract class ElementBase implements Element {
     public Iterable<Property> getProperties(final String name) {
         return new FilterIterable<Property>(getProperties()) {
             @Override
-            protected boolean isIncluded(Property obj) {
-                return obj.getName().equals(name);
+            protected boolean isIncluded(Property src, Property dest) {
+                return dest.getName().equals(name);
             }
         };
     }
@@ -61,12 +63,18 @@ public abstract class ElementBase implements Element {
     // this method differs setProperties in that it only updates the in memory representation of the properties
     protected void setPropertiesInternal(Property[] properties) {
         for (Property property : properties) {
-            Object propertyId = property.getId();
-            if (propertyId == null) {
+            if (property.getId() == null) {
                 throw new IllegalArgumentException("id is required for property");
             }
-            this.properties.put(propertyId, property);
+            this.properties.put(property.getId() + property.getName(), property);
         }
+    }
+
+    public Property removePropertyInternal(String propertyId, String name) {
+        String key = propertyId + name;
+        Property property = this.properties.get(key);
+        this.properties.remove(key);
+        return property;
     }
 
     public Graph getGraph() {

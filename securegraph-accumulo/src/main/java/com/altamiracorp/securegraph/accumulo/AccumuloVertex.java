@@ -4,6 +4,7 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.DefaultVertexQuery;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
+import com.altamiracorp.securegraph.util.JoinIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
 
@@ -34,11 +35,10 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     public Iterable<Edge> getEdges(Direction direction, Authorizations authorizations) {
         switch (direction) {
             case BOTH:
-                // TODO it would be nice if we didn't have to create a new list here
-                Set<Object> ids = new HashSet<Object>();
-                ids.addAll(inEdgeIds);
-                ids.addAll(outEdgeIds);
-                return new EdgesByIdsIterable(getGraph(), ids, authorizations);
+                return new JoinIterable<Edge>(
+                        new EdgesByIdsIterable(getGraph(), inEdgeIds, authorizations),
+                        new EdgesByIdsIterable(getGraph(), outEdgeIds, authorizations)
+                );
             case IN:
                 return new EdgesByIdsIterable(getGraph(), inEdgeIds, authorizations);
             case OUT:
@@ -89,8 +89,8 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         }
 
         @Override
-        protected boolean isIncluded(Edge obj) {
-            return obj != null;
+        protected boolean isIncluded(Object src, Edge dest) {
+            return dest != null;
         }
 
         @Override

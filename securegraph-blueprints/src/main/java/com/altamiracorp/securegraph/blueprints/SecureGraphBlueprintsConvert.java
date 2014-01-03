@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.blueprints;
 
 import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 
 public class SecureGraphBlueprintsConvert {
@@ -14,6 +15,16 @@ public class SecureGraphBlueprintsConvert {
         throw new IllegalArgumentException("Invalid vertex, cannot get SecureGraph vertex. " + vertex.getClass().getName());
     }
 
+    public static com.altamiracorp.securegraph.Edge toSecureGraph(Edge edge) {
+        if (edge == null) {
+            return null;
+        }
+        if (edge instanceof SecureGraphBlueprintsEdge) {
+            return ((SecureGraphBlueprintsEdge) edge).getSecureGraphElement();
+        }
+        throw new IllegalArgumentException("Invalid edge, cannot get SecureGraph edge. " + edge.getClass().getName());
+    }
+
     public static com.altamiracorp.securegraph.Direction toSecureGraph(Direction direction) {
         switch (direction) {
             case OUT:
@@ -25,5 +36,15 @@ public class SecureGraphBlueprintsConvert {
             default:
                 throw new IllegalArgumentException("Unexpected direction: " + direction);
         }
+    }
+
+    public static String idToString(Object id) {
+        if (id == null) {
+            return null;
+        }
+        if (id instanceof String) {
+            return (String) id;
+        }
+        return id.toString();
     }
 }

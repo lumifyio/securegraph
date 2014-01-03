@@ -13,11 +13,4 @@ public class AccumuloGraphTest extends SecureGraphBlueprintsGraphTestBase {
         super.setUp();
         ((AccumuloBlueprintsGraphTestHelper) this.graphTest).setUp();
     }
-
-    // TODO turn this back on when performance isn't horrible
-    @Override
-    public void testTreeConnectivity() {
-        assertEquals("turn this back on when performance isn't horrible", true, false);
-        //super.testTreeConnectivity();
-    }
 }

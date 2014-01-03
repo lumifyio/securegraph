@@ -88,6 +88,16 @@ public class AccumuloGraph extends GraphBase {
         getSearchIndex().addElement(element);
     }
 
+    public void removeProperty(AccumuloElement element, Property property) {
+        String rowPrefix = getRowPrefixForElement(element);
+
+        Mutation m = new Mutation(rowPrefix + element.getId());
+        addPropertyRemoveToMutation(m, property);
+        addMutations(m);
+
+        getSearchIndex().addElement(element);
+    }
+
     private String getRowPrefixForElement(AccumuloElement element) {
         if (element instanceof Vertex) {
             return AccumuloVertex.ROW_KEY_PREFIX;
@@ -105,6 +115,13 @@ public class AccumuloGraph extends GraphBase {
         m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);
         Value metadataValue = new Value(getValueSerializer().objectToValue(property.getMetadata()));
         m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
+    }
+
+    private void addPropertyRemoveToMutation(Mutation m, Property property) {
+        Text columnQualifier = new Text(property.getName() + PROPERTY_ID_NAME_SEPERATOR + property.getId());
+        ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
+        m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
+        m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
     }
 
     private void addMutations(Collection<Mutation> mutations) {
@@ -333,8 +350,8 @@ public class AccumuloGraph extends GraphBase {
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
 
             @Override
-            protected boolean isIncluded(Vertex obj) {
-                return obj != null;
+            protected boolean isIncluded(Iterator<Map.Entry<Key, Value>> src, Vertex dest) {
+                return dest != null;
             }
 
             @Override
@@ -429,8 +446,8 @@ public class AccumuloGraph extends GraphBase {
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Edge>() {
 
             @Override
-            protected boolean isIncluded(Edge obj) {
-                return obj != null;
+            protected boolean isIncluded(Iterator<Map.Entry<Key, Value>> src, Edge dest) {
+                return dest != null;
             }
 
             @Override

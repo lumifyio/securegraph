@@ -16,7 +16,15 @@ public abstract class AccumuloElement extends ElementBase {
 
     @Override
     public void setProperties(Property... properties) {
-        ((AccumuloGraph) getGraph()).saveProperties(this, properties);
         super.setPropertiesInternal(properties);
+        ((AccumuloGraph) getGraph()).saveProperties(this, properties);
+    }
+
+    @Override
+    public void removeProperty(String propertyId, String name) {
+        Property property = super.removePropertyInternal(propertyId, name);
+        if (property != null) {
+            ((AccumuloGraph) getGraph()).removeProperty(this, property);
+        }
     }
 }

@@ -12,7 +12,7 @@ public class DefaultVertexQuery extends VertexQueryBase implements VertexQuery {
     public Iterable<Edge> edges() {
         return new FilterIterable<Edge>(getGraph().getEdges(getParameters().getAuthorizations())) {
             @Override
-            protected boolean isIncluded(Edge edge) {
+            protected boolean isIncluded(Edge src, Edge edge) {
                 if (edge.getVertexId(Direction.OUT).equals(getSourceVertex().getId())) {
                     return true;
                 }

@@ -4,13 +4,17 @@ import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
+import com.altamiracorp.securegraph.util.FilterIterable;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Features;
 import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.DefaultGraphQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.blueprints.Graph {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecureGraphBlueprintsGraph.class);
     private static final SecureGraphBlueprintsGraphFeatures FEATURES = new SecureGraphBlueprintsGraphFeatures();
     private static final Visibility DEFAULT_VISIBILITY = new Visibility("");
     private static final Authorizations DEFAULT_AUTHORIZATIONS = new Authorizations();
@@ -27,17 +31,21 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
 
     @Override
     public Vertex addVertex(Object id) {
-        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().addVertex(id, getVisibility()));
+        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().addVertex(SecureGraphBlueprintsConvert.idToString(id), getVisibility()));
     }
 
     @Override
     public Vertex getVertex(Object id) {
-        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().getVertex(id, getAuthorizations()));
+        if (id == null) {
+            throw new IllegalArgumentException("Id cannot be null");
+        }
+        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().getVertex(SecureGraphBlueprintsConvert.idToString(id), getAuthorizations()));
     }
 
     @Override
     public void removeVertex(Vertex vertex) {
-        throw new RuntimeException("not implemented");
+        com.altamiracorp.securegraph.Vertex sgVertex = SecureGraphBlueprintsConvert.toSecureGraph(vertex);
+        getSecureGraph().removeVertex(sgVertex, getAuthorizations());
     }
 
     @Override
@@ -51,25 +59,46 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
     }
 
     @Override
-    public Iterable<Vertex> getVertices(String key, Object value) {
-        throw new RuntimeException("not implemented");
+    public Iterable<Vertex> getVertices(final String key, final Object value) {
+        LOGGER.warn("performing iteration over all vertices. implement getVertices(String, Object).");
+        return new FilterIterable<Vertex>(getVertices()) {
+            @Override
+            protected boolean isIncluded(Vertex src, Vertex dest) {
+                Object p = dest.getProperty(key);
+                if (p == null && value == null) {
+                    return true;
+                }
+                if (p == null) {
+                    return false;
+                }
+                return p.equals(value);
+            }
+        };
+
     }
 
     @Override
     public Edge addEdge(Object id, Vertex outVertex, Vertex inVertex, String label) {
+        if (label == null) {
+            throw new IllegalArgumentException("label cannot be null");
+        }
         com.altamiracorp.securegraph.Vertex sgOutVertex = SecureGraphBlueprintsConvert.toSecureGraph(outVertex);
         com.altamiracorp.securegraph.Vertex sgInVertex = SecureGraphBlueprintsConvert.toSecureGraph(inVertex);
-        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().addEdge(id, sgOutVertex, sgInVertex, label, getVisibility()));
+        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().addEdge(SecureGraphBlueprintsConvert.idToString(id), sgOutVertex, sgInVertex, label, getVisibility()));
     }
 
     @Override
     public Edge getEdge(Object id) {
-        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().getEdge(id, getAuthorizations()));
+        if (id == null) {
+            throw new IllegalArgumentException("Id cannot be null");
+        }
+        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().getEdge(SecureGraphBlueprintsConvert.idToString(id), getAuthorizations()));
     }
 
     @Override
     public void removeEdge(Edge edge) {
-        throw new RuntimeException("not implemented");
+        com.altamiracorp.securegraph.Edge sgEdge = SecureGraphBlueprintsConvert.toSecureGraph(edge);
+        getSecureGraph().removeEdge(sgEdge, getAuthorizations());
     }
 
     @Override
@@ -83,8 +112,21 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
     }
 
     @Override
-    public Iterable<Edge> getEdges(String key, Object value) {
-        throw new RuntimeException("not implemented");
+    public Iterable<Edge> getEdges(final String key, final Object value) {
+        LOGGER.warn("performing iteration over all edges. implement getEdges(String, Object).");
+        return new FilterIterable<Edge>(getEdges()) {
+            @Override
+            protected boolean isIncluded(Edge src, Edge dest) {
+                Object p = dest.getProperty(key);
+                if (p == null && value == null) {
+                    return true;
+                }
+                if (p == null) {
+                    return false;
+                }
+                return p.equals(value);
+            }
+        };
     }
 
     @Override
