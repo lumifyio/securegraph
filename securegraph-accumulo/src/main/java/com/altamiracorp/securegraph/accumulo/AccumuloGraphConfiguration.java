@@ -21,7 +21,6 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String ACCUMULO_USERNAME = "accumulo.username";
     public static final String ACCUMULO_PASSWORD = "accumulo.password";
     public static final String VALUE_SERIALIZER_PROP_PREFIX = "serializer";
-    public static final String SEARCH_INDEX_PROP_PREFIX = "search";
     public static final String AUTO_FLUSH = "autoflush";
     public static final String TABLE_NAME = "tablename";
 
@@ -30,7 +29,6 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String DEFAULT_ACCUMULO_USERNAME = "root";
     public static final String DEFAULT_ACCUMULO_INSTANCE_NAME = "blueprints_accumulo";
     public static final String DEFAULT_ZOOKEEPER_SERVERS = "localhost";
-    public static final String DEFAULT_SEARCH_INDEX = DefaultSearchIndex.class.getName();
     public static final boolean DEFAULT_AUTO_FLUSH = false;
     public static final String DEFAULT_TABLE_NAME = "securegraph";
 
@@ -62,10 +60,6 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
 
     public ValueSerializer createValueSerializer() throws SecureGraphException {
         return this.createProvider(VALUE_SERIALIZER_PROP_PREFIX, DEFAULT_VALUE_SERIALIZER);
-    }
-
-    public SearchIndex createSearchIndex() throws SecureGraphException {
-        return this.createProvider(SEARCH_INDEX_PROP_PREFIX, DEFAULT_SEARCH_INDEX);
     }
 
     public boolean isAutoFlush() {

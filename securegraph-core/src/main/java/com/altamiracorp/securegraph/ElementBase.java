@@ -70,7 +70,7 @@ public abstract class ElementBase implements Element {
         }
     }
 
-    public Property removePropertyInternal(String propertyId, String name) {
+    protected Property removePropertyInternal(String propertyId, String name) {
         String key = propertyId + name;
         Property property = this.properties.get(key);
         this.properties.remove(key);

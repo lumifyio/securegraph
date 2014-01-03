@@ -2,14 +2,19 @@ package com.altamiracorp.securegraph;
 
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.id.UUIDIdGenerator;
+import com.altamiracorp.securegraph.search.DefaultSearchIndex;
+import com.altamiracorp.securegraph.search.SearchIndex;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class GraphConfiguration {
+public class GraphConfiguration {
     public static final String IDGENERATOR_PROP_PREFIX = "idgenerator";
+    public static final String SEARCH_INDEX_PROP_PREFIX = "search";
+
     public static final String DEFAULT_IDGENERATOR = UUIDIdGenerator.class.getName();
+    public static final String DEFAULT_SEARCH_INDEX = DefaultSearchIndex.class.getName();
 
     private final Map config;
 
@@ -95,5 +100,9 @@ public abstract class GraphConfiguration {
 
     public IdGenerator createIdGenerator() throws SecureGraphException {
         return this.createProvider(IDGENERATOR_PROP_PREFIX, DEFAULT_IDGENERATOR);
+    }
+
+    public SearchIndex createSearchIndex() throws SecureGraphException {
+        return this.createProvider(SEARCH_INDEX_PROP_PREFIX, DEFAULT_SEARCH_INDEX);
     }
 }

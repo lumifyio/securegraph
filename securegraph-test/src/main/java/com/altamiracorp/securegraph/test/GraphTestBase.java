@@ -125,8 +125,11 @@ public abstract class GraphTestBase {
                 new Property("propid1a", "prop1", "value1b", VISIBILITY_A),
                 new Property("propid2a", "prop2", "value2b", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v.getPropertyValues("prop1")));
         assertEquals("value1b", v.getPropertyValues("prop1").iterator().next());
+        assertEquals(1, count(v.getPropertyValues("prop2")));
         assertEquals("value2b", v.getPropertyValues("prop2").iterator().next());
+        assertEquals(1, count(v.getPropertyValues("prop3")));
         assertEquals("value3a", v.getPropertyValues("prop3").iterator().next());
         assertEquals(3, count(v.getProperties()));
 

@@ -239,14 +239,6 @@ public class AccumuloGraph extends GraphBase {
         return edge;
     }
 
-    private void ensureIdsOnProperties(Property[] properties) {
-        for (Property property : properties) {
-            if (property.getId() == null) {
-                property.setId(getIdGenerator().nextId());
-            }
-        }
-    }
-
     @Override
     public Iterable<Edge> getEdges(Authorizations authorizations) {
         return getEdgesInRange(null, null, authorizations);

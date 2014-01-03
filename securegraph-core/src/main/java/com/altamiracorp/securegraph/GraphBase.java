@@ -45,7 +45,11 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public void removeVertex(String vertexId, Authorizations authorizations) {
-        removeVertex(getVertex(vertexId, authorizations), authorizations);
+        Vertex vertex = getVertex(vertexId, authorizations);
+        if (vertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + vertexId);
+        }
+        removeVertex(vertex, authorizations);
     }
 
     @Override
@@ -75,7 +79,11 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public void removeEdge(String edgeId, Authorizations authorizations) {
-        removeEdge(getEdge(edgeId, authorizations), authorizations);
+        Edge edge = getEdge(edgeId, authorizations);
+        if (edge == null) {
+            throw new IllegalArgumentException("Could not find edge with id: " + edgeId);
+        }
+        removeEdge(edge, authorizations);
     }
 
     @Override
@@ -93,5 +101,13 @@ public abstract class GraphBase implements Graph {
 
     public SearchIndex getSearchIndex() {
         return searchIndex;
+    }
+
+    protected void ensureIdsOnProperties(Property[] properties) {
+        for (Property property : properties) {
+            if (property.getId() == null) {
+                property.setId(getIdGenerator().nextId().toString());
+            }
+        }
     }
 }
