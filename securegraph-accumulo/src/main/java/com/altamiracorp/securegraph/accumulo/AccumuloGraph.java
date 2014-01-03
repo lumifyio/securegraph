@@ -76,7 +76,7 @@ public class AccumuloGraph extends GraphBase {
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());
-        for (Property property : element.getProperties()) {
+        for (Property property : properties) {
             addPropertyToMutation(m, property);
         }
         addMutations(m);
@@ -491,7 +491,7 @@ public class AccumuloGraph extends GraphBase {
         if (i < 0) {
             throw new SecureGraphException("Invalid property column qualifier");
         }
-        return columnQualifier.substring(i);
+        return columnQualifier.substring(i + 1);
     }
 
     private String getPropertyNameFromColumnQualifier(String columnQualifier) {

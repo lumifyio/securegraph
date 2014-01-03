@@ -129,7 +129,7 @@ public abstract class GraphTestBase {
 
         v.setProperties(new Property("propid1b", "prop1", "value1a-new", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
-        assertContains("value1a", v.getPropertyValues("prop1"));
+        assertContains("value1b", v.getPropertyValues("prop1"));
         assertContains("value1a-new", v.getPropertyValues("prop1"));
         assertEquals(4, count(v.getProperties()));
     }
@@ -178,11 +178,15 @@ public abstract class GraphTestBase {
 
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
-        graph.removeVertex("v1", AUTHORIZATIONS_B);
+        try {
+            graph.removeVertex("v1", AUTHORIZATIONS_B);
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
         graph.removeVertex("v1", AUTHORIZATIONS_A);
-        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
     }
 
     @Test
