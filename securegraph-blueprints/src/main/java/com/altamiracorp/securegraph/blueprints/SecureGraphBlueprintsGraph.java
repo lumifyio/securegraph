@@ -3,18 +3,15 @@ package com.altamiracorp.securegraph.blueprints;
 import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.query.Compare;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
-import com.altamiracorp.securegraph.util.FilterIterable;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Features;
 import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.DefaultGraphQuery;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.blueprints.Graph {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SecureGraphBlueprintsGraph.class);
     private static final SecureGraphBlueprintsGraphFeatures FEATURES = new SecureGraphBlueprintsGraphFeatures();
     private static final Visibility DEFAULT_VISIBILITY = new Visibility("");
     private static final Authorizations DEFAULT_AUTHORIZATIONS = new Authorizations();
@@ -60,18 +57,10 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
 
     @Override
     public Iterable<Vertex> getVertices(final String key, final Object value) {
-        LOGGER.warn("performing iteration over all vertices. implement getVertices(String, Object).");
-        return new FilterIterable<Vertex>(getVertices()) {
+        return new ConvertingIterable<com.altamiracorp.securegraph.Vertex, Vertex>(getSecureGraph().query(getAuthorizations()).has(key, Compare.EQUAL, value).vertices()) {
             @Override
-            protected boolean isIncluded(Vertex src, Vertex dest) {
-                Object p = dest.getProperty(key);
-                if (p == null && value == null) {
-                    return true;
-                }
-                if (p == null) {
-                    return false;
-                }
-                return p.equals(value);
+            protected Vertex convert(com.altamiracorp.securegraph.Vertex vertex) {
+                return SecureGraphBlueprintsVertex.create(SecureGraphBlueprintsGraph.this, vertex);
             }
         };
 
@@ -113,18 +102,10 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
 
     @Override
     public Iterable<Edge> getEdges(final String key, final Object value) {
-        LOGGER.warn("performing iteration over all edges. implement getEdges(String, Object).");
-        return new FilterIterable<Edge>(getEdges()) {
+        return new ConvertingIterable<com.altamiracorp.securegraph.Edge, Edge>(getSecureGraph().query(getAuthorizations()).has(key, Compare.EQUAL, value).edges()) {
             @Override
-            protected boolean isIncluded(Edge src, Edge dest) {
-                Object p = dest.getProperty(key);
-                if (p == null && value == null) {
-                    return true;
-                }
-                if (p == null) {
-                    return false;
-                }
-                return p.equals(value);
+            protected Edge convert(com.altamiracorp.securegraph.Edge edge) {
+                return SecureGraphBlueprintsEdge.create(SecureGraphBlueprintsGraph.this, edge);
             }
         };
     }
