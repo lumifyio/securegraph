@@ -68,18 +68,21 @@ public abstract class GraphTestBase {
         prop1Metadata.put("metadata1", "metadata1Value");
 
         graph.addVertex("v1", VISIBILITY_A,
-                new Property("prop1", "value1", VISIBILITY_A, prop1Metadata));
+                new Property("", "prop1", "value1", VISIBILITY_A, prop1Metadata));
 
         Vertex v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v.getProperties("prop1")));
         Property prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
+        assertNotNull(prop1Metadata);
         assertEquals(1, prop1Metadata.keySet().size());
         assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
 
         prop1Metadata.put("metadata2", "metadata2Value");
-        v.setProperties(new Property("prop1", "value1", VISIBILITY_A, prop1Metadata));
+        v.setProperties(new Property("", "prop1", "value1", VISIBILITY_A, prop1Metadata));
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v.getProperties("prop1")));
         prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
         assertEquals(2, prop1Metadata.keySet().size());

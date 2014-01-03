@@ -95,11 +95,12 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void addPropertyToMutation(Mutation m, Property property) {
-        Text cf = AccumuloElement.CF_PROPERTY;
         Text columnQualifier = new Text(property.getName() + PROPERTY_ID_NAME_SEPERATOR + property.getId());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         Value value = new Value(getValueSerializer().objectToValue(property.getValue()));
-        m.put(cf, columnQualifier, columnVisibility, value);
+        m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);
+        Value metadataValue = new Value(getValueSerializer().objectToValue(property.getMetadata()));
+        m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
     }
 
     private void addMutations(Collection<Mutation> mutations) {
