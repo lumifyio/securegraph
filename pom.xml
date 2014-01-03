@@ -15,6 +15,13 @@
         <log4j.version>1.2.17</log4j.version>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>bits.lumify.io</id>
+            <url>file:///var/www/maven/</url>
+        </repository>
+    </distributionManagement>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
