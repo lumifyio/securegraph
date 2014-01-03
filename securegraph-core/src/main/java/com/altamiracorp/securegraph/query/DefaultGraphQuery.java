@@ -103,7 +103,7 @@ public class DefaultGraphQuery extends GraphQueryBase {
                     it = (Iterator<T>) getGraph().getVertices(getParameters().getAuthorizations()).iterator();
                     break;
                 case EDGE:
-                    it = (Iterator<T>) getGraph().getVertices(getParameters().getAuthorizations()).iterator();
+                    it = (Iterator<T>) getGraph().getEdges(getParameters().getAuthorizations()).iterator();
                     break;
                 default:
                     throw new SecureGraphException("Unexpected element type: " + elementType);

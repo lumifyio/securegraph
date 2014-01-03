@@ -229,10 +229,12 @@ public abstract class GraphTestBase {
                 new Property("propB", "valueB", VISIBILITY_B));
 
         Edge e = graph.getEdge("e1", AUTHORIZATIONS_A);
+        assertEquals(1, count(e.getProperties()));
         assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
-        assertEquals(1, count(e.getPropertyValues("propB")));
+        assertEquals(0, count(e.getPropertyValues("propB")));
 
         e = graph.getEdge("e1", AUTHORIZATIONS_A_AND_B);
+        assertEquals(2, count(e.getProperties()));
         assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
         assertEquals("valueB", e.getPropertyValues("propB").iterator().next());
     }
@@ -323,7 +325,7 @@ public abstract class GraphTestBase {
         vertices = graph.query(AUTHORIZATIONS_A)
                 .has("age", Compare.GREATER_THAN_EQUAL, 25)
                 .vertices();
-        assertEquals(1, count(vertices));
+        assertEquals(2, count(vertices));
     }
 
     @Test
