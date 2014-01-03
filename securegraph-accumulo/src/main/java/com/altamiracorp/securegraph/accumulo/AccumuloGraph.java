@@ -366,7 +366,7 @@ public class AccumuloGraph extends GraphBase {
         int i = 0;
         for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
             String propertyNameAndId = propertyValueEntry.getKey();
-            Object propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
+            String propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
             String propertyName = propertyNames.get(propertyNameAndId);
             Object propertyValue = propertyValueEntry.getValue();
             Visibility visibility = propertyVisibilities.get(propertyNameAndId);
@@ -533,7 +533,7 @@ public class AccumuloGraph extends GraphBase {
         return new AccumuloVertex(this, id, vertexVisibility, properties, inEdgeIds, outEdgeIds);
     }
 
-    private Object getPropertyIdFromColumnQualifier(String columnQualifier) {
+    private String getPropertyIdFromColumnQualifier(String columnQualifier) {
         int i = columnQualifier.indexOf(PROPERTY_ID_NAME_SEPERATOR);
         if (i < 0) {
             throw new SecureGraphException("Invalid property column qualifier");
