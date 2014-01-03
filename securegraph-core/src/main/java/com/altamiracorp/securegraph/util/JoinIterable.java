@@ -39,27 +39,47 @@ public class JoinIterable<T> implements Iterable<T> {
         it.iterator = iterables.remove().iterator();
 
         return new Iterator<T>() {
+            private T next;
+            private T current;
+
             @Override
             public boolean hasNext() {
-                while (true) {
-                    if (it.iterator.hasNext()) {
-                        return true;
-                    }
-                    if (iterables.size() == 0) {
-                        return false;
-                    }
-                    it.iterator = iterables.remove().iterator();
-                }
+                loadNext();
+                return next != null;
             }
 
             @Override
             public T next() {
-                return it.iterator.next();
+                loadNext();
+                if (this.next == null) {
+                    throw new IllegalStateException("iterable doesn't have a next element");
+                }
+                this.current = this.next;
+                this.next = null;
+                return this.current;
             }
 
             @Override
             public void remove() {
                 it.iterator.remove();
+            }
+
+            private void loadNext() {
+                if (this.next != null) {
+                    return;
+                }
+
+                while (true) {
+                    if (it.iterator.hasNext()) {
+                        break;
+                    }
+                    if (iterables.size() == 0) {
+                        this.next = null;
+                        return;
+                    }
+                    it.iterator = iterables.remove().iterator();
+                }
+                this.next = it.iterator.next();
             }
         };
     }

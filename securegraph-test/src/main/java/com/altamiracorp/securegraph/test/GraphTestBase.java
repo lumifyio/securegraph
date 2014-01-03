@@ -267,11 +267,15 @@ public abstract class GraphTestBase {
 
         Iterable<Edge> aEdges = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_A);
         assertEquals(1, count(aEdges));
-        assertEquals("edgeA", aEdges.iterator().next().getLabel());
+        Edge e1 = aEdges.iterator().next();
+        assertNotNull(e1);
+        assertEquals("edgeA", e1.getLabel());
 
         Iterable<Edge> bEdges = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_B);
         assertEquals(1, count(bEdges));
-        assertEquals("edgeB", bEdges.iterator().next().getLabel());
+        Edge e2 = bEdges.iterator().next();
+        assertNotNull(e2);
+        assertEquals("edgeB", e2.getLabel());
 
         Iterable<Edge> allEdges = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_A_AND_B);
         assertEquals(2, count(allEdges));
