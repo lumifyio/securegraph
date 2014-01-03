@@ -3,6 +3,7 @@ package com.altamiracorp.securegraph.accumulo.blueprints.util;
 import com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +63,6 @@ public class TestAccumuloCluster {
             accumulo.stop();
             accumulo = null;
         }
-        tempDir.delete();
+        FileUtils.deleteDirectory(tempDir);
     }
 }

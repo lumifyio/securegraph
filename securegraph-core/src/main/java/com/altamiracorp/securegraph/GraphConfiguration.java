@@ -60,8 +60,13 @@ public class GraphConfiguration {
         Map result = new HashMap();
         for (Object e : getConfig().entrySet()) {
             Map.Entry entry = (Map.Entry) e;
-            if (entry.getKey().equals(prefix)) {
-                result.put(entry.getKey(), entry.getValue());
+            String key = (String) entry.getKey();
+            if (key.startsWith(prefix)) {
+                String keySub = key.substring(prefix.length());
+                if (keySub.startsWith(".")) {
+                    keySub = keySub.substring(1);
+                }
+                result.put(keySub, entry.getValue());
             }
         }
         return result;
