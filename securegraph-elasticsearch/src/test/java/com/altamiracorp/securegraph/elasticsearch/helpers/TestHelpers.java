@@ -5,6 +5,7 @@ import com.altamiracorp.securegraph.GraphConfiguration;
 import com.altamiracorp.securegraph.elasticsearch.ElasticSearchSearchIndex;
 import com.altamiracorp.securegraph.inmemory.InMemoryGraph;
 import org.apache.commons.io.FileUtils;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
@@ -20,11 +21,12 @@ public class TestHelpers {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestHelpers.class);
     private static File tempDir;
     private static Node elasticSearchNode;
+    private static String addr;
 
     public static Graph createGraph() {
         Map config = new HashMap();
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.ES_LOCATIONS, "localhost:9200");
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.ES_LOCATIONS, addr);
         GraphConfiguration configuration = new GraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }
@@ -37,7 +39,7 @@ public class TestHelpers {
 
         elasticSearchNode = NodeBuilder
                 .nodeBuilder()
-                .local(true)
+                .local(false)
                 .settings(
                         ImmutableSettings.settingsBuilder()
                                 .put("gateway.type", "local")
@@ -46,6 +48,11 @@ public class TestHelpers {
                                 .put("path.work", new File(tempDir, "work").getAbsolutePath())
                 ).node();
         elasticSearchNode.start();
+
+        ClusterStateResponse response = elasticSearchNode.client().admin().cluster().prepareState().execute().actionGet();
+        addr = response.getState().getNodes().getNodes().values().iterator().next().getAddress().toString();
+        addr = addr.substring("inet[/".length());
+        addr = addr.substring(0, addr.length() - 1);
     }
 
     public static void after() throws IOException {
