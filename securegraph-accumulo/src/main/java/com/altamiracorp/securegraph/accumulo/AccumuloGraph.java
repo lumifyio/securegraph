@@ -321,6 +321,15 @@ public class AccumuloGraph extends GraphBase {
         return (AccumuloGraphConfiguration) super.getConfiguration();
     }
 
+    @Override
+    public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
+        Iterator<Vertex> vertices = getVerticesInRange(vertexId, vertexId, authorizations).iterator();
+        if (vertices.hasNext()) {
+            return vertices.next();
+        }
+        return null;
+    }
+
     private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
         final Scanner scanner = createVertexScanner(authorizations);
 
@@ -415,6 +424,15 @@ public class AccumuloGraph extends GraphBase {
 
     private org.apache.accumulo.core.security.Authorizations toAccumuloAuthorizations(Authorizations authorizations) {
         return new org.apache.accumulo.core.security.Authorizations(authorizations.getAuthorizations());
+    }
+
+    @Override
+    public Edge getEdge(Object edgeId, Authorizations authorizations) {
+        Iterator<Edge> edges = getEdgesInRange(edgeId, edgeId, authorizations).iterator();
+        if (edges.hasNext()) {
+            return edges.next();
+        }
+        return null;
     }
 
     private Iterable<Edge> getEdgesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
