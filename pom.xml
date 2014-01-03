@@ -51,5 +51,6 @@
         <module>securegraph-accumulo</module>
         <module>securegraph-accumulo-blueprints</module>
         <module>securegraph-blueprints-test</module>
+        <module>securegraph-elasticsearch</module>
     </modules>
 </project>
