@@ -17,11 +17,11 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
         return new ConvertingIterable<Edge, Vertex>(edges()) {
             @Override
             protected Vertex convert(Edge edge) {
-                if (edge.getInVertexId().equals(sourceVertex.getId())) {
-                    return edge.getOutVertex(getParameters().getAuthorizations());
+                if (edge.getVertexId(Direction.IN).equals(sourceVertex.getId())) {
+                    return edge.getVertex(Direction.OUT, getParameters().getAuthorizations());
                 }
-                if (edge.getOutVertexId().equals(sourceVertex.getId())) {
-                    return edge.getInVertex(getParameters().getAuthorizations());
+                if (edge.getVertexId(Direction.OUT).equals(sourceVertex.getId())) {
+                    return edge.getVertex(Direction.IN, getParameters().getAuthorizations());
                 }
                 throw new IllegalStateException("Neither the in vertex or the out vertex of edge [" + edge + "] equals the source vertex.");
             }
@@ -40,9 +40,9 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
                     case BOTH:
                         return true;
                     case IN:
-                        return edge.getInVertexId().equals(sourceVertex.getId());
+                        return edge.getVertexId(Direction.IN).equals(sourceVertex.getId());
                     case OUT:
-                        return edge.getOutVertexId().equals(sourceVertex.getId());
+                        return edge.getVertexId(Direction.OUT).equals(sourceVertex.getId());
                     default:
                         throw new RuntimeException("Unexpected direction: " + direction);
                 }

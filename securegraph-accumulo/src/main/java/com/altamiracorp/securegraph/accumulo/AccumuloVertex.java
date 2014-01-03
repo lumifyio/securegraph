@@ -53,11 +53,11 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
             @Override
             protected Vertex convert(Edge o) {
-                if (o.getOutVertexId().equals(getId())) {
-                    return o.getInVertex(authorizations);
+                if (o.getVertexId(Direction.OUT).equals(getId())) {
+                    return o.getVertex(Direction.IN, authorizations);
                 }
-                if (o.getInVertexId().equals(getId())) {
-                    return o.getOutVertex(authorizations);
+                if (o.getVertexId(Direction.IN).equals(getId())) {
+                    return o.getVertex(Direction.OUT, authorizations);
                 }
                 throw new IllegalStateException("Neither the out or the in side of the edge [" + o + "] equals the current vertex [" + AccumuloVertex.this + "]");
             }

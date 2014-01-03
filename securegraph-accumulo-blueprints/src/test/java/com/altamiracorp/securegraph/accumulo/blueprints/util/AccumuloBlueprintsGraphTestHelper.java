@@ -7,7 +7,9 @@ import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TestSuite;
 import com.tinkerpop.blueprints.impls.GraphTest;
 import org.apache.accumulo.core.client.Connector;
+import org.junit.Ignore;
 
+@Ignore
 public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     private final AccumuloSecureGraphBlueprintsGraph defaultGraph;
 

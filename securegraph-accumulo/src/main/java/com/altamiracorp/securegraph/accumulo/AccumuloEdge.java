@@ -26,22 +26,19 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
     }
 
     @Override
-    public Object getOutVertexId() {
-        return outVertexId;
+    public Object getVertexId(Direction direction) {
+        switch (direction) {
+            case OUT:
+                return outVertexId;
+            case IN:
+                return inVertexId;
+            default:
+                throw new IllegalArgumentException("Unexpected direction: " + direction);
+        }
     }
 
     @Override
-    public Vertex getOutVertex(Authorizations authorizations) {
-        return getGraph().getVertex(getOutVertexId(), authorizations);
-    }
-
-    @Override
-    public Object getInVertexId() {
-        return inVertexId;
-    }
-
-    @Override
-    public Vertex getInVertex(Authorizations authorizations) {
-        return getGraph().getVertex(getInVertexId(), authorizations);
+    public Vertex getVertex(Direction direction, Authorizations authorizations) {
+        return getGraph().getVertex(getVertexId(direction), authorizations);
     }
 }

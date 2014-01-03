@@ -4,11 +4,13 @@ import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
-import com.tinkerpop.blueprints.*;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Features;
+import com.tinkerpop.blueprints.GraphQuery;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.DefaultGraphQuery;
 
-import java.util.Set;
-
-public abstract class SecureGraphBlueprintsGraph implements KeyIndexableGraph {
+public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.blueprints.Graph {
     private static final SecureGraphBlueprintsGraphFeatures FEATURES = new SecureGraphBlueprintsGraphFeatures();
     private static final Visibility DEFAULT_VISIBILITY = new Visibility("");
     private static final Authorizations DEFAULT_AUTHORIZATIONS = new Authorizations();
@@ -16,21 +18,6 @@ public abstract class SecureGraphBlueprintsGraph implements KeyIndexableGraph {
 
     protected SecureGraphBlueprintsGraph(Graph secureGraph) {
         this.secureGraph = secureGraph;
-    }
-
-    @Override
-    public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... indexParameters) {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
-        throw new RuntimeException("not implemented");
     }
 
     @Override
@@ -102,7 +89,7 @@ public abstract class SecureGraphBlueprintsGraph implements KeyIndexableGraph {
 
     @Override
     public GraphQuery query() {
-        throw new RuntimeException("not implemented");
+        return new DefaultGraphQuery(this); // TODO implement this
     }
 
     @Override

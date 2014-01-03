@@ -62,4 +62,22 @@ public abstract class SecureGraphBlueprintsElement implements Element {
     public com.altamiracorp.securegraph.Element getSecureGraphElement() {
         return element;
     }
+
+    @Override
+    public int hashCode() {
+        return getSecureGraphElement().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SecureGraphBlueprintsElement) {
+            return getSecureGraphElement().equals(((SecureGraphBlueprintsElement) obj).getSecureGraphElement());
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public String toString() {
+        return getSecureGraphElement().toString();
+    }
 }

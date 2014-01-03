@@ -18,7 +18,8 @@ public class SecureGraphBlueprintsEdge extends SecureGraphBlueprintsElement impl
 
     @Override
     public Vertex getVertex(Direction direction) throws IllegalArgumentException {
-        throw new RuntimeException("not implemented");
+        com.altamiracorp.securegraph.Direction sgDirection = SecureGraphBlueprintsConvert.toSecureGraph(direction);
+        return SecureGraphBlueprintsVertex.create(getGraph(), getSecureGraphElement().getVertex(sgDirection, getGraph().getAuthorizations()));
     }
 
     @Override

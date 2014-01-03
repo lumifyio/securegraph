@@ -264,14 +264,14 @@ public class AccumuloGraph extends GraphBase {
 
         // Remove edge info from out/in vertices.
         // These may be null due to self loops, so need to check.
-        Vertex out = edge.getOutVertex(authorizations);
+        Vertex out = edge.getVertex(Direction.OUT, authorizations);
         if (out != null) {
             Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + out.getId());
             m.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()));
             mutations.add(m);
         }
 
-        Vertex in = edge.getInVertex(authorizations);
+        Vertex in = edge.getVertex(Direction.IN, authorizations);
         if (in != null) {
             Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + in.getId());
             m.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()));

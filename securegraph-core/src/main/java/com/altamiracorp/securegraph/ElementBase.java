@@ -81,7 +81,7 @@ public abstract class ElementBase implements Element {
     @Override
     public String toString() {
         if (this instanceof Edge) {
-            return getId() + ":[" + ((Edge) this).getOutVertexId() + "->" + ((Edge) this).getInVertexId() + "]";
+            return getId() + ":[" + ((Edge) this).getVertexId(Direction.OUT) + "->" + ((Edge) this).getVertexId(Direction.IN) + "]";
         }
         return getId().toString();
     }

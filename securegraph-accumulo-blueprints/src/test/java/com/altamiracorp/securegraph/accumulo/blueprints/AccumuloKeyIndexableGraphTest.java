@@ -2,7 +2,9 @@ package com.altamiracorp.securegraph.accumulo.blueprints;
 
 import com.altamiracorp.securegraph.accumulo.blueprints.util.AccumuloBlueprintsGraphTestHelper;
 import com.altamiracorp.securegraph.blueprints.SecureGraphBlueprintsKeyIndexableGraphTestBase;
+import org.junit.Ignore;
 
+@Ignore
 public class AccumuloKeyIndexableGraphTest extends SecureGraphBlueprintsKeyIndexableGraphTestBase {
     public AccumuloKeyIndexableGraphTest() {
         super(new AccumuloBlueprintsGraphTestHelper());
