@@ -81,7 +81,7 @@ public abstract class QueryBase implements Query {
 
     public static class Parameters {
         private final Authorizations authorizations;
-        private long limit = Integer.MAX_VALUE;
+        private long limit = 100;
         private long skip = 0;
         private final List<HasContainer> hasContainers = new ArrayList<HasContainer>();
 

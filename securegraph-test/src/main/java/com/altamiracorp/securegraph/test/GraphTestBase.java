@@ -333,6 +333,26 @@ public abstract class GraphTestBase {
                 .has("age", Compare.GREATER_THAN_EQUAL, 25)
                 .vertices();
         assertEquals(2, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.GREATER_THAN, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.LESS_THAN, 26)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.LESS_THAN_EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.NOT_EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
     }
 
     @Test
