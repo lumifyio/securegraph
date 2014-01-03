@@ -39,7 +39,12 @@ public abstract class GraphBase implements Graph {
     public abstract Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException;
 
     @Override
-    public abstract void removeVertex(Object vertexId, Authorizations authorizations);
+    public abstract void removeVertex(Vertex vertex, Authorizations authorizations);
+
+    @Override
+    public void removeVertex(String vertexId, Authorizations authorizations) {
+        removeVertex(getVertex(vertexId, authorizations), authorizations);
+    }
 
     @Override
     public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties) {
@@ -64,7 +69,12 @@ public abstract class GraphBase implements Graph {
     public abstract Iterable<Edge> getEdges(Authorizations authorizations);
 
     @Override
-    public abstract void removeEdge(Object edgeId, Authorizations authorizations);
+    public abstract void removeEdge(Edge edge, Authorizations authorizations);
+
+    @Override
+    public void removeEdge(String edgeId, Authorizations authorizations) {
+        removeEdge(getEdge(edgeId, authorizations), authorizations);
+    }
 
     @Override
     public GraphQuery query(Authorizations authorizations) {

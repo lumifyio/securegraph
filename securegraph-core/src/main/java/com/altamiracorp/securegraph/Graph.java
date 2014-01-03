@@ -11,7 +11,9 @@ public interface Graph {
 
     Iterable<Vertex> getVertices(Authorizations authorizations);
 
-    void removeVertex(Object vertexId, Authorizations authorizations);
+    void removeVertex(Vertex vertex, Authorizations authorizations);
+
+    void removeVertex(String vertexId, Authorizations authorizations);
 
     Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties);
 
@@ -21,7 +23,9 @@ public interface Graph {
 
     Iterable<Edge> getEdges(Authorizations authorizations);
 
-    void removeEdge(Object edgeId, Authorizations authorizations);
+    void removeEdge(Edge edge, Authorizations authorizations);
+
+    void removeEdge(String edgeId, Authorizations authorizations);
 
     GraphQuery query(Authorizations authorizations);
 }

@@ -160,7 +160,11 @@ public abstract class GraphTestBase {
 
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
-        graph.removeVertex("v1", AUTHORIZATIONS_B);
+        try {
+            graph.removeVertex("v1", AUTHORIZATIONS_B);
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
         graph.removeVertex("v1", AUTHORIZATIONS_A);
@@ -234,10 +238,14 @@ public abstract class GraphTestBase {
 
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
-        graph.removeEdge("v1", AUTHORIZATIONS_B);
+        try {
+            graph.removeEdge("e1", AUTHORIZATIONS_B);
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
-        graph.removeEdge("v1", AUTHORIZATIONS_A);
+        graph.removeEdge("e1", AUTHORIZATIONS_A);
         assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
     }
 

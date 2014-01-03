@@ -13,4 +13,9 @@ public class NullSearchIndex implements SearchIndex {
     public void addElement(Element element) {
 
     }
+
+    @Override
+    public void removeElement(Element element) {
+
+    }
 }
