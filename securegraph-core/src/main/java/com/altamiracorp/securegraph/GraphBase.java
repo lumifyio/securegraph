@@ -1,8 +1,8 @@
 package com.altamiracorp.securegraph;
 
 import com.altamiracorp.securegraph.id.IdGenerator;
-import com.altamiracorp.securegraph.query.DefaultGraphQuery;
 import com.altamiracorp.securegraph.query.GraphQuery;
+import com.altamiracorp.securegraph.search.SearchIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,10 +10,12 @@ public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
     private final GraphConfiguration configuration;
     private final IdGenerator idGenerator;
+    private final SearchIndex searchIndex;
 
-    protected GraphBase(GraphConfiguration configuration, IdGenerator idGenerator) {
+    protected GraphBase(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this.configuration = configuration;
         this.idGenerator = idGenerator;
+        this.searchIndex = searchIndex;
     }
 
     @Override
@@ -78,7 +80,7 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public GraphQuery query(Authorizations authorizations) {
-        return new DefaultGraphQuery(this, authorizations);
+        return getSearchIndex().queryGraph(this, authorizations);
     }
 
     public IdGenerator getIdGenerator() {
@@ -87,5 +89,9 @@ public abstract class GraphBase implements Graph {
 
     public GraphConfiguration getConfiguration() {
         return configuration;
+    }
+
+    public SearchIndex getSearchIndex() {
+        return searchIndex;
     }
 }

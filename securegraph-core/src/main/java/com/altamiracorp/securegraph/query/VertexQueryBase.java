@@ -7,7 +7,7 @@ import com.altamiracorp.securegraph.util.FilterIterable;
 public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
     private final Vertex sourceVertex;
 
-    protected VertexQueryBase(Graph graph, Authorizations authorizations, Vertex sourceVertex) {
+    protected VertexQueryBase(Graph graph, Vertex sourceVertex, Authorizations authorizations) {
         super(graph, authorizations);
         this.sourceVertex = sourceVertex;
     }

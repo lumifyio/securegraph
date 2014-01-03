@@ -2,9 +2,9 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
-import com.altamiracorp.securegraph.accumulo.search.SearchIndex;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
+import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
@@ -27,15 +27,13 @@ public class AccumuloGraph extends GraphBase {
     public static final String PROPERTY_ID_NAME_SEPERATOR = "\u001f";
     private final Connector connector;
     private final ValueSerializer valueSerializer;
-    private final SearchIndex searchIndex;
     private BatchWriter writer;
     private final Object writerLock = new Object();
 
-    protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, Connector connector, ValueSerializer valueSerializer, SearchIndex searchIndex) {
-        super(config, idGenerator);
+    protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, ValueSerializer valueSerializer) {
+        super(config, idGenerator, searchIndex);
         this.connector = connector;
         this.valueSerializer = valueSerializer;
-        this.searchIndex = searchIndex;
     }
 
     public static AccumuloGraph create(AccumuloGraphConfiguration config) throws AccumuloSecurityException, AccumuloException, SecureGraphException {
@@ -46,7 +44,7 @@ public class AccumuloGraph extends GraphBase {
         ValueSerializer valueSerializer = config.createValueSerializer();
         SearchIndex searchIndex = config.createSearchIndex();
         IdGenerator idGenerator = config.createIdGenerator();
-        return new AccumuloGraph(config, idGenerator, connector, valueSerializer, searchIndex);
+        return new AccumuloGraph(config, idGenerator, searchIndex, connector, valueSerializer);
     }
 
     public static AccumuloGraph create(Map config) throws AccumuloSecurityException, AccumuloException, SecureGraphException {
@@ -69,7 +67,7 @@ public class AccumuloGraph extends GraphBase {
         }
         addMutations(m);
 
-        getSearchIndex().addElement(vertex);
+        getSearchIndex().addElement(this, vertex);
 
         return vertex;
     }
@@ -85,7 +83,7 @@ public class AccumuloGraph extends GraphBase {
         }
         addMutations(m);
 
-        getSearchIndex().addElement(element);
+        getSearchIndex().addElement(this, element);
     }
 
     public void removeProperty(AccumuloElement element, Property property) {
@@ -95,7 +93,7 @@ public class AccumuloGraph extends GraphBase {
         addPropertyRemoveToMutation(m, property);
         addMutations(m);
 
-        getSearchIndex().addElement(element);
+        getSearchIndex().addElement(this, element);
     }
 
     private String getRowPrefixForElement(AccumuloElement element) {
@@ -183,7 +181,7 @@ public class AccumuloGraph extends GraphBase {
 
         List<Mutation> mutations = new ArrayList<Mutation>();
 
-        getSearchIndex().removeElement(vertex);
+        getSearchIndex().removeElement(this, vertex);
 
         // Remove all edges that this vertex participates.
         for (Edge edge : vertex.getEdges(Direction.BOTH, authorizations)) {
@@ -236,7 +234,7 @@ public class AccumuloGraph extends GraphBase {
             ((AccumuloVertex) inVertex).addInEdge(edge);
         }
 
-        getSearchIndex().addElement(edge);
+        getSearchIndex().addElement(this, edge);
 
         return edge;
     }
@@ -277,7 +275,7 @@ public class AccumuloGraph extends GraphBase {
             throw new IllegalArgumentException("edge cannot be null");
         }
 
-        getSearchIndex().removeElement(edge);
+        getSearchIndex().removeElement(this, edge);
 
         // Remove edge info from out/in vertices.
         // These may be null due to self loops, so need to check.
@@ -316,10 +314,6 @@ public class AccumuloGraph extends GraphBase {
 
     public ValueSerializer getValueSerializer() {
         return valueSerializer;
-    }
-
-    public SearchIndex getSearchIndex() {
-        return searchIndex;
     }
 
     @Override

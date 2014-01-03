@@ -1,7 +1,6 @@
 package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
-import com.altamiracorp.securegraph.query.DefaultVertexQuery;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.JoinIterable;
@@ -66,7 +65,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public VertexQuery query(Authorizations authorizations) {
-        return new DefaultVertexQuery(getGraph(), authorizations, this);
+        return getGraph().getSearchIndex().queryVertex(getGraph(), this, authorizations);
     }
 
     void addOutEdge(AccumuloEdge edge) {

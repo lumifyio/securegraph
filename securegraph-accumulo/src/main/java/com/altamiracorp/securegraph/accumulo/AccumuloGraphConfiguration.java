@@ -2,8 +2,8 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.GraphConfiguration;
 import com.altamiracorp.securegraph.SecureGraphException;
-import com.altamiracorp.securegraph.accumulo.search.NullSearchIndex;
-import com.altamiracorp.securegraph.accumulo.search.SearchIndex;
+import com.altamiracorp.securegraph.search.DefaultSearchIndex;
+import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.accumulo.serializer.JavaValueSerializer;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -30,7 +30,7 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String DEFAULT_ACCUMULO_USERNAME = "root";
     public static final String DEFAULT_ACCUMULO_INSTANCE_NAME = "blueprints_accumulo";
     public static final String DEFAULT_ZOOKEEPER_SERVERS = "localhost";
-    public static final String DEFAULT_SEARCH_INDEX = NullSearchIndex.class.getName();
+    public static final String DEFAULT_SEARCH_INDEX = DefaultSearchIndex.class.getName();
     public static final boolean DEFAULT_AUTO_FLUSH = false;
     public static final String DEFAULT_TABLE_NAME = "securegraph";
 
