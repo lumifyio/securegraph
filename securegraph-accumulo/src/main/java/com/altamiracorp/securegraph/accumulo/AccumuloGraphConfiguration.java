@@ -11,10 +11,13 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class AccumuloGraphConfiguration extends GraphConfiguration {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraphConfiguration.class);
     public static final String ACCUMULO_INSTANCE_NAME = "accumuloInstanceName";
     public static final String ACCUMULO_USERNAME = "username";
     public static final String ACCUMULO_PASSWORD = "password";
@@ -36,6 +39,7 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     }
 
     public Connector createConnector() throws AccumuloSecurityException, AccumuloException {
+        LOGGER.info("Connecting to accumulo instance [{}] zookeeper servers [{}]", this.getAccumuloInstanceName(), this.getZookeeperServers());
         ZooKeeperInstance instance = new ZooKeeperInstance(this.getAccumuloInstanceName(), this.getZookeeperServers());
         return instance.getConnector(this.getAccumuloUsername(), this.getAuthenticationToken());
     }
