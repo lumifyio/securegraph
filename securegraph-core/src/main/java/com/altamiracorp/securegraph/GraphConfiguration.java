@@ -4,9 +4,8 @@ import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.id.UUIDIdGenerator;
 import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.search.SearchIndex;
+import com.altamiracorp.securegraph.util.ConfigurationUtils;
 
-import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import java.util.Map;
 
 public class GraphConfiguration {
@@ -55,59 +54,11 @@ public class GraphConfiguration {
         return o;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map getConfigSubset(String prefix) {
-        Map result = new HashMap();
-        for (Object e : getConfig().entrySet()) {
-            Map.Entry entry = (Map.Entry) e;
-            String key = (String) entry.getKey();
-            if (key.startsWith(prefix)) {
-                String keySub = key.substring(prefix.length());
-                if (keySub.startsWith(".")) {
-                    keySub = keySub.substring(1);
-                }
-                result.put(keySub, entry.getValue());
-            }
-        }
-        return result;
-    }
-
-    public <T> T createProvider(String propPrefix, String defaultProvider) throws SecureGraphException {
-        Map subsetConfig = getConfigSubset(propPrefix);
-        String implClass = getConfigString(propPrefix, defaultProvider);
-        return this.createProvider(implClass, subsetConfig);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T createProvider(String className, Map config) throws SecureGraphException {
-        Class<Map> constructorParameterClass = Map.class;
-        try {
-            Class<?> clazz = Class.forName(className);
-            try {
-                Constructor constructor = clazz.getConstructor(constructorParameterClass);
-                return (T) constructor.newInstance(config);
-            } catch (IllegalArgumentException e) {
-                StringBuilder possibleMatches = new StringBuilder();
-                for (Constructor<?> s : clazz.getConstructors()) {
-                    possibleMatches.append(s.toGenericString());
-                    possibleMatches.append(", ");
-                }
-                throw new SecureGraphException("Invalid constructor for " + className + ". Expected <init>(" + constructorParameterClass.getName() + "). Found: " + possibleMatches, e);
-            }
-        } catch (NoSuchMethodException e) {
-            throw new SecureGraphException("Provider must have a single argument constructor taking a " + constructorParameterClass.getName(), e);
-        } catch (ClassNotFoundException e) {
-            throw new SecureGraphException("No provider found with class name " + className, e);
-        } catch (Exception e) {
-            throw new SecureGraphException(e);
-        }
-    }
-
     public IdGenerator createIdGenerator() throws SecureGraphException {
-        return this.createProvider(IDGENERATOR_PROP_PREFIX, DEFAULT_IDGENERATOR);
+        return ConfigurationUtils.createProvider(getConfig(), IDGENERATOR_PROP_PREFIX, DEFAULT_IDGENERATOR);
     }
 
     public SearchIndex createSearchIndex() throws SecureGraphException {
-        return this.createProvider(SEARCH_INDEX_PROP_PREFIX, DEFAULT_SEARCH_INDEX);
+        return ConfigurationUtils.createProvider(getConfig(), SEARCH_INDEX_PROP_PREFIX, DEFAULT_SEARCH_INDEX);
     }
 }

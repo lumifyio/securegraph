@@ -44,7 +44,18 @@ public class AccumuloGraph extends GraphBase {
         ValueSerializer valueSerializer = config.createValueSerializer();
         SearchIndex searchIndex = config.createSearchIndex();
         IdGenerator idGenerator = config.createIdGenerator();
+        ensureTableExists(connector, config.getTableName());
         return new AccumuloGraph(config, idGenerator, searchIndex, connector, valueSerializer);
+    }
+
+    private static void ensureTableExists(Connector connector, String tableName) {
+        try {
+            if (!connector.tableOperations().exists(tableName)) {
+                connector.tableOperations().create(tableName);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to create table " + tableName);
+        }
     }
 
     public static AccumuloGraph create(Map config) throws AccumuloSecurityException, AccumuloException, SecureGraphException {

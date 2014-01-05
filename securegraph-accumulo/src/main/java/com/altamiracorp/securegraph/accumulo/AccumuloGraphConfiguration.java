@@ -2,10 +2,9 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.GraphConfiguration;
 import com.altamiracorp.securegraph.SecureGraphException;
-import com.altamiracorp.securegraph.search.DefaultSearchIndex;
-import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.accumulo.serializer.JavaValueSerializer;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
+import com.altamiracorp.securegraph.util.ConfigurationUtils;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -16,13 +15,13 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import java.util.Map;
 
 public class AccumuloGraphConfiguration extends GraphConfiguration {
-    public static final String ACCUMULO_INSTANCE_NAME = "accumulo.instance";
-    public static final String ZOOKEEPER_SERVERS = "zookeeper.servers";
-    public static final String ACCUMULO_USERNAME = "accumulo.username";
-    public static final String ACCUMULO_PASSWORD = "accumulo.password";
+    public static final String ACCUMULO_INSTANCE_NAME = "accumuloInstanceName";
+    public static final String ACCUMULO_USERNAME = "username";
+    public static final String ACCUMULO_PASSWORD = "password";
+    public static final String ZOOKEEPER_SERVERS = "zookeeperServers";
     public static final String VALUE_SERIALIZER_PROP_PREFIX = "serializer";
-    public static final String AUTO_FLUSH = "autoflush";
-    public static final String TABLE_NAME = "tablename";
+    public static final String AUTO_FLUSH = "autoFlush";
+    public static final String TABLE_NAME = "tableName";
 
     public static final String DEFAULT_ACCUMULO_PASSWORD = "password";
     public static final String DEFAULT_VALUE_SERIALIZER = JavaValueSerializer.class.getName();
@@ -59,7 +58,7 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     }
 
     public ValueSerializer createValueSerializer() throws SecureGraphException {
-        return this.createProvider(VALUE_SERIALIZER_PROP_PREFIX, DEFAULT_VALUE_SERIALIZER);
+        return ConfigurationUtils.createProvider(getConfig(), VALUE_SERIALIZER_PROP_PREFIX, DEFAULT_VALUE_SERIALIZER);
     }
 
     public boolean isAutoFlush() {

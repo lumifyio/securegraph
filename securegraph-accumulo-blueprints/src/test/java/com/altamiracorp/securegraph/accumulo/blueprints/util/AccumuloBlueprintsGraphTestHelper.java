@@ -13,18 +13,18 @@ import com.tinkerpop.blueprints.impls.GraphTest;
 import org.apache.accumulo.core.client.Connector;
 import org.junit.Ignore;
 
+import java.util.HashMap;
+
 @Ignore
 public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     private final AccumuloSecureGraphBlueprintsGraph defaultGraph;
-    private final VisibilityProvider visibilityProvider = new DefaultVisibilityProvider();
-    private final AuthorizationsProvider authorizationsProvider = new DefaultAuthorizationsProvider();
+    private final VisibilityProvider visibilityProvider = new DefaultVisibilityProvider(new HashMap());
+    private final AuthorizationsProvider authorizationsProvider = new DefaultAuthorizationsProvider(new HashMap());
 
     public AccumuloBlueprintsGraphTestHelper() {
         try {
             this.ensureAccumuloIsStarted();
             AccumuloGraphConfiguration config = this.getGraphConfig(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
-            Connector connector = config.createConnector();
-            this.ensureTableExists(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
             this.defaultGraph = new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config), visibilityProvider, authorizationsProvider);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -40,8 +40,6 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     public Graph generateGraph(String graphDirectoryName) {
         try {
             AccumuloGraphConfiguration config = this.getGraphConfig(graphDirectoryName);
-            Connector connector = config.createConnector();
-            this.ensureTableExists(connector, graphDirectoryName);
             return new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config), visibilityProvider, authorizationsProvider);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -83,16 +81,6 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
             TestAccumuloCluster.start();
         } catch (Exception e) {
             throw new RuntimeException("Failed to start Accumulo mini cluster", e);
-        }
-    }
-
-    private void ensureTableExists(Connector connector, String tableName) {
-        try {
-            if (!connector.tableOperations().exists(tableName)) {
-                connector.tableOperations().create(tableName);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to create table " + tableName);
         }
     }
 

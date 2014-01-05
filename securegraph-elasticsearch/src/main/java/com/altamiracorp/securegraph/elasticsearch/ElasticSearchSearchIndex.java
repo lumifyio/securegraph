@@ -23,12 +23,13 @@ import java.util.Map;
 public class ElasticSearchSearchIndex implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndex.class);
     public static final String ES_LOCATIONS = "locations";
-    public static final String INDEX_NAME = "index-name";
+    public static final String INDEX_NAME = "indexName";
     private static final String DEFAULT_INDEX_NAME = "securegraph";
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
+    public static final int DEFAULT_ES_PORT = 9300;
     private final TransportClient client;
     private String indexName;
     private Map<String, Boolean> existingProperties = new HashMap<String, Boolean>();
@@ -48,7 +49,18 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         client = new TransportClient();
         for (String esLocation : esLocations) {
             String[] locationSocket = esLocation.split(":");
-            client.addTransportAddress(new InetSocketTransportAddress(locationSocket[0], Integer.parseInt(locationSocket[1])));
+            String hostname;
+            int port;
+            if (locationSocket.length == 2) {
+                hostname = locationSocket[0];
+                port = Integer.parseInt(locationSocket[1]);
+            } else if (locationSocket.length == 1) {
+                hostname = locationSocket[0];
+                port = DEFAULT_ES_PORT;
+            } else {
+                throw new SecureGraphException("Invalid elastic search location: " + esLocation);
+            }
+            client.addTransportAddress(new InetSocketTransportAddress(hostname, port));
         }
 
         if (!client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
