@@ -45,4 +45,33 @@ cp securegraph-elasticsearch/target/securegraph-elasticsearch-*.jar ${GREMLIN_HO
 ```
 
 * Copy other dependencies accumulo, hadoop, etc. to ${GREMLIN_HOME}/lib
+
+```
+accumulo-core-1.5.0.jar
+accumulo-fate-1.5.0.jar
+accumulo-trace-1.5.0.jar
+commons-io-2.4.jar
+hadoop-client-0.23.10.jar
+hadoop-core-0.20.2.jar
+libthrift-0.9.0.jar
+```
+
+```
+elasticsearch-0.90.0.jar
+lucene-analyzers-common-4.2.1.jar
+lucene-codecs-4.2.1.jar
+lucene-core-4.2.1.jar
+lucene-grouping-4.2.1.jar
+lucene-highlighter-4.2.1.jar
+lucene-join-4.2.1.jar
+lucene-memory-4.2.1.jar
+lucene-queries-4.2.1.jar
+lucene-queryparser-4.2.1.jar
+lucene-sandbox-4.2.1.jar
+lucene-spatial-4.2.1.jar
+lucene-suggest-4.2.1.jar
+
+rm lucene-core-3.6.2.jar
+```
+
 * Run `${GREMLIN_HOME}/bin/gremlin.sh gremlin-sg.script`
