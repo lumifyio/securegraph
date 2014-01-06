@@ -2,12 +2,16 @@ package com.altamiracorp.securegraph.test;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.Compare;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,6 +64,21 @@ public abstract class GraphTestBase {
         v = graph.getVertex(vertexId, AUTHORIZATIONS_A);
         assertNotNull(v);
         assertNotNull(vertexId);
+    }
+
+    @Test
+    public void testAddBigDataProperty() throws IOException {
+        graph.addVertex("v1", VISIBILITY_A,
+                new Property("prop1", new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), "text/plain"), VISIBILITY_A));
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        Iterable<Object> prop1Values = v1.getPropertyValues("prop1");
+        assertEquals(1, count(prop1Values));
+        Object val = prop1Values.iterator().next();
+        assertTrue(val instanceof StreamingPropertyValue);
+        StreamingPropertyValue value = (StreamingPropertyValue) val;
+        assertEquals("text/plain", value.getContentType());
+        assertEquals("value1", IOUtils.toString(value.getInputStream()));
     }
 
     @Test
