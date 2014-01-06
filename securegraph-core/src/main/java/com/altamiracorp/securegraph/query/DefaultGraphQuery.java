@@ -9,8 +9,8 @@ import java.util.Iterator;
 public class DefaultGraphQuery extends GraphQueryBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGraphQuery.class);
 
-    public DefaultGraphQuery(Graph graph, Authorizations authorizations) {
-        super(graph, authorizations);
+    public DefaultGraphQuery(Graph graph, String queryString, Authorizations authorizations) {
+        super(graph, queryString, authorizations);
     }
 
     @Override
@@ -23,6 +23,24 @@ public class DefaultGraphQuery extends GraphQueryBase {
     public Iterable<Edge> edges() {
         LOGGER.warn("scanning all edges! create your own GraphQuery.");
         return new DefaultGraphQueryIterable<Edge>(ElementType.EDGE);
+    }
+
+    protected boolean evaluateQueryString(Element elem, String queryString) {
+        LOGGER.warn("evaluating query string using simple logic! You may want to override evaluateQueryString with a better implementation.");
+        for (Property property : elem.getProperties()) {
+            if (evaluateQueryStringOnValue(property.getValue(), queryString)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean evaluateQueryStringOnValue(Object value, String queryString) {
+        if (value == null) {
+            return false;
+        }
+        String valueString = value.toString();
+        return valueString.contains(queryString);
     }
 
     private class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {
@@ -80,6 +98,9 @@ public class DefaultGraphQuery extends GraphQueryBase {
                             }
                         }
                         if (!match) {
+                            continue;
+                        }
+                        if (getParameters().getQueryString() != null && !evaluateQueryString(elem, getParameters().getQueryString())) {
                             continue;
                         }
 

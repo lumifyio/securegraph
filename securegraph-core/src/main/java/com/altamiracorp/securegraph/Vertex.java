@@ -8,4 +8,6 @@ public interface Vertex extends Element {
     Iterable<Vertex> getVertices(Direction direction, Authorizations authorizations);
 
     VertexQuery query(Authorizations authorizations);
+
+    VertexQuery query(String queryString, Authorizations authorizations);
 }

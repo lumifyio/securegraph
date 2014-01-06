@@ -16,6 +16,7 @@ public abstract class AccumuloElement extends ElementBase {
 
     @Override
     public void setProperties(Property... properties) {
+        getGraph().ensureIdsOnProperties(properties);
         super.setPropertiesInternal(properties);
         getGraph().saveProperties(this, properties);
     }

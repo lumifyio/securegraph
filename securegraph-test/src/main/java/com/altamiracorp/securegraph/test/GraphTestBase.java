@@ -313,6 +313,24 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGraphQueryWithQueryString() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
+        v1.setProperties(new Property("description", "This is vertex 1 - dog.", VISIBILITY_A));
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
+        v2.setProperties(new Property("description", "This is vertex 2 - cat.", VISIBILITY_A));
+
+        Iterable<Vertex> vertices = graph.query("vertex", AUTHORIZATIONS_A).vertices();
+        assertEquals(2, count(vertices));
+
+        vertices = graph.query("dog", AUTHORIZATIONS_A).vertices();
+        assertEquals(1, count(vertices));
+
+        // TODO elastic search can't filter based on authorizations
+//        vertices = graph.query("dog", AUTHORIZATIONS_B).vertices();
+//        assertEquals(0, count(vertices));
+    }
+
+    @Test
     public void testGraphQueryHas() {
         graph.addVertex("v1", VISIBILITY_A,
                 new Property("age", 25, VISIBILITY_A));

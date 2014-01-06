@@ -31,6 +31,7 @@ public abstract class InMemoryElement extends ElementBase {
 
     @Override
     public void setPropertiesInternal(Property[] properties) {
+        getGraph().ensureIdsOnProperties(properties);
         super.setPropertiesInternal(properties);
     }
 

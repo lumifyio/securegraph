@@ -4,8 +4,8 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
 public class DefaultVertexQuery extends VertexQueryBase implements VertexQuery {
-    public DefaultVertexQuery(Graph graph, Vertex sourceVertex, Authorizations authorizations) {
-        super(graph, sourceVertex, authorizations);
+    public DefaultVertexQuery(Graph graph, Vertex sourceVertex, String queryString, Authorizations authorizations) {
+        super(graph, sourceVertex, queryString, authorizations);
     }
 
     @Override

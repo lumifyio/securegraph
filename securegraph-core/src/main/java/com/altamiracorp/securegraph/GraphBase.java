@@ -88,7 +88,12 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public GraphQuery query(Authorizations authorizations) {
-        return getSearchIndex().queryGraph(this, authorizations);
+        return getSearchIndex().queryGraph(this, null, authorizations);
+    }
+
+    @Override
+    public GraphQuery query(String queryString, Authorizations authorizations) {
+        return getSearchIndex().queryGraph(this, queryString, authorizations);
     }
 
     public IdGenerator getIdGenerator() {
@@ -103,7 +108,7 @@ public abstract class GraphBase implements Graph {
         return searchIndex;
     }
 
-    protected void ensureIdsOnProperties(Property[] properties) {
+    public void ensureIdsOnProperties(Property[] properties) {
         for (Property property : properties) {
             if (property.getId() == null) {
                 property.setId(getIdGenerator().nextId().toString());

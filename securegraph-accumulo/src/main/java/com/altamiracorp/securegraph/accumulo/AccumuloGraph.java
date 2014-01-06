@@ -84,8 +84,6 @@ public class AccumuloGraph extends GraphBase {
     }
 
     void saveProperties(AccumuloElement element, Property[] properties) {
-        ensureIdsOnProperties(properties);
-
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());

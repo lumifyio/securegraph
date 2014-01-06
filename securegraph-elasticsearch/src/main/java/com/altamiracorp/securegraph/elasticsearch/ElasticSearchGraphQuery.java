@@ -8,6 +8,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
@@ -18,8 +19,8 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
     private final TransportClient client;
     private String indexName;
 
-    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, Authorizations authorizations) {
-        super(graph, authorizations);
+    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
+        super(graph, queryString, authorizations);
         this.client = client;
         this.indexName = indexName;
     }
@@ -80,14 +81,25 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 throw new SecureGraphException("Unexpected predicate type " + has.predicate.getClass().getName());
             }
         }
+        QueryBuilder query = createQuery(getParameters().getQueryString());
         return client
                 .prepareSearch(indexName)
                 .setTypes(ElasticSearchSearchIndex.ELEMENT_TYPE)
-                .setQuery(QueryBuilders.matchAllQuery())
+                .setQuery(query)
                 .setFilter(FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])))
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit())
                 .execute()
                 .actionGet();
+    }
+
+    protected QueryBuilder createQuery(String queryString) {
+        QueryBuilder query;
+        if (queryString == null) {
+            query = QueryBuilders.matchAllQuery();
+        } else {
+            query = QueryBuilders.queryString(queryString);
+        }
+        return query;
     }
 }

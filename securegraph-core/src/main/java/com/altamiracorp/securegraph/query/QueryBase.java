@@ -9,13 +9,13 @@ public abstract class QueryBase implements Query {
     private final Graph graph;
     private final Parameters parameters;
 
-    protected QueryBase(Graph graph, Authorizations authorizations) {
+    protected QueryBase(Graph graph, String queryString, Authorizations authorizations) {
         this.graph = graph;
-        this.parameters = createParameters(authorizations);
+        this.parameters = createParameters(queryString, authorizations);
     }
 
-    protected Parameters createParameters(Authorizations authorizations) {
-        return new Parameters(authorizations);
+    protected Parameters createParameters(String queryString, Authorizations authorizations) {
+        return new Parameters(queryString, authorizations);
     }
 
     @Override
@@ -81,16 +81,22 @@ public abstract class QueryBase implements Query {
 
     public static class Parameters {
         private final Authorizations authorizations;
+        private final String queryString;
         private long limit = 100;
         private long skip = 0;
         private final List<HasContainer> hasContainers = new ArrayList<HasContainer>();
 
-        public Parameters(Authorizations authorizations) {
+        public Parameters(String queryString, Authorizations authorizations) {
+            this.queryString = queryString;
             this.authorizations = authorizations;
         }
 
         public void addHasContainer(HasContainer hasContainer) {
             this.hasContainers.add(hasContainer);
+        }
+
+        public String getQueryString() {
+            return queryString;
         }
 
         public long getLimit() {

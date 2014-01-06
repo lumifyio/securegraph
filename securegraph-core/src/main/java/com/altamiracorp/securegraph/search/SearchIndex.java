@@ -12,7 +12,7 @@ public interface SearchIndex {
 
     void removeElement(Graph graph, Element element);
 
-    GraphQuery queryGraph(Graph graph, Authorizations authorizations);
+    GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations);
 
-    VertexQuery queryVertex(Graph graph, Vertex vertex, Authorizations authorizations);
+    VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations);
 }

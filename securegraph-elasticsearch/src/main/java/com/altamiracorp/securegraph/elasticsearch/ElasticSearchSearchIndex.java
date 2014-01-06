@@ -201,12 +201,12 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     }
 
     @Override
-    public GraphQuery queryGraph(Graph graph, Authorizations authorizations) {
-        return new ElasticSearchGraphQuery(client, indexName, graph, authorizations);
+    public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
+        return new ElasticSearchGraphQuery(client, indexName, graph, queryString, authorizations);
     }
 
     @Override
-    public VertexQuery queryVertex(Graph graph, Vertex vertex, Authorizations authorizations) {
-        return new DefaultVertexQuery(graph, vertex, authorizations);
+    public VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations) {
+        return new DefaultVertexQuery(graph, vertex, queryString, authorizations);
     }
 }

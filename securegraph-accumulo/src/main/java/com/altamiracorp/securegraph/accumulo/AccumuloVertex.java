@@ -65,7 +65,12 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public VertexQuery query(Authorizations authorizations) {
-        return getGraph().getSearchIndex().queryVertex(getGraph(), this, authorizations);
+        return query(null, authorizations);
+    }
+
+    @Override
+    public VertexQuery query(String queryString, Authorizations authorizations) {
+        return getGraph().getSearchIndex().queryVertex(getGraph(), this, queryString, authorizations);
     }
 
     void addOutEdge(AccumuloEdge edge) {
