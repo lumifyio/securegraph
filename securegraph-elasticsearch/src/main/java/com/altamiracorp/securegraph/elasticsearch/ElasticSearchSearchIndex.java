@@ -1,10 +1,12 @@
 package com.altamiracorp.securegraph.elasticsearch;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.DefaultVertexQuery;
 import com.altamiracorp.securegraph.query.GraphQuery;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.search.SearchIndex;
+import com.altamiracorp.securegraph.util.StreamUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
@@ -102,7 +104,20 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             }
 
             for (Property property : element.getProperties()) {
-                jsonBuilder.field(property.getName(), property.getValue());
+                Object propertyValue = property.getValue();
+                if (propertyValue instanceof StreamingPropertyValue) {
+                    StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
+                    if (!streamingPropertyValue.isSearchIndex()) {
+                        continue;
+                    }
+                    Class valueType = streamingPropertyValue.getValueType();
+                    if (valueType == String.class) {
+                        propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream(null));
+                    } else {
+                        throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
+                    }
+                }
+                jsonBuilder.field(property.getName(), propertyValue);
             }
 
             IndexResponse response = client
@@ -145,7 +160,17 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 .startObject("properties")
                 .startObject(propertyName);
 
-        Class dataType = property.getValue().getClass();
+        Class dataType;
+        Object propertyValue = property.getValue();
+        if (propertyValue instanceof StreamingPropertyValue) {
+            StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
+            if (!streamingPropertyValue.isSearchIndex()) {
+                return;
+            }
+            dataType = streamingPropertyValue.getValueType();
+        } else {
+            dataType = propertyValue.getClass();
+        }
 
         if (dataType == String.class) {
             LOGGER.debug("Registering string type for {}", propertyName);
