@@ -2,7 +2,6 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.Edge;
 import com.altamiracorp.securegraph.SecureGraphException;
-import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
@@ -17,8 +16,8 @@ public class EdgeMaker extends ElementMaker<Edge> {
     private String outVertexId;
     private String label;
 
-    public EdgeMaker(AccumuloGraph graph, ValueSerializer valueSerializer, Iterator<Map.Entry<Key, Value>> row) {
-        super(valueSerializer, row);
+    public EdgeMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
+        super(graph, row);
         this.graph = graph;
     }
 

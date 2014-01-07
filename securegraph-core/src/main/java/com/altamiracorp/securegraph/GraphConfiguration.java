@@ -37,6 +37,14 @@ public class GraphConfiguration {
         return o.toString();
     }
 
+    public long getConfigLong(String key, long defaultValue) {
+        Object o = getConfig(key, defaultValue);
+        if (o == null) {
+            return defaultValue;
+        }
+        return Long.valueOf(o.toString());
+    }
+
     public boolean getConfigBoolean(String key, boolean defaultValue) {
         Object o = getConfig(key, defaultValue);
         if (o instanceof Boolean) {

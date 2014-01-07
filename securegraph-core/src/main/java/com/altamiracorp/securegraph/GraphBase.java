@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
@@ -83,8 +84,8 @@ public abstract class GraphBase implements Graph {
     public abstract void removeEdge(Edge edge, Authorizations authorizations);
 
     @Override
-    public Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int hops, Authorizations authorizations) {
-        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, hops, authorizations);
+    public Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
+        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, authorizations);
     }
 
     @Override
@@ -118,11 +119,21 @@ public abstract class GraphBase implements Graph {
         return searchIndex;
     }
 
-    public void ensureIdsOnProperties(Property[] properties) {
-        for (Property property : properties) {
-            if (property.getId() == null) {
-                property.setId(getIdGenerator().nextId().toString());
-            }
-        }
+    @Override
+    public Property createProperty(String name, Object value, Visibility visibility) {
+        return createProperty(name, value, null, visibility);
     }
+
+    @Override
+    public Property createProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        return createProperty(getIdGenerator().nextId(), name, value, metadata, visibility);
+    }
+
+    @Override
+    public Property createProperty(Object id, String name, Object value, Visibility visibility) {
+        return createProperty(id, name, value, null, visibility);
+    }
+
+    @Override
+    public abstract Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility);
 }

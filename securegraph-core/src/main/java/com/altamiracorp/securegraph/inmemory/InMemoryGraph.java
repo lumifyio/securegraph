@@ -17,7 +17,6 @@ public class InMemoryGraph extends GraphBase {
 
     @Override
     public Vertex addVertex(Object vertexId, Visibility visibility, Property... properties) {
-        ensureIdsOnProperties(properties);
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
@@ -61,7 +60,6 @@ public class InMemoryGraph extends GraphBase {
 
     @Override
     public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties) {
-        ensureIdsOnProperties(properties);
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
         }
@@ -101,6 +99,11 @@ public class InMemoryGraph extends GraphBase {
         }
         this.edges.remove(edge.getId());
         getSearchIndex().removeElement(this, edge);
+    }
+
+    @Override
+    public Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        return new InMemoryProperty(id, name, value, metadata, visibility);
     }
 
     @Override

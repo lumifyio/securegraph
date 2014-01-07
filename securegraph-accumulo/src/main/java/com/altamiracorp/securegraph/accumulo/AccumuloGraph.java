@@ -4,8 +4,12 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
+import com.altamiracorp.securegraph.property.PropertyBase;
+import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.search.SearchIndex;
+import com.altamiracorp.securegraph.util.LimitOutputStream;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
+import com.altamiracorp.securegraph.util.StreamUtils;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
@@ -13,39 +17,50 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class AccumuloGraph extends GraphBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
-
     private static final Text EMPTY_TEXT = new Text("");
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
-    public static final String PROPERTY_ID_NAME_SEPERATOR = "\u001f";
+    public static final String DATA_ROW_KEY_PREFIX = "D";
+    public static final String VALUE_SEPERATOR = "\u001f";
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private BatchWriter writer;
     private final Object writerLock = new Object();
+    private long maxStreamingPropertyValueTableDataSize;
+    private final FileSystem fileSystem;
+    private String dataDir;
 
-    protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, ValueSerializer valueSerializer) {
+    protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, FileSystem fileSystem, ValueSerializer valueSerializer) {
         super(config, idGenerator, searchIndex);
         this.connector = connector;
+        this.fileSystem = fileSystem;
         this.valueSerializer = valueSerializer;
+        this.maxStreamingPropertyValueTableDataSize = config.getMaxStreamingPropertyValueTableDataSize();
+        this.dataDir = config.getDataDir();
     }
 
-    public static AccumuloGraph create(AccumuloGraphConfiguration config) throws AccumuloSecurityException, AccumuloException, SecureGraphException {
+    public static AccumuloGraph create(AccumuloGraphConfiguration config) throws AccumuloSecurityException, AccumuloException, SecureGraphException, InterruptedException, IOException, URISyntaxException {
         if (config == null) {
             throw new IllegalArgumentException("config cannot be null");
         }
         Connector connector = config.createConnector();
+        FileSystem fs = config.createFileSystem();
         ValueSerializer valueSerializer = config.createValueSerializer();
         SearchIndex searchIndex = config.createSearchIndex();
         IdGenerator idGenerator = config.createIdGenerator();
         ensureTableExists(connector, config.getTableName());
-        return new AccumuloGraph(config, idGenerator, searchIndex, connector, valueSerializer);
+        return new AccumuloGraph(config, idGenerator, searchIndex, connector, fs, valueSerializer);
     }
 
     private static void ensureTableExists(Connector connector, String tableName) {
@@ -58,23 +73,23 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
-    public static AccumuloGraph create(Map config) throws AccumuloSecurityException, AccumuloException, SecureGraphException {
+    public static AccumuloGraph create(Map config) throws AccumuloSecurityException, AccumuloException, SecureGraphException, InterruptedException, IOException, URISyntaxException {
         return create(new AccumuloGraphConfiguration(config));
     }
 
     @Override
     public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Property... properties) {
-        ensureIdsOnProperties(properties);
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
         AccumuloVertex vertex = new AccumuloVertex(this, vertexId, vertexVisibility, properties);
 
-        Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + vertex.getId());
+        String vertexRowKey = AccumuloVertex.ROW_KEY_PREFIX + vertex.getId();
+        Mutation m = new Mutation(vertexRowKey);
         m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, new ColumnVisibility(vertexVisibility.getVisibilityString()), EMPTY_VALUE);
         for (Property property : vertex.getProperties()) {
-            addPropertyToMutation(m, property);
+            addPropertyToMutation(m, vertexRowKey, property);
         }
         addMutations(m);
 
@@ -86,9 +101,10 @@ public class AccumuloGraph extends GraphBase {
     void saveProperties(AccumuloElement element, Property[] properties) {
         String rowPrefix = getRowPrefixForElement(element);
 
-        Mutation m = new Mutation(rowPrefix + element.getId());
+        String elementRowKey = rowPrefix + element.getId();
+        Mutation m = new Mutation(elementRowKey);
         for (Property property : properties) {
-            addPropertyToMutation(m, property);
+            addPropertyToMutation(m, elementRowKey, property);
         }
         addMutations(m);
 
@@ -115,17 +131,68 @@ public class AccumuloGraph extends GraphBase {
         throw new SecureGraphException("Unexpected element type: " + element.getClass().getName());
     }
 
-    private void addPropertyToMutation(Mutation m, Property property) {
-        Text columnQualifier = new Text(property.getName() + PROPERTY_ID_NAME_SEPERATOR + property.getId());
+    private void addPropertyToMutation(Mutation m, String rowKey, Property property) {
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPERATOR + property.getId());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
-        Value value = new Value(getValueSerializer().objectToValue(property.getValue()));
+        Object propertyValue = property.getValue();
+        if (propertyValue instanceof StreamingPropertyValue) {
+            StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue, columnVisibility);
+            ((PropertyBase) property).setValue(streamingPropertyValueRef.toStreamingPropertyValue(this));
+            propertyValue = streamingPropertyValueRef;
+        }
+        Value value = new Value(getValueSerializer().objectToValue(propertyValue));
         m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);
-        Value metadataValue = new Value(getValueSerializer().objectToValue(property.getMetadata()));
-        m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
+        if (property.getMetadata() != null) {
+            Value metadataValue = new Value(getValueSerializer().objectToValue(property.getMetadata()));
+            m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
+        }
+    }
+
+    private StreamingPropertyValueRef saveStreamingPropertyValue(String rowKey, Property property, StreamingPropertyValue propertyValue, ColumnVisibility columnVisibility) {
+        try {
+            HdfsLargeDataStore largeDataStore = new HdfsLargeDataStore(this.fileSystem);
+            LimitOutputStream out = new LimitOutputStream(largeDataStore, maxStreamingPropertyValueTableDataSize);
+            try {
+                StreamUtils.copy(propertyValue.getInputStream(null), out);
+            } finally {
+                out.close();
+            }
+
+            if (out.hasExceededSizeLimit()) {
+                return saveStreamingPropertyValueLarge(rowKey, property, largeDataStore, propertyValue.getValueType());
+            } else {
+                return saveStreamingPropertyValueSmall(rowKey, property, out.getSmall(), propertyValue.getValueType(), columnVisibility);
+            }
+        } catch (IOException ex) {
+            throw new SecureGraphException(ex);
+        }
+    }
+
+    private StreamingPropertyValueRef saveStreamingPropertyValueLarge(String rowKey, Property property, HdfsLargeDataStore largeDataStore, Class valueType) throws IOException {
+        Path dir = new Path(dataDir, rowKey);
+        fileSystem.mkdirs(dir);
+        Path path = new Path(dir, property.getName() + "_" + property.getId());
+        if (fileSystem.exists(path)) {
+            fileSystem.delete(path, true);
+        }
+        fileSystem.rename(largeDataStore.getFileName(), path);
+        return new StreamingPropertyValueHdfsRef(path, valueType);
+    }
+
+    private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, Class valueType, ColumnVisibility columnVisibility) {
+        String dataRowKey = createTableDataRowKey(rowKey, property);
+        Mutation dataMutation = new Mutation(dataRowKey);
+        dataMutation.put(EMPTY_TEXT, EMPTY_TEXT, columnVisibility, new Value(data));
+        addMutations(dataMutation);
+        return new StreamingPropertyValueTableRef(dataRowKey, valueType);
+    }
+
+    private String createTableDataRowKey(String rowKey, Property property) {
+        return DATA_ROW_KEY_PREFIX + VALUE_SEPERATOR + rowKey + VALUE_SEPERATOR + property.getName() + VALUE_SEPERATOR + property.getId();
     }
 
     private void addPropertyRemoveToMutation(Mutation m, Property property) {
-        Text columnQualifier = new Text(property.getName() + PROPERTY_ID_NAME_SEPERATOR + property.getId());
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPERATOR + property.getId());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
@@ -214,16 +281,16 @@ public class AccumuloGraph extends GraphBase {
             edgeId = getIdGenerator().nextId();
         }
 
-        ensureIdsOnProperties(properties);
         AccumuloEdge edge = new AccumuloEdge(this, edgeId, outVertex.getId(), inVertex.getId(), label, edgeVisibility, properties);
 
-        Mutation addEdgeMutation = new Mutation(AccumuloEdge.ROW_KEY_PREFIX + edge.getId());
+        String edgeRowKey = AccumuloEdge.ROW_KEY_PREFIX + edge.getId();
+        Mutation addEdgeMutation = new Mutation(edgeRowKey);
         ColumnVisibility edgeColumnVisibility = new ColumnVisibility(edgeVisibility.getVisibilityString());
         addEdgeMutation.put(AccumuloEdge.CF_SIGNAL, new Text(label), edgeColumnVisibility, EMPTY_VALUE);
         addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(outVertex.getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
         addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(inVertex.getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
         for (Property property : edge.getProperties()) {
-            addPropertyToMutation(addEdgeMutation, property);
+            addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
         }
 
         // Update out vertex.
@@ -323,6 +390,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
+    public Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        return new AccumuloProperty(id, name, value, metadata, visibility);
+    }
+
+    @Override
     public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
         Iterator<Vertex> vertices = getVerticesInRange(vertexId, vertexId, authorizations).iterator();
         if (vertices.hasNext()) {
@@ -331,7 +403,7 @@ public class AccumuloGraph extends GraphBase {
         return null;
     }
 
-    private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
+    private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final Scanner scanner = createVertexScanner(authorizations);
         final AccumuloGraph graph = this;
 
@@ -361,7 +433,7 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
-                VertexMaker maker = new VertexMaker(graph, valueSerializer, next);
+                VertexMaker maker = new VertexMaker(graph, next);
                 return maker.make();
             }
 
@@ -409,7 +481,7 @@ public class AccumuloGraph extends GraphBase {
         return null;
     }
 
-    private Iterable<Edge> getEdgesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
+    private Iterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final Scanner scanner = createEdgeScanner(authorizations);
         final AccumuloGraph graph = this;
 
@@ -439,7 +511,7 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
-                EdgeMaker maker = new EdgeMaker(graph, valueSerializer, next);
+                EdgeMaker maker = new EdgeMaker(graph, next);
                 return maker.make();
             }
 
@@ -448,5 +520,51 @@ public class AccumuloGraph extends GraphBase {
                 return new RowIterator(scanner.iterator());
             }
         };
+    }
+
+    private void printTable(Authorizations authorizations) {
+        try {
+            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
+            RowIterator it = new RowIterator(scanner.iterator());
+            while (it.hasNext()) {
+                boolean first = true;
+                Text lastColumnFamily = null;
+                Iterator<Map.Entry<Key, Value>> row = it.next();
+                while (row.hasNext()) {
+                    Map.Entry<Key, Value> col = row.next();
+                    if (first) {
+                        System.out.println("\"" + col.getKey().getRow() + "\"");
+                        first = false;
+                    }
+                    if (!col.getKey().getColumnFamily().equals(lastColumnFamily)) {
+                        System.out.println("  \"" + col.getKey().getColumnFamily() + "\"");
+                        lastColumnFamily = col.getKey().getColumnFamily();
+                    }
+                    System.out.println("    \"" + col.getKey().getColumnQualifier() + "\"(" + col.getKey().getColumnVisibility() + ")=\"" + col.getValue() + "\"");
+                }
+            }
+            System.out.flush();
+        } catch (TableNotFoundException e) {
+            throw new SecureGraphException(e);
+        }
+    }
+
+    public byte[] streamingPropertyValueTableData(String dataRowKey, Authorizations authorizations) {
+        try {
+            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
+            scanner.setRange(new Range(dataRowKey));
+            Iterator<Map.Entry<Key, Value>> it = scanner.iterator();
+            if (it.hasNext()) {
+                Map.Entry<Key, Value> col = it.next();
+                return col.getValue().get();
+            }
+        } catch (Exception ex) {
+            throw new SecureGraphException(ex);
+        }
+        throw new SecureGraphException("Unexpected end of row: " + dataRowKey);
+    }
+
+    public FileSystem getFileSystem() {
+        return fileSystem;
     }
 }

@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
@@ -66,11 +67,15 @@ public abstract class ElementBase implements Element {
             if (property.getId() == null) {
                 throw new IllegalArgumentException("id is required for property");
             }
+            Object propertyValue = property.getValue();
+            if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
+                continue;
+            }
             this.properties.put(property.getId() + property.getName(), property);
         }
     }
 
-    protected Property removePropertyInternal(String propertyId, String name) {
+    protected Property removePropertyInternal(Object propertyId, String name) {
         String key = propertyId + name;
         Property property = this.properties.get(key);
         this.properties.remove(key);
