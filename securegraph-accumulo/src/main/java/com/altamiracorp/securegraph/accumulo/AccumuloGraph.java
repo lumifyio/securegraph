@@ -333,6 +333,7 @@ public class AccumuloGraph extends GraphBase {
 
     private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
         final Scanner scanner = createVertexScanner(authorizations);
+        final AccumuloGraph graph = this;
 
         Key startKey;
         if (startId == null) {
@@ -360,7 +361,8 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
-                return createVertexFromRow(next);
+                VertexMaker maker = new VertexMaker(graph, valueSerializer, next);
+                return maker.make();
             }
 
             @Override
@@ -368,35 +370,6 @@ public class AccumuloGraph extends GraphBase {
                 return new RowIterator(scanner.iterator());
             }
         };
-    }
-
-    private Property[] toProperties(Map<String, String> propertyNames, Map<String, Object> propertyValues, Map<String, Visibility> propertyVisibilities, Map<String, Map<String, Object>> propertyMetadata) {
-        Property[] results = new Property[propertyValues.size()];
-        int i = 0;
-        for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
-            String propertyNameAndId = propertyValueEntry.getKey();
-            String propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
-            String propertyName = propertyNames.get(propertyNameAndId);
-            Object propertyValue = propertyValueEntry.getValue();
-            Visibility visibility = propertyVisibilities.get(propertyNameAndId);
-            Map<String, Object> metadata = propertyMetadata.get(propertyNameAndId);
-            results[i++] = new Property(propertyId, propertyName, propertyValue, visibility, metadata);
-        }
-        return results;
-    }
-
-    private String vertexIdFromRowKey(String rowKey) throws SecureGraphException {
-        if (rowKey.startsWith(AccumuloVertex.ROW_KEY_PREFIX)) {
-            return rowKey.substring(AccumuloVertex.ROW_KEY_PREFIX.length());
-        }
-        throw new SecureGraphException("Invalid row key for vertex: " + rowKey);
-    }
-
-    private String edgeIdFromRowKey(String rowKey) throws SecureGraphException {
-        if (rowKey.startsWith(AccumuloEdge.ROW_KEY_PREFIX)) {
-            return rowKey.substring(AccumuloEdge.ROW_KEY_PREFIX.length());
-        }
-        throw new SecureGraphException("Invalid row key for edge: " + rowKey);
     }
 
     private Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
@@ -438,6 +411,7 @@ public class AccumuloGraph extends GraphBase {
 
     private Iterable<Edge> getEdgesInRange(Object startId, Object endId, Authorizations authorizations) throws SecureGraphException {
         final Scanner scanner = createEdgeScanner(authorizations);
+        final AccumuloGraph graph = this;
 
         Key startKey;
         if (startId == null) {
@@ -465,7 +439,8 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
-                return createEdgeFromRow(next);
+                EdgeMaker maker = new EdgeMaker(graph, valueSerializer, next);
+                return maker.make();
             }
 
             @Override
@@ -473,194 +448,5 @@ public class AccumuloGraph extends GraphBase {
                 return new RowIterator(scanner.iterator());
             }
         };
-    }
-
-    private Vertex createVertexFromRow(Iterator<Map.Entry<Key, Value>> row) throws SecureGraphException {
-        String id = null;
-        Map<String, String> propertyNames = new HashMap<String, String>();
-        Map<String, Object> propertyValues = new HashMap<String, Object>();
-        Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
-        Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
-        HashSet<Object> inEdgeIds = new HashSet<Object>();
-        HashSet<Object> outEdgeIds = new HashSet<Object>();
-        Visibility vertexVisibility = null;
-
-        while (row.hasNext()) {
-            Map.Entry<Key, Value> col = row.next();
-            if (id == null) {
-                id = vertexIdFromRowKey(col.getKey().getRow().toString());
-            }
-            Text columnFamily = col.getKey().getColumnFamily();
-            Text columnQualifier = col.getKey().getColumnQualifier();
-            ColumnVisibility columnVisibility = new ColumnVisibility(col.getKey().getColumnVisibility().toString());
-            Value value = col.getValue();
-
-            if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
-                Object v = getValueSerializer().valueToObject(value);
-                String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
-                propertyNames.put(columnQualifier.toString(), propertyName);
-                propertyValues.put(columnQualifier.toString(), v);
-                propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
-                continue;
-            }
-
-            if (AccumuloElement.CF_PROPERTY_METADATA.toString().equals(columnFamily.toString())) {
-                Object o = getValueSerializer().valueToObject(value);
-                if (o == null) {
-                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found null.");
-                } else if (o instanceof Map) {
-                    Map v = (Map) o;
-                    propertyMetadata.put(columnQualifier.toString(), v);
-                } else {
-                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found " + o.getClass().getName() + ".");
-                }
-                continue;
-            }
-
-            if (AccumuloVertex.CF_SIGNAL.toString().equals(columnFamily.toString())) {
-                vertexVisibility = accumuloVisibilityToVisibility(columnVisibility);
-                continue;
-            }
-
-            if (AccumuloVertex.CF_OUT_EDGE.toString().equals(columnFamily.toString())) {
-                outEdgeIds.add(columnQualifier.toString());
-                continue;
-            }
-
-            if (AccumuloVertex.CF_IN_EDGE.toString().equals(columnFamily.toString())) {
-                inEdgeIds.add(columnQualifier.toString());
-                continue;
-            }
-
-            LOGGER.debug("Unhandled column {} {}", columnFamily, columnQualifier);
-        }
-
-        if (vertexVisibility == null) {
-            throw new SecureGraphException("Invalid vertex visibility. This could occur if other columns are returned without the vertex signal column being returned.");
-        }
-        Property[] properties = toProperties(propertyNames, propertyValues, propertyVisibilities, propertyMetadata);
-        return new AccumuloVertex(this, id, vertexVisibility, properties, inEdgeIds, outEdgeIds);
-    }
-
-    private String getPropertyIdFromColumnQualifier(String columnQualifier) {
-        int i = columnQualifier.indexOf(PROPERTY_ID_NAME_SEPERATOR);
-        if (i < 0) {
-            throw new SecureGraphException("Invalid property column qualifier");
-        }
-        return columnQualifier.substring(i + 1);
-    }
-
-    private String getPropertyNameFromColumnQualifier(String columnQualifier) {
-        int i = columnQualifier.indexOf(PROPERTY_ID_NAME_SEPERATOR);
-        if (i < 0) {
-            throw new SecureGraphException("Invalid property column qualifier");
-        }
-        return columnQualifier.substring(0, i);
-    }
-
-    private Edge createEdgeFromRow(Iterator<Map.Entry<Key, Value>> row) {
-        String id = null;
-        Map<String, String> propertyNames = new HashMap<String, String>();
-        Map<String, Object> propertyValues = new HashMap<String, Object>();
-        Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
-        Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
-        String outVertexId = null;
-        String inVertexId = null;
-        String label = null;
-        Visibility edgeVisibility = null;
-
-        while (row.hasNext()) {
-            Map.Entry<Key, Value> col = row.next();
-            if (id == null) {
-                id = edgeIdFromRowKey(col.getKey().getRow().toString());
-            }
-            Text columnFamily = col.getKey().getColumnFamily();
-            Text columnQualifier = col.getKey().getColumnQualifier();
-            ColumnVisibility columnVisibility = new ColumnVisibility(col.getKey().getColumnVisibility().toString());
-            Value value = col.getValue();
-
-            // TODO this is duplicate logic from createVertexFromRow
-            if (AccumuloElement.CF_PROPERTY.toString().equals(columnFamily.toString())) {
-                Object v = getValueSerializer().valueToObject(value);
-                String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
-                propertyNames.put(columnQualifier.toString(), propertyName);
-                propertyValues.put(columnQualifier.toString(), v);
-                propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
-                continue;
-            }
-
-            // TODO this is duplicate logic from createVertexFromRow
-            if (AccumuloElement.CF_PROPERTY_METADATA.toString().equals(columnFamily.toString())) {
-                Object o = getValueSerializer().valueToObject(value);
-                if (o == null) {
-                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found null.");
-                } else if (o instanceof Map) {
-                    Map v = (Map) o;
-                    propertyMetadata.put(columnQualifier.toString(), v);
-                } else {
-                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found " + o.getClass().getName() + ".");
-                }
-                continue;
-            }
-
-            if (AccumuloEdge.CF_SIGNAL.toString().equals(columnFamily.toString())) {
-                edgeVisibility = accumuloVisibilityToVisibility(columnVisibility);
-                label = columnQualifier.toString();
-                continue;
-            }
-
-            if (AccumuloEdge.CF_IN_VERTEX.toString().equals(columnFamily.toString())) {
-                inVertexId = columnQualifier.toString();
-                continue;
-            }
-
-            if (AccumuloEdge.CF_OUT_VERTEX.toString().equals(columnFamily.toString())) {
-                outVertexId = columnQualifier.toString();
-                continue;
-            }
-
-            LOGGER.debug("Unhandled column {} {}", columnFamily, columnQualifier);
-        }
-
-        if (edgeVisibility == null) {
-            throw new SecureGraphException("Invalid vertex visibility. This could occur if other columns are returned without the vertex signal column being returned.");
-        }
-        Property[] properties = toProperties(propertyNames, propertyValues, propertyVisibilities, propertyMetadata);
-        return new AccumuloEdge(this, id, outVertexId, inVertexId, label, edgeVisibility, properties);
-    }
-
-    private Visibility accumuloVisibilityToVisibility(ColumnVisibility columnVisibility) {
-        String columnVisibilityString = columnVisibility.toString();
-        if (columnVisibilityString.startsWith("[") && columnVisibilityString.endsWith("]")) {
-            return new Visibility(columnVisibilityString.substring(1, columnVisibilityString.length() - 1));
-        }
-        return new Visibility(columnVisibilityString);
-    }
-
-    private void printTable(Authorizations authorizations) {
-        try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
-            RowIterator it = new RowIterator(scanner.iterator());
-            while (it.hasNext()) {
-                boolean first = true;
-                Text lastColumnFamily = null;
-                Iterator<Map.Entry<Key, Value>> row = it.next();
-                while (row.hasNext()) {
-                    Map.Entry<Key, Value> col = row.next();
-                    if (first) {
-                        System.out.println("\"" + col.getKey().getRow() + "\"");
-                        first = false;
-                    }
-                    if (!col.getKey().getColumnFamily().equals(lastColumnFamily)) {
-                        System.out.println("  \"" + col.getKey().getColumnFamily() + "\"");
-                        lastColumnFamily = col.getKey().getColumnFamily();
-                    }
-                    System.out.println("    \"" + col.getKey().getColumnQualifier() + "\"(" + col.getKey().getColumnVisibility() + ")=\"" + col.getValue() + "\"");
-                }
-            }
-            System.out.flush();
-        } catch (TableNotFoundException e) {
-            throw new SecureGraphException(e);
-        }
     }
 }
