@@ -175,6 +175,8 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             throw new SecureGraphException("Unexpected value type: " + dataType.getName());
         }
 
+        mapping.field("store", "no");
+
         mapping
                 .endObject()
                 .endObject()

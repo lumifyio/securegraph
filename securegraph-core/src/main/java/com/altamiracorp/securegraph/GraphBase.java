@@ -1,16 +1,21 @@
 package com.altamiracorp.securegraph;
 
 import com.altamiracorp.securegraph.id.IdGenerator;
+import com.altamiracorp.securegraph.path.PathFindingAlgorithm;
+import com.altamiracorp.securegraph.path.RecursivePathFindingAlgorithm;
 import com.altamiracorp.securegraph.query.GraphQuery;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
     private final GraphConfiguration configuration;
     private final IdGenerator idGenerator;
     private final SearchIndex searchIndex;
+    private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
 
     protected GraphBase(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this.configuration = configuration;
@@ -76,6 +81,11 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public abstract void removeEdge(Edge edge, Authorizations authorizations);
+
+    @Override
+    public Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int hops, Authorizations authorizations) {
+        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, hops, authorizations);
+    }
 
     @Override
     public void removeEdge(String edgeId, Authorizations authorizations) {

@@ -13,6 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
@@ -431,5 +433,40 @@ public abstract class GraphTestBase {
 
         edges = v1.query(AUTHORIZATIONS_A).edges(Direction.OUT);
         assertEquals(1, count(edges));
+    }
+
+    @Test
+    public void testFindPaths() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A);
+        Vertex v4 = graph.addVertex("v4", VISIBILITY_A);
+        graph.addEdge(v1, v2, "knows", VISIBILITY_A);
+        graph.addEdge(v2, v4, "knows", VISIBILITY_A);
+        graph.addEdge(v1, v3, "knows", VISIBILITY_A);
+        graph.addEdge(v3, v4, "knows", VISIBILITY_A);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
+        Iterable<List<Object>> paths = graph.findPaths(v1, v4, 2, AUTHORIZATIONS_A);
+        assertEquals(2, count(paths));
+        Iterator<List<Object>> it = paths.iterator();
+        boolean found2 = false;
+        boolean found3 = false;
+        while (it.hasNext()) {
+            List<Object> path = it.next();
+            assertEquals(3, path.size());
+            assertEquals(path.get(0), v1.getId());
+            if (v2.getId().equals(path.get(1))) {
+                found2 = true;
+            } else if (v3.getId().equals(path.get(1))) {
+                found3 = true;
+            } else {
+                fail("center of path is neither v2 or v3 but found " + path.get(1));
+            }
+            assertEquals(path.get(2), v4.getId());
+        }
+        assertTrue("v2 not found in path", found2);
+        assertTrue("v3 not found in path", found3);
     }
 }
