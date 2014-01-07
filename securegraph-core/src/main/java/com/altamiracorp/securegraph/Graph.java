@@ -2,6 +2,8 @@ package com.altamiracorp.securegraph;
 
 import com.altamiracorp.securegraph.query.GraphQuery;
 
+import java.util.List;
+
 public interface Graph {
     Vertex addVertex(Visibility visibility, Property... properties);
 
@@ -32,4 +34,6 @@ public interface Graph {
     GraphQuery query(Authorizations authorizations);
 
     void shutdown();
+
+    Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int hops, Authorizations authorizations);
 }

@@ -49,6 +49,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
+        // TODO this should be optimized for path finding by skipping the edges and storing the other vertex ids
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
             @Override
             protected Vertex convert(Edge o) {
