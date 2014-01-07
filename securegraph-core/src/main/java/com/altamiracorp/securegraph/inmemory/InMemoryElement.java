@@ -1,9 +1,11 @@
 package com.altamiracorp.securegraph.inmemory;
 
-import com.altamiracorp.securegraph.ElementBase;
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.Property;
-import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.property.PropertyBase;
+import com.altamiracorp.securegraph.property.StreamingPropertyValue;
+import com.altamiracorp.securegraph.util.StreamUtils;
+
+import java.io.IOException;
 
 public abstract class InMemoryElement extends ElementBase {
     protected InMemoryElement(Graph graph, Object id, Visibility visibility, Property[] properties) {
@@ -30,13 +32,23 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    public void setPropertiesInternal(Property[] properties) {
-        getGraph().ensureIdsOnProperties(properties);
-        super.setPropertiesInternal(properties);
+    protected void setPropertiesInternal(Property[] properties) {
+        try {
+            for (Property property : properties) {
+                if (property.getValue() instanceof StreamingPropertyValue) {
+                    StreamingPropertyValue value = (StreamingPropertyValue) property.getValue();
+                    byte[] valueData = StreamUtils.toBytes(value.getInputStream(null));
+                    ((PropertyBase) property).setValue(new InMemoryStreamingPropertyValue(valueData, value.getValueType()));
+                }
+            }
+            super.setPropertiesInternal(properties);
+        } catch (IOException ex) {
+            throw new SecureGraphException(ex);
+        }
     }
 
     @Override
-    public Property removePropertyInternal(String propertyId, String name) {
+    protected Property removePropertyInternal(Object propertyId, String name) {
         return super.removePropertyInternal(propertyId, name);
     }
 }

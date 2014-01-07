@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.accumulo.helpers;
 
 import com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration;
+import com.altamiracorp.securegraph.test.GraphTestBase;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.slf4j.Logger;
@@ -54,6 +55,8 @@ public class TestAccumuloCluster {
         configMap.put(AccumuloGraphConfiguration.ACCUMULO_USERNAME, ACCUMULO_USERNAME);
         configMap.put(AccumuloGraphConfiguration.ACCUMULO_PASSWORD, ACCUMULO_PASSWORD);
         configMap.put(AccumuloGraphConfiguration.AUTO_FLUSH, true);
+        configMap.put(AccumuloGraphConfiguration.MAX_STREAMING_PROPERTY_VALUE_TABLE_DATA_SIZE, GraphTestBase.LARGE_PROPERTY_VALUE_SIZE - 1);
+        configMap.put(AccumuloGraphConfiguration.DATA_DIR, "/tmp/");
         config = new AccumuloGraphConfiguration(configMap);
     }
 

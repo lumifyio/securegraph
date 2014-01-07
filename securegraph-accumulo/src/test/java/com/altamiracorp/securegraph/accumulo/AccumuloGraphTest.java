@@ -11,10 +11,13 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
 @RunWith(JUnit4.class)
 public class AccumuloGraphTest extends GraphTestBase {
     @Override
-    protected Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException {
+    protected Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException, InterruptedException, IOException, URISyntaxException {
         return TestHelpers.createGraph();
     }
 

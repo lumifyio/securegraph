@@ -1,7 +1,10 @@
 package com.altamiracorp.securegraph.test;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.property.PropertyValue;
+import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
+import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -11,7 +14,6 @@ import org.junit.runners.JUnit4;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,6 +31,7 @@ public abstract class GraphTestBase {
     private static final Authorizations AUTHORIZATIONS_B = new Authorizations("b");
     private static final Authorizations AUTHORIZATIONS_C = new Authorizations("c");
     private static final Authorizations AUTHORIZATIONS_A_AND_B = new Authorizations("a", "b");
+    public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
 
     private Graph graph;
 
@@ -69,18 +72,50 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testAddBigDataProperty() throws IOException {
-        graph.addVertex("v1", VISIBILITY_A,
-                new Property("prop1", new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), "text/plain"), VISIBILITY_A));
+    public void testAddStreamingPropertyValue() throws IOException, InterruptedException {
+        String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(LARGE_PROPERTY_VALUE_SIZE));
+        PropertyValue propSmall = new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), String.class);
+        PropertyValue propLarge = new StreamingPropertyValue(new ByteArrayInputStream(expectedLargeValue.getBytes()), String.class);
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A,
+                graph.createProperty("propSmall", propSmall, VISIBILITY_A),
+                graph.createProperty("propLarge", propLarge, VISIBILITY_A));
 
-        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        Iterable<Object> prop1Values = v1.getPropertyValues("prop1");
-        assertEquals(1, count(prop1Values));
-        Object val = prop1Values.iterator().next();
-        assertTrue(val instanceof StreamingPropertyValue);
-        StreamingPropertyValue value = (StreamingPropertyValue) val;
-        assertEquals("text/plain", value.getContentType());
-        assertEquals("value1", IOUtils.toString(value.getInputStream()));
+        Iterable<Object> propSmallValues = v1.getPropertyValues("propSmall");
+        assertEquals(1, count(propSmallValues));
+        Object propSmallValue = propSmallValues.iterator().next();
+        assertTrue("propSmallValue was " + propSmallValue.getClass().getName(), propSmallValue instanceof StreamingPropertyValue);
+        StreamingPropertyValue value = (StreamingPropertyValue) propSmallValue;
+        assertEquals(String.class, value.getValueType());
+        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+
+        Iterable<Object> propLargeValues = v1.getPropertyValues("propLarge");
+        assertEquals(1, count(propLargeValues));
+        Object propLargeValue = propLargeValues.iterator().next();
+        assertTrue("propLargeValue was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
+        value = (StreamingPropertyValue) propLargeValue;
+        assertEquals(String.class, value.getValueType());
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        propSmallValues = v1.getPropertyValues("propSmall");
+        assertEquals(1, count(propSmallValues));
+        propSmallValue = propSmallValues.iterator().next();
+        assertTrue("propSmallValue was " + propSmallValue.getClass().getName(), propSmallValue instanceof StreamingPropertyValue);
+        value = (StreamingPropertyValue) propSmallValue;
+        assertEquals(String.class, value.getValueType());
+        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+
+        propLargeValues = v1.getPropertyValues("propLarge");
+        assertEquals(1, count(propLargeValues));
+        propLargeValue = propLargeValues.iterator().next();
+        assertTrue("propLargeValue was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
+        value = (StreamingPropertyValue) propLargeValue;
+        assertEquals(String.class, value.getValueType());
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
     }
 
     @Test
@@ -89,7 +124,7 @@ public abstract class GraphTestBase {
         prop1Metadata.put("metadata1", "metadata1Value");
 
         graph.addVertex("v1", VISIBILITY_A,
-                new Property("", "prop1", "value1", VISIBILITY_A, prop1Metadata));
+                graph.createProperty("", "prop1", "value1", prop1Metadata, VISIBILITY_A));
 
         Vertex v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(1, count(v.getProperties("prop1")));
@@ -100,7 +135,7 @@ public abstract class GraphTestBase {
         assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
 
         prop1Metadata.put("metadata2", "metadata2Value");
-        v.setProperties(new Property("", "prop1", "value1", VISIBILITY_A, prop1Metadata));
+        v.setProperties(graph.createProperty("", "prop1", "value1", prop1Metadata, VISIBILITY_A));
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(1, count(v.getProperties("prop1")));
@@ -114,8 +149,8 @@ public abstract class GraphTestBase {
     @Test
     public void testAddVertexWithProperties() {
         Vertex v = graph.addVertex("v1", VISIBILITY_A,
-                new Property("prop1", "value1", VISIBILITY_A),
-                new Property("prop2", "value2", VISIBILITY_B));
+                graph.createProperty("prop1", "value1", VISIBILITY_A),
+                graph.createProperty("prop2", "value2", VISIBILITY_B));
         assertEquals(1, count(v.getProperties("prop1")));
         assertEquals("value1", v.getPropertyValues("prop1").iterator().next());
         assertEquals(1, count(v.getProperties("prop2")));
@@ -133,9 +168,9 @@ public abstract class GraphTestBase {
         Vertex v = graph.addVertex("v1", VISIBILITY_A);
 
         v.setProperties(
-                new Property("propid1a", "prop1", "value1a", VISIBILITY_A),
-                new Property("propid2a", "prop2", "value2a", VISIBILITY_A),
-                new Property("propid3a", "prop3", "value3a", VISIBILITY_A));
+                graph.createProperty("propid1a", "prop1", "value1a", VISIBILITY_A),
+                graph.createProperty("propid2a", "prop2", "value2a", VISIBILITY_A),
+                graph.createProperty("propid3a", "prop3", "value3a", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals("value1a", v.getPropertyValues("prop1").iterator().next());
         assertEquals("value2a", v.getPropertyValues("prop2").iterator().next());
@@ -143,8 +178,8 @@ public abstract class GraphTestBase {
         assertEquals(3, count(v.getProperties()));
 
         v.setProperties(
-                new Property("propid1a", "prop1", "value1b", VISIBILITY_A),
-                new Property("propid2a", "prop2", "value2b", VISIBILITY_A));
+                graph.createProperty("propid1a", "prop1", "value1b", VISIBILITY_A),
+                graph.createProperty("propid2a", "prop2", "value2b", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(1, count(v.getPropertyValues("prop1")));
         assertEquals("value1b", v.getPropertyValues("prop1").iterator().next());
@@ -154,7 +189,7 @@ public abstract class GraphTestBase {
         assertEquals("value3a", v.getPropertyValues("prop3").iterator().next());
         assertEquals(3, count(v.getProperties()));
 
-        v.setProperties(new Property("propid1b", "prop1", "value1a-new", VISIBILITY_A));
+        v.setProperties(graph.createProperty("propid1b", "prop1", "value1a-new", VISIBILITY_A));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertContains("value1b", v.getPropertyValues("prop1"));
         assertContains("value1a-new", v.getPropertyValues("prop1"));
@@ -201,7 +236,7 @@ public abstract class GraphTestBase {
     @Test
     public void testRemoveVertexWithProperties() {
         graph.addVertex("v1", VISIBILITY_A,
-                new Property("prop1", "value1", VISIBILITY_B));
+                graph.createProperty("prop1", "value1", VISIBILITY_B));
 
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
@@ -249,8 +284,8 @@ public abstract class GraphTestBase {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
         graph.addEdge("e1", v1, v2, "label1", VISIBILITY_A,
-                new Property("propA", "valueA", VISIBILITY_A),
-                new Property("propB", "valueB", VISIBILITY_B));
+                graph.createProperty("propA", "valueA", VISIBILITY_A),
+                graph.createProperty("propB", "valueB", VISIBILITY_B));
 
         Edge e = graph.getEdge("e1", AUTHORIZATIONS_A);
         assertEquals(1, count(e.getProperties()));
@@ -336,9 +371,9 @@ public abstract class GraphTestBase {
     @Test
     public void testGraphQueryWithQueryString() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
-        v1.setProperties(new Property("description", "This is vertex 1 - dog.", VISIBILITY_A));
+        v1.setProperties(graph.createProperty("description", "This is vertex 1 - dog.", VISIBILITY_A));
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
-        v2.setProperties(new Property("description", "This is vertex 2 - cat.", VISIBILITY_A));
+        v2.setProperties(graph.createProperty("description", "This is vertex 2 - cat.", VISIBILITY_A));
 
         Iterable<Vertex> vertices = graph.query("vertex", AUTHORIZATIONS_A).vertices();
         assertEquals(2, count(vertices));
@@ -354,9 +389,9 @@ public abstract class GraphTestBase {
     @Test
     public void testGraphQueryHas() {
         graph.addVertex("v1", VISIBILITY_A,
-                new Property("age", 25, VISIBILITY_A));
+                graph.createProperty("age", 25, VISIBILITY_A));
         graph.addVertex("v2", VISIBILITY_A,
-                new Property("age", 30, VISIBILITY_A));
+                graph.createProperty("age", 30, VISIBILITY_A));
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
                 .has("age", Compare.EQUAL, 25)
@@ -397,9 +432,9 @@ public abstract class GraphTestBase {
     @Test
     public void testGraphQueryRange() {
         graph.addVertex("v1", VISIBILITY_A,
-                new Property("age", 25, VISIBILITY_A));
+                graph.createProperty("age", 25, VISIBILITY_A));
         graph.addVertex("v2", VISIBILITY_A,
-                new Property("age", 30, VISIBILITY_A));
+                graph.createProperty("age", 30, VISIBILITY_A));
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
                 .range("age", 25, 25)

@@ -3,6 +3,7 @@ package com.altamiracorp.securegraph;
 import com.altamiracorp.securegraph.query.GraphQuery;
 
 import java.util.List;
+import java.util.Map;
 
 public interface Graph {
     Vertex addVertex(Visibility visibility, Property... properties);
@@ -35,5 +36,13 @@ public interface Graph {
 
     void shutdown();
 
-    Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int hops, Authorizations authorizations);
+    Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);
+
+    Property createProperty(String name, Object value, Visibility visibility);
+
+    Property createProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility);
+
+    Property createProperty(Object id, String name, Object value, Visibility visibility);
+
+    Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility);
 }

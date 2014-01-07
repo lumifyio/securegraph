@@ -9,8 +9,11 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
 public class TestHelpers {
-    public static Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException {
+    public static Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException, InterruptedException, IOException, URISyntaxException {
         return AccumuloGraph.create(TestAccumuloCluster.getConfig());
     }
 
