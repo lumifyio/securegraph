@@ -188,7 +188,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private String createTableDataRowKey(String rowKey, Property property) {
-        return DATA_ROW_KEY_PREFIX + VALUE_SEPERATOR + rowKey + VALUE_SEPERATOR + property.getName() + VALUE_SEPERATOR + property.getId();
+        return DATA_ROW_KEY_PREFIX + rowKey + VALUE_SEPERATOR + property.getName() + VALUE_SEPERATOR + property.getId();
     }
 
     private void addPropertyRemoveToMutation(Mutation m, Property property) {
