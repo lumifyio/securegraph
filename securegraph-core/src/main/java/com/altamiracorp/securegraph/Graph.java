@@ -34,6 +34,8 @@ public interface Graph {
 
     GraphQuery query(Authorizations authorizations);
 
+    void flush();
+
     void shutdown();
 
     Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);

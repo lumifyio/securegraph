@@ -206,7 +206,7 @@ public class AccumuloGraph extends GraphBase {
                     writer.addMutation(m);
                 }
                 if (getConfiguration().isAutoFlush()) {
-                    writer.flush();
+                    flush();
                 }
             }
         } catch (MutationsRejectedException ex) {
@@ -223,7 +223,7 @@ public class AccumuloGraph extends GraphBase {
                     writer.addMutation(m);
                 }
                 if (getConfiguration().isAutoFlush()) {
-                    writer.flush();
+                    flush();
                 }
             }
         } catch (MutationsRejectedException ex) {
@@ -328,11 +328,20 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
+    public void flush() {
+        if (this.writer != null) {
+            try {
+                this.writer.flush();
+            } catch (MutationsRejectedException e) {
+                throw new SecureGraphException("Could not flush", e);
+            }
+        }
+    }
+
+    @Override
     public void shutdown() {
         try {
-            if (this.writer != null) {
-                this.writer.flush();
-            }
+            flush();
         } catch (Exception ex) {
             throw new SecureGraphException(ex);
         }

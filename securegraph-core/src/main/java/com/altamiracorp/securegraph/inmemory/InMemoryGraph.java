@@ -102,6 +102,11 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
+    public void flush() {
+
+    }
+
+    @Override
     public Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         return new InMemoryProperty(id, name, value, metadata, visibility);
     }
