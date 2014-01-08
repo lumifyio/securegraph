@@ -10,6 +10,8 @@ The graph is stored in a single table with the following schema.
 <tr><td>V[id]</td>                                        <td>V</td>          <td>-</td>               <td>-</td>           <td>Vertex id</td></tr>
 <tr><td>V[id]</td>                                        <td>EOUT</td>       <td>[e id]</td>          <td>[e label]</td>   <td>Vertex out-edge</td></tr>
 <tr><td>V[id]</td>                                        <td>EIN</td>        <td>[e id]</td>          <td>[e label]</td>   <td>Vertex in-edge</td></tr>
+<tr><td>V[id]</td>                                        <td>VOUT</td>       <td>[v id]</td>          <td>[e label]</td>   <td>Vertex on other side of out-edge</td></tr>
+<tr><td>V[id]</td>                                        <td>VIN</td>        <td>[v id]</td>          <td>[e label]</td>   <td>Vertex on other side of in-edge</td></tr>
 <tr><td>E[id]</td>                                        <td>E</td>          <td>[e label]</td>       <td>-</td>           <td>Edge id</td></tr>
 <tr><td>E[id]</td>                                        <td>VOUT</td>       <td>[v id]</td>          <td>-</td>           <td>Edge out-vertex</td></tr>
 <tr><td>E[id]</td>                                        <td>VIN</td>        <td>[v id]</td>          <td>-</td>           <td>Edge in-vertex</td></tr>

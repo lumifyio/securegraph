@@ -315,6 +315,11 @@ public abstract class GraphTestBase {
 
         graph.removeEdge("e1", AUTHORIZATIONS_A);
         assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(0, count(v1.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
+        assertEquals(0, count(v2.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
     }
 
     @Test
@@ -503,5 +508,37 @@ public abstract class GraphTestBase {
         }
         assertTrue("v2 not found in path", found2);
         assertTrue("v3 not found in path", found3);
+    }
+
+    @Test
+    public void testGetVerticesFromVertex() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A);
+        Vertex v4 = graph.addVertex("v4", VISIBILITY_A);
+        graph.addEdge(v1, v2, "knows", VISIBILITY_A);
+        graph.addEdge(v1, v3, "knows", VISIBILITY_A);
+        graph.addEdge(v1, v4, "knows", VISIBILITY_A);
+        graph.addEdge(v2, v3, "knows", VISIBILITY_A);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(3, count(v1.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(3, count(v1.getVertices(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(0, count(v1.getVertices(Direction.IN, AUTHORIZATIONS_A)));
+
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
+        assertEquals(2, count(v2.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v2.getVertices(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v2.getVertices(Direction.IN, AUTHORIZATIONS_A)));
+
+        v3 = graph.getVertex("v3", AUTHORIZATIONS_A);
+        assertEquals(2, count(v3.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(0, count(v3.getVertices(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(2, count(v3.getVertices(Direction.IN, AUTHORIZATIONS_A)));
+
+        v4 = graph.getVertex("v4", AUTHORIZATIONS_A);
+        assertEquals(1, count(v4.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(0, count(v4.getVertices(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v4.getVertices(Direction.IN, AUTHORIZATIONS_A)));
     }
 }
