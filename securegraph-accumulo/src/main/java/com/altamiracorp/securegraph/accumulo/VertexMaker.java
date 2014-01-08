@@ -16,6 +16,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private final AccumuloGraph graph;
     private final HashSet<Object> outEdgeIds = new HashSet<Object>();
     private final HashSet<Object> inEdgeIds = new HashSet<Object>();
+    private final HashSet<Object> outVertexIds = new HashSet<Object>();
+    private final HashSet<Object> inVertexIds = new HashSet<Object>();
 
     public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
         super(graph, row);
@@ -34,6 +36,17 @@ public class VertexMaker extends ElementMaker<Vertex> {
 
         if (AccumuloVertex.CF_IN_EDGE.compareTo(columnFamily) == 0) {
             inEdgeIds.add(columnQualifier.toString());
+            return;
+        }
+
+        if (AccumuloVertex.CF_OUT_VERTEX.compareTo(columnFamily) == 0) {
+            outVertexIds.add(columnQualifier.toString());
+            return;
+        }
+
+        if (AccumuloVertex.CF_IN_VERTEX.compareTo(columnFamily) == 0) {
+            inVertexIds.add(columnQualifier.toString());
+            return;
         }
     }
 
@@ -52,7 +65,15 @@ public class VertexMaker extends ElementMaker<Vertex> {
 
     @Override
     protected Vertex makeElement() {
-        return new AccumuloVertex(this.graph, this.getId(), this.getVisibility(), this.getProperties(), this.inEdgeIds, this.outEdgeIds);
+        return new AccumuloVertex(
+                this.graph,
+                this.getId(),
+                this.getVisibility(),
+                this.getProperties(),
+                this.inEdgeIds,
+                this.outEdgeIds,
+                this.inVertexIds,
+                this.outVertexIds);
     }
 
 }
