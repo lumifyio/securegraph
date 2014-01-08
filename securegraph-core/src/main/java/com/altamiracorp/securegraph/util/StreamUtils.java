@@ -25,7 +25,7 @@ public class StreamUtils {
         return out.toByteArray();
     }
 
-    public static Object toString(InputStream in) throws IOException {
+    public static String toString(InputStream in) throws IOException {
         return new String(toBytes(in));
     }
 }

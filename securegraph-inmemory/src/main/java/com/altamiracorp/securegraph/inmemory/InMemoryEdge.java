@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
+import org.json.JSONObject;
 
 public class InMemoryEdge extends InMemoryElement implements Edge {
     private final Object outVertexId;
@@ -34,5 +35,23 @@ public class InMemoryEdge extends InMemoryElement implements Edge {
     @Override
     public Vertex getVertex(Direction direction, Authorizations authorizations) {
         return getGraph().getVertex(getVertexId(direction), authorizations);
+    }
+
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        json.put("outVertexId", InMemoryGraph.objectToJsonString(this.outVertexId));
+        json.put("inVertexId", InMemoryGraph.objectToJsonString(this.inVertexId));
+        json.put("label", this.label);
+        return json;
+    }
+
+    public static InMemoryEdge fromJson(InMemoryGraph graph, Object id, JSONObject jsonObject) {
+        Visibility visibility = InMemoryElement.fromJsonVisibility(jsonObject);
+        Property[] properties = InMemoryElement.fromJsonProperties(jsonObject);
+        Object outVertexId = InMemoryGraph.jsonStringToObject(jsonObject.getString("outVertexId"));
+        Object inVertexId = InMemoryGraph.jsonStringToObject(jsonObject.getString("inVertexId"));
+        String label = jsonObject.getString("label");
+        return new InMemoryEdge(graph, id, outVertexId, inVertexId, label, visibility, properties);
     }
 }

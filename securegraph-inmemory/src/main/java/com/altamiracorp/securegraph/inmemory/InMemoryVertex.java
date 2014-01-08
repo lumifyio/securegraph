@@ -3,6 +3,7 @@ package com.altamiracorp.securegraph.inmemory;
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
+import org.json.JSONObject;
 
 public class InMemoryVertex extends InMemoryElement implements Vertex {
     protected InMemoryVertex(Graph graph, Object id, Visibility visibility, Property[] properties) {
@@ -38,5 +39,11 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     @Override
     public VertexQuery query(String queryString, Authorizations authorizations) {
         return getGraph().getSearchIndex().queryVertex(getGraph(), this, queryString, authorizations);
+    }
+
+    static InMemoryVertex fromJson(Graph graph, Object id, JSONObject jsonObject) {
+        Visibility visibility = InMemoryElement.fromJsonVisibility(jsonObject);
+        Property[] properties = InMemoryElement.fromJsonProperties(jsonObject);
+        return new InMemoryVertex(graph, id, visibility, properties);
     }
 }
