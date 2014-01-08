@@ -9,11 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>securegraph-elasticsearch</artifactId>
-
-    <properties>
-        <elasticsearch.version>0.90.0</elasticsearch.version>
-    </properties>
+    <artifactId>securegraph-inmemory</artifactId>
 
     <dependencies>
         <dependency>
@@ -28,29 +24,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.altamiracorp.securegraph</groupId>
-            <artifactId>securegraph-inmemory</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>${elasticsearch.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
-            <scope>test</scope>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
 </project>
