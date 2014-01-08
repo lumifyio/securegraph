@@ -350,14 +350,16 @@ public class AccumuloGraph extends GraphBase {
         Vertex in = edge.getVertex(Direction.IN, authorizations);
         checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
 
+        ColumnVisibility visibility = visibilityToAccumuloVisibility(edge.getVisibility());
+
         Mutation outMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + out.getId());
-        outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()));
-        outMutation.putDelete(AccumuloVertex.CF_OUT_VERTEX, new Text(in.getId().toString()));
+        outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), visibility);
+        outMutation.putDelete(AccumuloVertex.CF_OUT_VERTEX, new Text(in.getId().toString()), visibility);
         mutations.add(outMutation);
 
         Mutation inMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + in.getId());
-        inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()));
-        inMutation.putDelete(AccumuloVertex.CF_IN_VERTEX, new Text(out.getId().toString()));
+        inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), visibility);
+        inMutation.putDelete(AccumuloVertex.CF_IN_VERTEX, new Text(out.getId().toString()), visibility);
         mutations.add(inMutation);
 
         // Remove everything else related to edge.
@@ -573,5 +575,9 @@ public class AccumuloGraph extends GraphBase {
 
     public FileSystem getFileSystem() {
         return fileSystem;
+    }
+
+    private ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
+        return new ColumnVisibility(visibility.getVisibilityString());
     }
 }
