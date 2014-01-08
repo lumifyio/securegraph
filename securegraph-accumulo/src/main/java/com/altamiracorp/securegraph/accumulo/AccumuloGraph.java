@@ -111,7 +111,7 @@ public class AccumuloGraph extends GraphBase {
         getSearchIndex().addElement(this, element);
     }
 
-    public void removeProperty(AccumuloElement element, Property property) {
+    void removeProperty(AccumuloElement element, Property property) {
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());
@@ -199,22 +199,9 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void addMutations(Collection<Mutation> mutations) {
-        try {
-            BatchWriter writer = getWriter();
-            synchronized (this.writerLock) {
-                for (Mutation m : mutations) {
-                    writer.addMutation(m);
-                }
-                if (getConfiguration().isAutoFlush()) {
-                    flush();
-                }
-            }
-        } catch (MutationsRejectedException ex) {
-            throw new RuntimeException("Could not add mutation", ex);
-        }
+        addMutations(mutations.toArray(new Mutation[mutations.size()]));
     }
 
-    // TODO consolodate this with addMutations(Collection) somehow
     private void addMutations(Mutation... mutations) {
         try {
             BatchWriter writer = getWriter();
