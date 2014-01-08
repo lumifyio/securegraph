@@ -81,12 +81,24 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         return getGraph().getSearchIndex().queryVertex(getGraph(), this, queryString, authorizations);
     }
 
-    void addOutEdge(AccumuloEdge edge) {
+    void addOutEdge(Edge edge) {
         this.outEdgeIds.add(edge.getId().toString());
+        this.outVertexIds.add(edge.getVertexId(Direction.IN));
     }
 
-    void addInEdge(AccumuloEdge edge) {
+    void removeOutEdge(Edge edge) {
+        this.outEdgeIds.remove(edge.getId().toString());
+        this.outVertexIds.remove(edge.getVertexId(Direction.IN));
+    }
+
+    void addInEdge(Edge edge) {
         this.inEdgeIds.add(edge.getId().toString());
+        this.inVertexIds.add(edge.getVertexId(Direction.OUT));
+    }
+
+    void removeInEdge(Edge edge) {
+        this.inEdgeIds.remove(edge.getId().toString());
+        this.inVertexIds.remove(edge.getVertexId(Direction.OUT));
     }
 
     private static abstract class ElementsByIdsIterable <T> extends LookAheadIterable<Object, T> {

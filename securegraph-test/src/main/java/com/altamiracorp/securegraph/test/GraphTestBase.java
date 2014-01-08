@@ -315,6 +315,11 @@ public abstract class GraphTestBase {
 
         graph.removeEdge("e1", AUTHORIZATIONS_A);
         assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(0, count(v1.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
+        assertEquals(0, count(v2.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
     }
 
     @Test

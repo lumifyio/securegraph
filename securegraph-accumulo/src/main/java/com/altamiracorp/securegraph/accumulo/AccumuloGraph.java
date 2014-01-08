@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
+
 public class AccumuloGraph extends GraphBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
     private static final Text EMPTY_TEXT = new Text("");
@@ -251,7 +253,7 @@ public class AccumuloGraph extends GraphBase {
             removeEdge(mutations, edge, authorizations);
         }
 
-        addDeleteRowMutations(mutations, AccumuloVertex.ROW_KEY_PREFIX + vertex.getId(), authorizations);
+        addDeleteRowToMutations(mutations, AccumuloVertex.ROW_KEY_PREFIX + vertex.getId(), authorizations);
 
         addMutations(mutations);
     }
@@ -285,12 +287,12 @@ public class AccumuloGraph extends GraphBase {
         // Update out vertex.
         Mutation addEdgeToOutMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + outVertex.getId());
         addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
-        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_VERTEX, new Text(outVertex.getId().toString()), edgeColumnVisibility, edgeLabelValue);
+        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_VERTEX, new Text(inVertex.getId().toString()), edgeColumnVisibility, edgeLabelValue);
 
         // Update in vertex.
         Mutation addEdgeToInMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + inVertex.getId());
         addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
-        addEdgeToInMutation.put(AccumuloVertex.CF_IN_VERTEX, new Text(inVertex.getId().toString()), edgeColumnVisibility, edgeLabelValue);
+        addEdgeToInMutation.put(AccumuloVertex.CF_IN_VERTEX, new Text(outVertex.getId().toString()), edgeColumnVisibility, edgeLabelValue);
 
         addMutations(addEdgeMutation, addEdgeToOutMutation, addEdgeToInMutation);
 
@@ -339,35 +341,38 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void removeEdge(List<Mutation> mutations, Edge edge, Authorizations authorizations) {
-        if (edge == null) {
-            throw new IllegalArgumentException("edge cannot be null");
-        }
+        checkNotNull(edge);
 
         getSearchIndex().removeElement(this, edge);
 
-        // Remove edge info from out/in vertices.
-        // These may be null due to self loops, so need to check.
         Vertex out = edge.getVertex(Direction.OUT, authorizations);
-        if (out != null) {
-            Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + out.getId());
-            m.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()));
-            m.putDelete(AccumuloVertex.CF_OUT_VERTEX, new Text(out.getId().toString()));
-            mutations.add(m);
-        }
-
+        checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
         Vertex in = edge.getVertex(Direction.IN, authorizations);
-        if (in != null) {
-            Mutation m = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + in.getId());
-            m.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()));
-            m.putDelete(AccumuloVertex.CF_IN_VERTEX, new Text(in.getId().toString()));
-            mutations.add(m);
-        }
+        checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
+
+        Mutation outMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + out.getId());
+        outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()));
+        outMutation.putDelete(AccumuloVertex.CF_OUT_VERTEX, new Text(in.getId().toString()));
+        mutations.add(outMutation);
+
+        Mutation inMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + in.getId());
+        inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()));
+        inMutation.putDelete(AccumuloVertex.CF_IN_VERTEX, new Text(out.getId().toString()));
+        mutations.add(inMutation);
 
         // Remove everything else related to edge.
-        addDeleteRowMutations(mutations, AccumuloEdge.ROW_KEY_PREFIX + edge.getId(), authorizations);
+        addDeleteRowToMutations(mutations, AccumuloEdge.ROW_KEY_PREFIX + edge.getId(), authorizations);
+        addMutations(mutations);
+
+        if (out instanceof AccumuloVertex) {
+            ((AccumuloVertex) out).removeOutEdge(edge);
+        }
+        if (in instanceof AccumuloVertex) {
+            ((AccumuloVertex) out).removeInEdge(edge);
+        }
     }
 
-    private void addDeleteRowMutations(List<Mutation> mutations, String rowKey, Authorizations authorizations) {
+    private void addDeleteRowToMutations(List<Mutation> mutations, String rowKey, Authorizations authorizations) {
         // TODO: How do we delete rows if a user can't see all properties?
         try {
             Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
