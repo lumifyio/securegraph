@@ -3,6 +3,7 @@ package com.altamiracorp.securegraph.inmemory;
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
+import com.altamiracorp.securegraph.util.FilterIterable;
 import org.json.JSONObject;
 
 public class InMemoryVertex extends InMemoryElement implements Vertex {
@@ -11,8 +12,20 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(Direction direction, Authorizations authorizations) {
-        return getGraph().getEdgesFromVertex(getId(), authorizations);
+    public Iterable<Edge> getEdges(final Direction direction, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getGraph().getEdgesFromVertex(getId(), authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge, Edge dest) {
+                switch (direction) {
+                    case IN:
+                        return edge.getVertexId(Direction.IN).equals(getId());
+                    case OUT:
+                        return edge.getVertexId(Direction.OUT).equals(getId());
+                    default:
+                        return true;
+                }
+            }
+        };
     }
 
     @Override

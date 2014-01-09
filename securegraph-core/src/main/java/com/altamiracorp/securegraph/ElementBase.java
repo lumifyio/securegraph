@@ -5,6 +5,7 @@ import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public abstract class ElementBase implements Element {
@@ -31,6 +32,18 @@ public abstract class ElementBase implements Element {
                 return p.getValue();
             }
         };
+    }
+
+    @Override
+    public Object getPropertyValue(String name, int index) {
+        Iterator<Object> values = getPropertyValues(name).iterator();
+        while (values.hasNext() && index >= 0) {
+            if (index == 0) {
+                return values.next();
+            }
+            index--;
+        }
+        return null;
     }
 
     @Override
