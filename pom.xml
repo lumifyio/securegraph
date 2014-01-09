@@ -16,6 +16,7 @@
         <commons-io.version>2.4</commons-io.version>
         <json.version>20131018</json.version>
         <commons-codec.version>1.8</commons-codec.version>
+        <plugin.maven.source.version>2.2.1</plugin.maven.source.version>
     </properties>
 
     <distributionManagement>
@@ -62,6 +63,25 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${plugin.maven.source.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <modules>
         <module>securegraph-core</module>

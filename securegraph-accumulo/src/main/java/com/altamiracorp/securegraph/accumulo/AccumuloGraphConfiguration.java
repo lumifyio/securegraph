@@ -41,7 +41,7 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String DEFAULT_ACCUMULO_PASSWORD = "password";
     public static final String DEFAULT_VALUE_SERIALIZER = JavaValueSerializer.class.getName();
     public static final String DEFAULT_ACCUMULO_USERNAME = "root";
-    public static final String DEFAULT_ACCUMULO_INSTANCE_NAME = "blueprints_accumulo";
+    public static final String DEFAULT_ACCUMULO_INSTANCE_NAME = "securegraph";
     public static final String DEFAULT_ZOOKEEPER_SERVERS = "localhost";
     public static final boolean DEFAULT_AUTO_FLUSH = false;
     public static final String DEFAULT_TABLE_NAME = "securegraph";
