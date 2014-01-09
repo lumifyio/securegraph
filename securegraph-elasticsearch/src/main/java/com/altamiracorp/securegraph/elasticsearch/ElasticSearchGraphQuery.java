@@ -4,6 +4,7 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.Compare;
 import com.altamiracorp.securegraph.query.GraphQueryBase;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.FilterBuilder;
@@ -11,11 +12,14 @@ import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ElasticSearchGraphQuery extends GraphQueryBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQuery.class);
     private final TransportClient client;
     private String indexName;
 
@@ -82,14 +86,15 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
             }
         }
         QueryBuilder query = createQuery(getParameters().getQueryString());
-        return client
+        SearchRequestBuilder q = client
                 .prepareSearch(indexName)
                 .setTypes(ElasticSearchSearchIndex.ELEMENT_TYPE)
                 .setQuery(query)
                 .setFilter(FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])))
                 .setFrom((int) getParameters().getSkip())
-                .setSize((int) getParameters().getLimit())
-                .execute()
+                .setSize((int) getParameters().getLimit());
+        LOGGER.debug("query: " + q);
+        return q.execute()
                 .actionGet();
     }
 
