@@ -6,6 +6,9 @@ import java.util.Map;
 public class GraphFactory {
     public Graph createGraph(Map config) {
         String graphClassName = (String) config.get("");
+        if (graphClassName == null || graphClassName.length() == 0) {
+            throw new SecureGraphException("missing graph configuration class");
+        }
         try {
             Class graphClass = Class.forName(graphClassName);
             try {
