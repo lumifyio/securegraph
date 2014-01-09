@@ -4,6 +4,7 @@ import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.GraphConfiguration;
 import com.altamiracorp.securegraph.elasticsearch.ElasticSearchSearchIndex;
 import com.altamiracorp.securegraph.inmemory.InMemoryGraph;
+import com.altamiracorp.securegraph.inmemory.InMemoryGraphConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -27,7 +28,7 @@ public class TestHelpers {
         Map config = new HashMap();
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.ES_LOCATIONS, addr);
-        GraphConfiguration configuration = new GraphConfiguration(config);
+        InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }
 
