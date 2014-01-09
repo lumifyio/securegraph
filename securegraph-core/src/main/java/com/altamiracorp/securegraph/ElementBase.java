@@ -65,8 +65,8 @@ public abstract class ElementBase implements Element {
     public Iterable<Property> getProperties(final String name) {
         return new FilterIterable<Property>(getProperties()) {
             @Override
-            protected boolean isIncluded(Property src, Property dest) {
-                return dest.getName().equals(name);
+            protected boolean isIncluded(Property property) {
+                return property.getName().equals(name);
             }
         };
     }

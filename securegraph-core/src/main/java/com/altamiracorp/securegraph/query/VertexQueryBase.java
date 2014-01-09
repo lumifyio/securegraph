@@ -35,7 +35,7 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
     public Iterable<Edge> edges(final Direction direction) {
         return new FilterIterable<Edge>(edges()) {
             @Override
-            protected boolean isIncluded(Edge src, Edge edge) {
+            protected boolean isIncluded(Edge edge) {
                 switch (direction) {
                     case BOTH:
                         return true;

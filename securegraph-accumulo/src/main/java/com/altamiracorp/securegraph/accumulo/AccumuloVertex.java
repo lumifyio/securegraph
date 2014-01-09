@@ -64,7 +64,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     public Iterable<Edge> getEdges(Direction direction, final String[] labels, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
             @Override
-            protected boolean isIncluded(Edge edge, Edge dest) {
+            protected boolean isIncluded(Edge edge) {
                 for (String label : labels) {
                     if (label.equals(edge.getLabel())) {
                         return true;

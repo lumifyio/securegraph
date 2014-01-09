@@ -19,5 +19,9 @@ public abstract class FilterIterable<T> extends LookAheadIterable<T, T> implemen
         return this.iterable.iterator();
     }
 
-    protected abstract boolean isIncluded(T src, T dest);
+    protected final boolean isIncluded(T src, T dest) {
+        return isIncluded(src);
+    }
+
+    protected abstract boolean isIncluded(T o);
 }

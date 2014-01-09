@@ -15,7 +15,7 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     public Iterable<Edge> getEdges(final Direction direction, Authorizations authorizations) {
         return new FilterIterable<Edge>(getGraph().getEdgesFromVertex(getId(), authorizations)) {
             @Override
-            protected boolean isIncluded(Edge edge, Edge dest) {
+            protected boolean isIncluded(Edge edge) {
                 switch (direction) {
                     case IN:
                         return edge.getVertexId(Direction.IN).equals(getId());
@@ -37,7 +37,7 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     public Iterable<Edge> getEdges(Direction direction, final String[] labels, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
             @Override
-            protected boolean isIncluded(Edge edge, Edge dest) {
+            protected boolean isIncluded(Edge edge) {
                 for (String label : labels) {
                     if (label.equals(edge.getLabel())) {
                         return true;
