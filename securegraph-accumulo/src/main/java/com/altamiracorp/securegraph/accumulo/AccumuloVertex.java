@@ -2,6 +2,8 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.VertexQuery;
+import com.altamiracorp.securegraph.util.ConvertingIterable;
+import com.altamiracorp.securegraph.util.FilterIterable;
 import com.altamiracorp.securegraph.util.JoinIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
@@ -54,6 +56,26 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     }
 
     @Override
+    public Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations) {
+        return getEdges(direction, new String[]{label}, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Direction direction, final String[] labels, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge, Edge dest) {
+                for (String label : labels) {
+                    if (label.equals(edge.getLabel())) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+    }
+
+    @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
         switch (direction) {
             case BOTH:
@@ -69,6 +91,31 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, String label, Authorizations authorizations) {
+        return getVertices(direction, new String[]{label}, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, String[] labels, final Authorizations authorizations) {
+        return new ConvertingIterable<Edge, Vertex>(getEdges(direction, labels, authorizations)) {
+            @Override
+            protected Vertex convert(Edge edge) {
+                return getOtherVertexFromEdge(edge, authorizations);
+            }
+        };
+    }
+
+    private Vertex getOtherVertexFromEdge(Edge edge, Authorizations authorizations) {
+        if (edge.getVertexId(Direction.IN).equals(getId())) {
+            return edge.getVertex(Direction.OUT, authorizations);
+        }
+        if (edge.getVertexId(Direction.OUT).equals(getId())) {
+            return edge.getVertex(Direction.IN, authorizations);
+        }
+        throw new IllegalStateException("Edge does not contain vertex on either end");
     }
 
     @Override
@@ -101,7 +148,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         this.inVertexIds.remove(edge.getVertexId(Direction.OUT));
     }
 
-    private static abstract class ElementsByIdsIterable <T> extends LookAheadIterable<Object, T> {
+    private static abstract class ElementsByIdsIterable<T> extends LookAheadIterable<Object, T> {
         protected final Graph graph;
         protected final Set<Object> idsList;
         protected final Authorizations authorizations;
