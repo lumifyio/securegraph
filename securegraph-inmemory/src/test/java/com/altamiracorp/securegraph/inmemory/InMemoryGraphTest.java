@@ -1,9 +1,6 @@
 package com.altamiracorp.securegraph.inmemory;
 
-import com.altamiracorp.securegraph.Direction;
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.GraphConfiguration;
-import com.altamiracorp.securegraph.Vertex;
+import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.id.UUIDIdGenerator;
 import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.test.GraphTestBase;
@@ -28,7 +25,10 @@ public class InMemoryGraphTest extends GraphTestBase {
     @Override
     protected Graph createGraph() {
         Map config = new HashMap();
-        return new InMemoryGraph(new GraphConfiguration(config), new UUIDIdGenerator(config), new DefaultSearchIndex(config));
+        config.put("", InMemoryGraph.class.getName());
+        config.put(GraphConfiguration.IDGENERATOR_PROP_PREFIX, UUIDIdGenerator.class.getName());
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, DefaultSearchIndex.class.getName());
+        return new GraphFactory().createGraph(config);
     }
 
     @Override

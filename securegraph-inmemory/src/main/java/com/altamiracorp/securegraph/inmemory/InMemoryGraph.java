@@ -18,14 +18,24 @@ public class InMemoryGraph extends GraphBase {
     private final Map<Object, InMemoryVertex> vertices;
     private final Map<Object, InMemoryEdge> edges;
 
-    public InMemoryGraph(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
+    public InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this(configuration, idGenerator, searchIndex, new HashMap<Object, InMemoryVertex>(), new HashMap<Object, InMemoryEdge>());
     }
 
-    protected InMemoryGraph(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex, Map<Object, InMemoryVertex> vertices, Map<Object, InMemoryEdge> edges) {
+    protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex, Map<Object, InMemoryVertex> vertices, Map<Object, InMemoryEdge> edges) {
         super(configuration, idGenerator, searchIndex);
         this.vertices = vertices;
         this.edges = edges;
+    }
+
+    public static InMemoryGraph create(InMemoryGraphConfiguration config) {
+        IdGenerator idGenerator = config.createIdGenerator();
+        SearchIndex searchIndex = config.createSearchIndex();
+        return new InMemoryGraph(config, idGenerator, searchIndex);
+    }
+
+    public static InMemoryGraph create(Map config) {
+        return create(new InMemoryGraphConfiguration(config));
     }
 
     @Override
@@ -262,7 +272,7 @@ public class InMemoryGraph extends GraphBase {
 
     private static InMemoryGraph load(JSONObject json) {
         Map config = jsonToMap(json.getJSONObject("config"));
-        GraphConfiguration configuration = new GraphConfiguration(config);
+        InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         IdGenerator idGenerator = configuration.createIdGenerator();
         SearchIndex searchIndex = configuration.createSearchIndex();
         Map<Object, InMemoryVertex> vertices = new HashMap<Object, InMemoryVertex>();
