@@ -16,4 +16,6 @@ public interface Element {
     void setProperties(Property... properties);
 
     void removeProperty(String propertyId, String name);
+
+    Graph getGraph();
 }
