@@ -1,6 +1,5 @@
 package com.altamiracorp.securegraph.blueprints;
 
-import com.altamiracorp.securegraph.SecureGraphException;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -70,14 +69,7 @@ public class SecureGraphBlueprintsVertex extends SecureGraphBlueprintsElement im
 
             @Override
             protected Vertex convert(com.altamiracorp.securegraph.Edge edge) {
-                com.altamiracorp.securegraph.Vertex vertex;
-                if (edge.getVertexId(com.altamiracorp.securegraph.Direction.OUT).equals(getId())) {
-                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.IN, getGraph().getAuthorizationsProvider().getAuthorizations());
-                } else if (edge.getVertexId(com.altamiracorp.securegraph.Direction.IN).equals(getId())) {
-                    vertex = edge.getVertex(com.altamiracorp.securegraph.Direction.OUT, getGraph().getAuthorizationsProvider().getAuthorizations());
-                } else {
-                    throw new SecureGraphException("Could not find current vertex on either side of edge");
-                }
+                com.altamiracorp.securegraph.Vertex vertex = edge.getOtherVertex(getId(), getGraph().getAuthorizationsProvider().getAuthorizations());
                 return SecureGraphBlueprintsVertex.create(getGraph(), vertex);
             }
 

@@ -17,13 +17,7 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
         return new ConvertingIterable<Edge, Vertex>(edges()) {
             @Override
             protected Vertex convert(Edge edge) {
-                if (edge.getVertexId(Direction.IN).equals(sourceVertex.getId())) {
-                    return edge.getVertex(Direction.OUT, getParameters().getAuthorizations());
-                }
-                if (edge.getVertexId(Direction.OUT).equals(sourceVertex.getId())) {
-                    return edge.getVertex(Direction.IN, getParameters().getAuthorizations());
-                }
-                throw new IllegalStateException("Neither the in vertex or the out vertex of edge [" + edge + "] equals the source vertex.");
+                return edge.getOtherVertex(sourceVertex.getId(), getParameters().getAuthorizations());
             }
         };
     }

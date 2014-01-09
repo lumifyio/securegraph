@@ -103,19 +103,9 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, labels, authorizations)) {
             @Override
             protected Vertex convert(Edge edge) {
-                return getOtherVertexFromEdge(edge, authorizations);
+                return edge.getOtherVertex(getId(), authorizations);
             }
         };
-    }
-
-    private Vertex getOtherVertexFromEdge(Edge edge, Authorizations authorizations) {
-        if (edge.getVertexId(Direction.IN).equals(getId())) {
-            return edge.getVertex(Direction.OUT, authorizations);
-        }
-        if (edge.getVertexId(Direction.OUT).equals(getId())) {
-            return edge.getVertex(Direction.IN, authorizations);
-        }
-        throw new IllegalStateException("Edge does not contain vertex on either end");
     }
 
     @Override

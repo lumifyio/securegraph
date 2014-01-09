@@ -38,6 +38,21 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
     }
 
     @Override
+    public Object getOtherVertexId(Object myVertexId) {
+        if (inVertexId.equals(myVertexId)) {
+            return outVertexId;
+        } else if (outVertexId.equals(myVertexId)) {
+            return inVertexId;
+        }
+        throw new SecureGraphException("myVertexId does not appear on either the in or the out.");
+    }
+
+    @Override
+    public Vertex getOtherVertex(Object myVertexId, Authorizations authorizations) {
+        return getGraph().getVertex(getOtherVertexId(myVertexId), authorizations);
+    }
+
+    @Override
     public Vertex getVertex(Direction direction, Authorizations authorizations) {
         return getGraph().getVertex(getVertexId(direction), authorizations);
     }
