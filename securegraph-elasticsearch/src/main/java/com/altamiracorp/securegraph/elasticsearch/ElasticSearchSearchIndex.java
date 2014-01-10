@@ -6,6 +6,7 @@ import com.altamiracorp.securegraph.query.DefaultVertexQuery;
 import com.altamiracorp.securegraph.query.GraphQuery;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.search.SearchIndex;
+import com.altamiracorp.securegraph.type.GeoPoint;
 import com.altamiracorp.securegraph.util.StreamUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
@@ -105,7 +106,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
             for (Property property : element.getProperties()) {
                 Object propertyValue = property.getValue();
-                if (propertyValue instanceof StreamingPropertyValue) {
+                if (propertyValue instanceof GeoPoint) {
+                    GeoPoint geoPoint = (GeoPoint) propertyValue;
+                    propertyValue = new org.elasticsearch.common.geo.GeoPoint(geoPoint.getLatitude(), geoPoint.getLongitude());
+                } else if (propertyValue instanceof StreamingPropertyValue) {
                     StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
                     if (!streamingPropertyValue.isSearchIndex()) {
                         continue;
@@ -196,6 +200,9 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } else if (dataType == Boolean.class) {
             LOGGER.debug("Registering boolean type for {}", propertyName);
             mapping.field("type", "boolean");
+        } else if (dataType == GeoPoint.class) {
+            LOGGER.debug("Registering geo_point type for {}", propertyName);
+            mapping.field("type", "geo_point");
         } else {
             throw new SecureGraphException("Unexpected value type: " + dataType.getName());
         }
