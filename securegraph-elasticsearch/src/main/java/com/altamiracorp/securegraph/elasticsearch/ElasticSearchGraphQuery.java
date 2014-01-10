@@ -59,24 +59,28 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
         for (HasContainer has : getParameters().getHasContainers()) {
             if (has.predicate instanceof Compare) {
                 Compare compare = (Compare) has.predicate;
+                Object value = has.value;
+                if (value instanceof String) {
+                    value = ((String) value).toLowerCase(); // using the standard analyzer all strings are lower-cased.
+                }
                 switch (compare) {
                     case EQUAL:
-                        filters.add(FilterBuilders.inFilter(has.key, has.value));
+                        filters.add(FilterBuilders.inFilter(has.key, value));
                         break;
                     case GREATER_THAN_EQUAL:
-                        filters.add(FilterBuilders.rangeFilter(has.key).gte(has.value));
+                        filters.add(FilterBuilders.rangeFilter(has.key).gte(value));
                         break;
                     case GREATER_THAN:
-                        filters.add(FilterBuilders.rangeFilter(has.key).gt(has.value));
+                        filters.add(FilterBuilders.rangeFilter(has.key).gt(value));
                         break;
                     case LESS_THAN_EQUAL:
-                        filters.add(FilterBuilders.rangeFilter(has.key).lte(has.value));
+                        filters.add(FilterBuilders.rangeFilter(has.key).lte(value));
                         break;
                     case LESS_THAN:
-                        filters.add(FilterBuilders.rangeFilter(has.key).lt(has.value));
+                        filters.add(FilterBuilders.rangeFilter(has.key).lt(value));
                         break;
                     case NOT_EQUAL:
-                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(has.key, has.value)));
+                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(has.key, value)));
                         break;
                     default:
                         throw new SecureGraphException("Unexpected compare predicate " + has.predicate);
