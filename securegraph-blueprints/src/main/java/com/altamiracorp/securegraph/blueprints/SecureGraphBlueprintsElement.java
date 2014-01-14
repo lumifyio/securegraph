@@ -51,7 +51,7 @@ public abstract class SecureGraphBlueprintsElement implements Element {
             throw new IllegalArgumentException("Property Name cannot be empty.");
         }
         Visibility visibility = getGraph().getVisibilityProvider().getVisibilityForProperty(propertyName, value);
-        getSecureGraphElement().setProperties(getGraph().getSecureGraph().createProperty(DEFAULT_PROPERTY_ID, propertyName, value, visibility));
+        getSecureGraphElement().setProperty(propertyName, value, visibility);
     }
 
     @Override
