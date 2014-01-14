@@ -3,14 +3,13 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.SecureGraphException;
 import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.property.MutableProperty;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public abstract class ElementMaker<T> {
     private final Iterator<Map.Entry<Key, Value>> row;
@@ -84,9 +83,8 @@ public abstract class ElementMaker<T> {
         return graph;
     }
 
-    protected Property[] getProperties() {
-        Property[] results = new Property[propertyValues.size()];
-        int i = 0;
+    protected List<Property> getProperties() {
+        List<Property> results = new ArrayList<Property>(propertyValues.size());
         for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
             String propertyNameAndId = propertyValueEntry.getKey();
             String propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
@@ -94,7 +92,7 @@ public abstract class ElementMaker<T> {
             Object propertyValue = propertyValueEntry.getValue();
             Visibility visibility = propertyVisibilities.get(propertyNameAndId);
             Map<String, Object> metadata = propertyMetadata.get(propertyNameAndId);
-            results[i++] = new AccumuloProperty(propertyId, propertyName, propertyValue, metadata, visibility);
+            results.add(new MutableProperty(propertyId, propertyName, propertyValue, metadata, visibility));
         }
         return results;
     }

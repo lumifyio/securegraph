@@ -13,9 +13,13 @@ public interface Element {
 
     Object getPropertyValue(String name, int index);
 
-    void setProperties(Property... properties);
+    ElementMutation prepareMutation();
 
     void removeProperty(String propertyId, String name);
 
     Graph getGraph();
+
+    void addPropertyValue(Object id, String name, Object value, Visibility visibility);
+
+    void setProperty(String name, Object value, Visibility visibility);
 }

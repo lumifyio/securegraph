@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 
 public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
@@ -25,12 +24,19 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Vertex addVertex(Visibility visibility, Property... properties) {
-        return addVertex(getIdGenerator().nextId(), visibility, properties);
+    public Vertex addVertex(Visibility visibility) {
+        return prepareVertex(visibility).save();
     }
 
     @Override
-    public abstract Vertex addVertex(Object vertexId, Visibility visibility, Property... properties);
+    public Vertex addVertex(Object vertexId, Visibility visibility) {
+        return prepareVertex(vertexId, visibility).save();
+    }
+
+    @Override
+    public VertexBuilder prepareVertex(Visibility visibility) {
+        return prepareVertex(getIdGenerator().nextId(), visibility);
+    }
 
     @Override
     public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
@@ -59,12 +65,19 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties) {
-        return addEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility, properties);
+    public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+        return prepareEdge(outVertex, inVertex, label, visibility).save();
     }
 
     @Override
-    public abstract Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties);
+    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+        return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save();
+    }
+
+    @Override
+    public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+        return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility);
+    }
 
     @Override
     public Edge getEdge(Object edgeId, Authorizations authorizations) {
@@ -118,22 +131,4 @@ public abstract class GraphBase implements Graph {
     public SearchIndex getSearchIndex() {
         return searchIndex;
     }
-
-    @Override
-    public Property createProperty(String name, Object value, Visibility visibility) {
-        return createProperty(name, value, null, visibility);
-    }
-
-    @Override
-    public Property createProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        return createProperty(getIdGenerator().nextId(), name, value, metadata, visibility);
-    }
-
-    @Override
-    public Property createProperty(Object id, String name, Object value, Visibility visibility) {
-        return createProperty(id, name, value, null, visibility);
-    }
-
-    @Override
-    public abstract Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility);
 }

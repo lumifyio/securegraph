@@ -3,6 +3,8 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.*;
 import org.apache.hadoop.io.Text;
 
+import java.util.List;
+
 public class AccumuloEdge extends AccumuloElement implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
     public static final Text CF_OUT_VERTEX = new Text("EOUT");
@@ -13,7 +15,7 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
     private final Object inVertexId;
     private final String label;
 
-    AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, Property[] properties) {
+    AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, List<Property> properties) {
         super(graph, id, visibility, properties);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;

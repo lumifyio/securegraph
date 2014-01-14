@@ -1,7 +1,7 @@
 package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
-import com.altamiracorp.securegraph.property.PropertyBase;
+import com.altamiracorp.securegraph.property.MutableProperty;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.util.StreamUtils;
 import org.json.JSONArray;
@@ -14,14 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class InMemoryElement extends ElementBase {
-    protected InMemoryElement(Graph graph, Object id, Visibility visibility, Property[] properties) {
+    protected InMemoryElement(Graph graph, Object id, Visibility visibility, List<Property> properties) {
         super(graph, id, visibility, properties);
-    }
-
-    @Override
-    public void setProperties(Property... properties) {
-        setPropertiesInternal(properties);
-        getGraph().saveProperties(this, properties);
     }
 
     @Override
@@ -38,13 +32,13 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    protected void setPropertiesInternal(Property[] properties) {
+    protected void setPropertiesInternal(List<Property> properties) {
         try {
             for (Property property : properties) {
                 if (property.getValue() instanceof StreamingPropertyValue) {
                     StreamingPropertyValue value = (StreamingPropertyValue) property.getValue();
                     byte[] valueData = StreamUtils.toBytes(value.getInputStream(null));
-                    ((PropertyBase) property).setValue(new InMemoryStreamingPropertyValue(valueData, value.getValueType()));
+                    ((MutableProperty) property).setValue(new InMemoryStreamingPropertyValue(valueData, value.getValueType()));
                 }
             }
             super.setPropertiesInternal(properties);
@@ -98,14 +92,14 @@ public abstract class InMemoryElement extends ElementBase {
         return new Visibility(jsonObject.getString("visibility"));
     }
 
-    protected static Property[] fromJsonProperties(JSONObject jsonObject) {
+    protected static List<Property> fromJsonProperties(JSONObject jsonObject) {
         JSONArray propertiesJson = jsonObject.getJSONArray("properties");
         List<Property> properties = new ArrayList<Property>();
         for (int i = 0; i < propertiesJson.length(); i++) {
             JSONObject propertyJson = propertiesJson.getJSONObject(i);
             properties.add(fromJsonProperty(propertyJson));
         }
-        return properties.toArray(new Property[properties.size()]);
+        return properties;
     }
 
     private static Property fromJsonProperty(JSONObject propertyJson) {
@@ -114,7 +108,7 @@ public abstract class InMemoryElement extends ElementBase {
         Object value = InMemoryGraph.jsonStringToObject(propertyJson.getString("value"));
         Map<String, Object> metadata = fromJsonPropertyMetadata(propertyJson.optJSONObject("metadata"));
         Visibility visibility = new Visibility(propertyJson.getString("visibility"));
-        return new InMemoryProperty(id, name, value, metadata, visibility);
+        return new MutableProperty(id, name, value, metadata, visibility);
     }
 
     private static Map<String, Object> fromJsonPropertyMetadata(JSONObject metadataJson) {
@@ -128,5 +122,17 @@ public abstract class InMemoryElement extends ElementBase {
             metadata.put(keyString, val);
         }
         return metadata;
+    }
+
+    @Override
+    public ElementMutation prepareMutation() {
+        return new ElementMutation() {
+            @Override
+            public void save() {
+                List<Property> properties = getProperties();
+                setPropertiesInternal(properties);
+                getGraph().saveProperties(InMemoryElement.this, properties);
+            }
+        };
     }
 }

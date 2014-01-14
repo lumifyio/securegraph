@@ -39,17 +39,23 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility visibility, Property... properties) {
+    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
-        InMemoryVertex vertex = new InMemoryVertex(this, vertexId, visibility, properties);
-        vertices.put(vertexId, vertex);
+        return new VertexBuilder(vertexId, visibility) {
+            @Override
+            public Vertex save() {
+                List<Property> properties = getProperties();
+                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties);
+                vertices.put(getVertexId(), vertex);
 
-        getSearchIndex().addElement(this, vertex);
+                getSearchIndex().addElement(InMemoryGraph.this, vertex);
 
-        return vertex;
+                return vertex;
+            }
+        };
     }
 
     @Override
@@ -82,17 +88,22 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Property... properties) {
+    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
         }
 
-        InMemoryEdge edge = new InMemoryEdge(this, edgeId, outVertex.getId(), inVertex.getId(), label, visibility, properties);
-        edges.put(edgeId, edge);
+        return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
+            @Override
+            public Edge save() {
+                InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+                edges.put(getEdgeId(), edge);
 
-        getSearchIndex().addElement(this, edge);
+                getSearchIndex().addElement(InMemoryGraph.this, edge);
 
-        return edge;
+                return edge;
+            }
+        };
     }
 
     @Override
@@ -127,11 +138,6 @@ public class InMemoryGraph extends GraphBase {
     @Override
     public void flush() {
 
-    }
-
-    @Override
-    public Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        return new InMemoryProperty(id, name, value, metadata, visibility);
     }
 
     @Override
@@ -171,7 +177,7 @@ public class InMemoryGraph extends GraphBase {
         return false;
     }
 
-    public void saveProperties(Element element, Property[] properties) {
+    public void saveProperties(Element element, List<Property> properties) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
             vertex.setPropertiesInternal(properties);
@@ -203,25 +209,25 @@ public class InMemoryGraph extends GraphBase {
         Object inVertexId = edge.getVertexId(Direction.IN);
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
-        Property[] properties = filterProperties(edge.getProperties(), authorizations);
+        List<Property> properties = filterProperties(edge.getProperties(), authorizations);
         return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties);
     }
 
     private Vertex filteredVertex(InMemoryVertex vertex, Authorizations authorizations) {
         Object vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
-        Property[] properties = filterProperties(vertex.getProperties(), authorizations);
+        List<Property> properties = filterProperties(vertex.getProperties(), authorizations);
         return new InMemoryVertex(this, vertexId, visibility, properties);
     }
 
-    private Property[] filterProperties(Iterable<Property> properties, Authorizations authorizations) {
+    private List<Property> filterProperties(Iterable<Property> properties, Authorizations authorizations) {
         List<Property> filteredProperties = new ArrayList<Property>();
         for (Property p : properties) {
             if (hasAccess(p.getVisibility(), authorizations)) {
                 filteredProperties.add(p);
             }
         }
-        return filteredProperties.toArray(new Property[filteredProperties.size()]);
+        return filteredProperties;
     }
 
     public void save(OutputStream out) throws IOException {

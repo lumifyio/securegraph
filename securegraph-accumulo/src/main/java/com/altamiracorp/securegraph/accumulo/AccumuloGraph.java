@@ -4,7 +4,7 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
-import com.altamiracorp.securegraph.property.PropertyBase;
+import com.altamiracorp.securegraph.property.MutableProperty;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LimitOutputStream;
@@ -80,27 +80,37 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Property... properties) {
+    public Vertex addVertex(Object vertexId, Visibility vertexVisibility) {
+        return prepareVertex(vertexId, vertexVisibility).save();
+    }
+
+    @Override
+    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
-        AccumuloVertex vertex = new AccumuloVertex(this, vertexId, vertexVisibility, properties);
+        return new VertexBuilder(vertexId, visibility) {
+            @Override
+            public Vertex save() {
+                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties());
 
-        String vertexRowKey = AccumuloVertex.ROW_KEY_PREFIX + vertex.getId();
-        Mutation m = new Mutation(vertexRowKey);
-        m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, new ColumnVisibility(vertexVisibility.getVisibilityString()), EMPTY_VALUE);
-        for (Property property : vertex.getProperties()) {
-            addPropertyToMutation(m, vertexRowKey, property);
-        }
-        addMutations(m);
+                String vertexRowKey = AccumuloVertex.ROW_KEY_PREFIX + vertex.getId();
+                Mutation m = new Mutation(vertexRowKey);
+                m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, new ColumnVisibility(getVisibility().getVisibilityString()), EMPTY_VALUE);
+                for (Property property : vertex.getProperties()) {
+                    addPropertyToMutation(m, vertexRowKey, property);
+                }
+                addMutations(m);
 
-        getSearchIndex().addElement(this, vertex);
+                getSearchIndex().addElement(AccumuloGraph.this, vertex);
 
-        return vertex;
+                return vertex;
+            }
+        };
     }
 
-    void saveProperties(AccumuloElement element, Property[] properties) {
+    void saveProperties(AccumuloElement element, List<Property> properties) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
@@ -139,7 +149,7 @@ public class AccumuloGraph extends GraphBase {
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
             StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue, columnVisibility);
-            ((PropertyBase) property).setValue(streamingPropertyValueRef.toStreamingPropertyValue(this));
+            ((MutableProperty) property).setValue(streamingPropertyValueRef.toStreamingPropertyValue(this));
             propertyValue = streamingPropertyValueRef;
         }
         Value value = new Value(getValueSerializer().objectToValue(propertyValue));
@@ -259,7 +269,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Property... properties) {
+    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (outVertex == null) {
             throw new IllegalArgumentException("outVertex is required");
         }
@@ -270,42 +280,52 @@ public class AccumuloGraph extends GraphBase {
             edgeId = getIdGenerator().nextId();
         }
 
-        AccumuloEdge edge = new AccumuloEdge(this, edgeId, outVertex.getId(), inVertex.getId(), label, edgeVisibility, properties);
+        return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
+            @Override
+            public Edge save() {
+                AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
 
-        String edgeRowKey = AccumuloEdge.ROW_KEY_PREFIX + edge.getId();
-        Mutation addEdgeMutation = new Mutation(edgeRowKey);
-        ColumnVisibility edgeColumnVisibility = new ColumnVisibility(edgeVisibility.getVisibilityString());
-        addEdgeMutation.put(AccumuloEdge.CF_SIGNAL, new Text(label), edgeColumnVisibility, EMPTY_VALUE);
-        addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(outVertex.getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
-        addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(inVertex.getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
-        for (Property property : edge.getProperties()) {
-            addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
-        }
+                String edgeRowKey = AccumuloEdge.ROW_KEY_PREFIX + edge.getId();
+                Mutation addEdgeMutation = new Mutation(edgeRowKey);
+                ColumnVisibility edgeColumnVisibility = new ColumnVisibility(getVisibility().getVisibilityString());
+                addEdgeMutation.put(AccumuloEdge.CF_SIGNAL, new Text(getLabel()), edgeColumnVisibility, EMPTY_VALUE);
+                addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(getOutVertex().getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
+                addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(getInVertex().getId().toString()), edgeColumnVisibility, EMPTY_VALUE);
+                for (Property property : edge.getProperties()) {
+                    addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
+                }
 
-        Value edgeLabelValue = new Value(label.getBytes());
+                Value edgeLabelValue = new Value(getLabel().getBytes());
 
-        // Update out vertex.
-        Mutation addEdgeToOutMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + outVertex.getId());
-        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
-        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_VERTEX, new Text(inVertex.getId().toString()), edgeColumnVisibility, edgeLabelValue);
+                // Update out vertex.
+                Mutation addEdgeToOutMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + getOutVertex().getId());
+                addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
+                addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_VERTEX, new Text(getInVertex().getId().toString()), edgeColumnVisibility, edgeLabelValue);
 
-        // Update in vertex.
-        Mutation addEdgeToInMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + inVertex.getId());
-        addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
-        addEdgeToInMutation.put(AccumuloVertex.CF_IN_VERTEX, new Text(outVertex.getId().toString()), edgeColumnVisibility, edgeLabelValue);
+                // Update in vertex.
+                Mutation addEdgeToInMutation = new Mutation(AccumuloVertex.ROW_KEY_PREFIX + getInVertex().getId());
+                addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
+                addEdgeToInMutation.put(AccumuloVertex.CF_IN_VERTEX, new Text(getOutVertex().getId().toString()), edgeColumnVisibility, edgeLabelValue);
 
-        addMutations(addEdgeMutation, addEdgeToOutMutation, addEdgeToInMutation);
+                addMutations(addEdgeMutation, addEdgeToOutMutation, addEdgeToInMutation);
 
-        if (outVertex instanceof AccumuloVertex) {
-            ((AccumuloVertex) outVertex).addOutEdge(edge);
-        }
-        if (inVertex instanceof AccumuloVertex) {
-            ((AccumuloVertex) inVertex).addInEdge(edge);
-        }
+                if (getOutVertex() instanceof AccumuloVertex) {
+                    ((AccumuloVertex) getOutVertex()).addOutEdge(edge);
+                }
+                if (getInVertex() instanceof AccumuloVertex) {
+                    ((AccumuloVertex) getInVertex()).addInEdge(edge);
+                }
 
-        getSearchIndex().addElement(this, edge);
+                getSearchIndex().addElement(AccumuloGraph.this, edge);
 
-        return edge;
+                return edge;
+            }
+        };
+    }
+
+    @Override
+    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility) {
+        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility).save();
     }
 
     @Override
@@ -396,11 +416,6 @@ public class AccumuloGraph extends GraphBase {
     @Override
     public AccumuloGraphConfiguration getConfiguration() {
         return (AccumuloGraphConfiguration) super.getConfiguration();
-    }
-
-    @Override
-    public Property createProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        return new AccumuloProperty(id, name, value, metadata, visibility);
     }
 
     @Override

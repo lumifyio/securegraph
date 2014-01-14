@@ -52,10 +52,11 @@ public class InMemoryGraphTest extends GraphTestBase {
         Map<String, Object> prop1Metadata = new HashMap<String, Object>();
         prop1Metadata.put("metadata1", "metadata1Value");
 
-        Vertex v1 = graph.addVertex("v1", VISIBILITY_A,
-                graph.createProperty("id1a", "prop1", "value1a", prop1Metadata, VISIBILITY_A),
-                graph.createProperty("id1b", "prop1", "value1b", VISIBILITY_A),
-                graph.createProperty("id2", "prop2", "value2", VISIBILITY_B));
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
+                .addPropertyValue("id1a", "prop1", "value1a", prop1Metadata, VISIBILITY_A)
+                .addPropertyValue("id1b", "prop1", "value1b", VISIBILITY_A)
+                .addPropertyValue("id2", "prop2", "value2", VISIBILITY_B)
+                .save();
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
         Vertex v3 = graph.addVertex("v3", VISIBILITY_B);
         graph.addEdge("e1to2", v1, v2, "label1", VISIBILITY_A);

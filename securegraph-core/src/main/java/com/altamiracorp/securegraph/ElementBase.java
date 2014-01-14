@@ -6,6 +6,7 @@ import com.altamiracorp.securegraph.util.FilterIterable;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public abstract class ElementBase implements Element {
@@ -16,7 +17,7 @@ public abstract class ElementBase implements Element {
     // The key to this map is the property id + property name
     private final Map<Object, Property> properties;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility, Property[] properties) {
+    protected ElementBase(Graph graph, Object id, Visibility visibility, List<Property> properties) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
@@ -71,11 +72,8 @@ public abstract class ElementBase implements Element {
         };
     }
 
-    @Override
-    public abstract void setProperties(Property... properties);
-
     // this method differs setProperties in that it only updates the in memory representation of the properties
-    protected void setPropertiesInternal(Property[] properties) {
+    protected void setPropertiesInternal(List<Property> properties) {
         for (Property property : properties) {
             if (property.getId() == null) {
                 throw new IllegalArgumentException("id is required for property");
@@ -119,5 +117,21 @@ public abstract class ElementBase implements Element {
             return getId().equals(objElem.getId());
         }
         return super.equals(obj);
+    }
+
+    @Override
+    public abstract ElementMutation prepareMutation();
+
+    @Override
+    public abstract void removeProperty(String propertyId, String name);
+
+    @Override
+    public void addPropertyValue(Object id, String name, Object value, Visibility visibility) {
+        prepareMutation().addPropertyValue(id, name, value, visibility).save();
+    }
+
+    @Override
+    public void setProperty(String name, Object value, Visibility visibility) {
+        prepareMutation().setProperty(name, value, visibility).save();
     }
 }

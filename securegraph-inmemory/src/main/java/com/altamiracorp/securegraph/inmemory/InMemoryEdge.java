@@ -3,12 +3,14 @@ package com.altamiracorp.securegraph.inmemory;
 import com.altamiracorp.securegraph.*;
 import org.json.JSONObject;
 
+import java.util.List;
+
 public class InMemoryEdge extends InMemoryElement implements Edge {
     private final Object outVertexId;
     private final Object inVertexId;
     private final String label;
 
-    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, Property[] properties) {
+    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, List<Property> properties) {
         super(graph, edgeId, visibility, properties);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
@@ -63,7 +65,7 @@ public class InMemoryEdge extends InMemoryElement implements Edge {
 
     public static InMemoryEdge fromJson(InMemoryGraph graph, Object id, JSONObject jsonObject) {
         Visibility visibility = InMemoryElement.fromJsonVisibility(jsonObject);
-        Property[] properties = InMemoryElement.fromJsonProperties(jsonObject);
+        List<Property> properties = InMemoryElement.fromJsonProperties(jsonObject);
         Object outVertexId = InMemoryGraph.jsonStringToObject(jsonObject.getString("outVertexId"));
         Object inVertexId = InMemoryGraph.jsonStringToObject(jsonObject.getString("inVertexId"));
         String label = jsonObject.getString("label");
