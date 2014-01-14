@@ -479,14 +479,13 @@ public class AccumuloGraph extends GraphBase {
     private Scanner createElementVisibilityScanner(Authorizations authorizations, String elementMode) throws SecureGraphException {
         try {
             Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
-            // TODO !!! when using a remote accumulo this doesn't work
-//            IteratorSetting iteratorSetting = new IteratorSetting(
-//                    100,
-//                    ElementVisibilityRowFilter.class.getSimpleName(),
-//                    ElementVisibilityRowFilter.class
-//            );
-//            iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
-//            scanner.addScanIterator(iteratorSetting);
+            IteratorSetting iteratorSetting = new IteratorSetting(
+                    100,
+                    ElementVisibilityRowFilter.class.getSimpleName(),
+                    ElementVisibilityRowFilter.class
+            );
+            iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
+            scanner.addScanIterator(iteratorSetting);
             return scanner;
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
