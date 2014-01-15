@@ -51,6 +51,36 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     }
 
     @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, label, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, labels, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
             @Override

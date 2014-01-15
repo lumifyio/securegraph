@@ -292,6 +292,30 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGetEdge() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
+        graph.addEdge("e1to2label1", v1, v2, "label1", VISIBILITY_A);
+        graph.addEdge("e1to2label2", v1, v2, "label2", VISIBILITY_A);
+        graph.addEdge("e2to1", v2, v1, "label1", VISIBILITY_A);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+
+        assertEquals(3, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(2, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(3, count(v1.getEdges(v2, Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(2, count(v1.getEdges(v2, Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(v2, Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(2, count(v1.getEdges(v2, Direction.BOTH, "label1", AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(v2, Direction.OUT, "label1", AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(v2, Direction.IN, "label1", AUTHORIZATIONS_A)));
+        assertEquals(3, count(v1.getEdges(v2, Direction.BOTH, new String[]{"label1", "label2"}, AUTHORIZATIONS_A)));
+        assertEquals(2, count(v1.getEdges(v2, Direction.OUT, new String[]{"label1", "label2"}, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(v2, Direction.IN, new String[]{"label1", "label2"}, AUTHORIZATIONS_A)));
+    }
+
+    @Test
     public void testAddEdgeWithProperties() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A);
