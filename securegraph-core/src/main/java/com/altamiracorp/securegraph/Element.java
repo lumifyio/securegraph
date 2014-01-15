@@ -17,6 +17,8 @@ public interface Element {
 
     void removeProperty(String propertyId, String name);
 
+    void removeProperty(String name);
+
     Graph getGraph();
 
     void addPropertyValue(Object id, String name, Object value, Visibility visibility);

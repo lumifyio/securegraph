@@ -27,6 +27,14 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
+    public void removeProperty(String name) {
+        Iterable<Property> properties = removePropertyInternal(name);
+        for (Property property : properties) {
+            getGraph().removeProperty(this, property);
+        }
+    }
+
+    @Override
     public InMemoryGraph getGraph() {
         return (InMemoryGraph) super.getGraph();
     }
@@ -45,6 +53,11 @@ public abstract class InMemoryElement extends ElementBase {
         } catch (IOException ex) {
             throw new SecureGraphException(ex);
         }
+    }
+
+    @Override
+    protected Iterable<Property> removePropertyInternal(String name) {
+        return super.removePropertyInternal(name);
     }
 
     @Override

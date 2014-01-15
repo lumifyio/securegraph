@@ -208,6 +208,28 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testRemoveProperty() {
+        Vertex v = graph.addVertex("v1", VISIBILITY_A);
+
+        v.prepareMutation()
+                .addPropertyValue("propid1a", "prop1", "value1a", VISIBILITY_A)
+                .addPropertyValue("propid1b", "prop1", "value1b", VISIBILITY_A)
+                .addPropertyValue("propid2a", "prop2", "value2a", VISIBILITY_A)
+                .save();
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v.removeProperty("prop1");
+        assertEquals(1, count(v.getProperties()));
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v.getProperties()));
+
+        v.removeProperty("propid2a", "prop2");
+        assertEquals(0, count(v.getProperties()));
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(0, count(v.getProperties()));
+    }
+
+    @Test
     public void testAddVertexWithVisibility() {
         graph.addVertex("v1", VISIBILITY_A);
         graph.addVertex("v2", VISIBILITY_B);

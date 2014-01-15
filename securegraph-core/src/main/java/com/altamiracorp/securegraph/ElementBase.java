@@ -4,10 +4,7 @@ import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class ElementBase implements Element {
     private final Graph graph;
@@ -82,15 +79,35 @@ public abstract class ElementBase implements Element {
             if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
                 continue;
             }
-            this.properties.put(property.getId() + property.getName(), property);
+            this.properties.put(getPropertyKey(property.getId(), property.getName()), property);
         }
     }
 
     protected Property removePropertyInternal(Object propertyId, String name) {
-        String key = propertyId + name;
+        String key = getPropertyKey(propertyId, name);
         Property property = this.properties.get(key);
         this.properties.remove(key);
         return property;
+    }
+
+    private String getPropertyKey(Object propertyId, String name) {
+        return propertyId + name;
+    }
+
+    protected Iterable<Property> removePropertyInternal(String name) {
+        List<Property> removedProperties = new ArrayList<Property>();
+        for (Property p : this.properties.values()) {
+            if (p.getName().equals(name)) {
+                removedProperties.add(p);
+            }
+        }
+
+        for (Property p : removedProperties) {
+            Object key = getPropertyKey(p.getId(), p.getName());
+            this.properties.remove(key);
+        }
+
+        return removedProperties;
     }
 
     public Graph getGraph() {
