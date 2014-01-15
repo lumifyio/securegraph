@@ -22,6 +22,14 @@ public abstract class AccumuloElement extends ElementBase {
     }
 
     @Override
+    public void removeProperty(String name) {
+        Iterable<Property> properties = super.removePropertyInternal(name);
+        for (Property property : properties) {
+            getGraph().removeProperty(this, property);
+        }
+    }
+
+    @Override
     public AccumuloGraph getGraph() {
         return (AccumuloGraph) super.getGraph();
     }
