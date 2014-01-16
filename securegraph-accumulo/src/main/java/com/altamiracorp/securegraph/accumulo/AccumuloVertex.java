@@ -126,7 +126,6 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         };
     }
 
-    @Override
     public Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations) {
         switch (direction) {
             case BOTH:
