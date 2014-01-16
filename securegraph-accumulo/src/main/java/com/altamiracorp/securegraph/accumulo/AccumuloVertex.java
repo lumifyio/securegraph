@@ -108,20 +108,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
-        switch (direction) {
-            case BOTH:
-                // TODO: Can't we concat the two id lists together and do a single scan, skipping the JoinIterable?
-                return new JoinIterable<Vertex>(
-                        new VerticesByIdsIterable(getGraph(), inVertexIds, authorizations),
-                        new VerticesByIdsIterable(getGraph(), outVertexIds, authorizations)
-                );
-            case IN:
-                return new VerticesByIdsIterable(getGraph(), inVertexIds, authorizations);
-            case OUT:
-                return new VerticesByIdsIterable(getGraph(), outVertexIds, authorizations);
-            default:
-                throw new SecureGraphException("Unexpected direction: " + direction);
-        }
+        return new VerticesByIdsIterable(getGraph(), getVertexIds(direction, authorizations), authorizations);
     }
 
     @Override
@@ -137,6 +124,20 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
                 return edge.getOtherVertex(getId(), authorizations);
             }
         };
+    }
+
+    @Override
+    public Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations) {
+        switch (direction) {
+            case BOTH:
+                return new JoinIterable<Object>(inVertexIds, outVertexIds);
+            case IN:
+                return this.inVertexIds;
+            case OUT:
+                return this.outVertexIds;
+            default:
+                throw new SecureGraphException("Unexpected direction: " + direction);
+        }
     }
 
     @Override
@@ -171,10 +172,10 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     private static abstract class ElementsByIdsIterable<T> extends LookAheadIterable<Object, T> {
         protected final Graph graph;
-        protected final Set<Object> idsList;
+        protected final Iterable<Object> idsList;
         protected final Authorizations authorizations;
 
-        public ElementsByIdsIterable(Graph graph, Set<Object> idsList, Authorizations authorizations) {
+        public ElementsByIdsIterable(Graph graph, Iterable<Object> idsList, Authorizations authorizations) {
             this.graph = graph;
             this.idsList = idsList;
             this.authorizations = authorizations;
@@ -206,7 +207,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     }
 
     private static class VerticesByIdsIterable extends ElementsByIdsIterable<Vertex> {
-        public VerticesByIdsIterable(Graph graph, Set<Object> idsList, Authorizations authorizations) {
+        public VerticesByIdsIterable(Graph graph, Iterable<Object> idsList, Authorizations authorizations) {
             super(graph, idsList, authorizations);
         }
 

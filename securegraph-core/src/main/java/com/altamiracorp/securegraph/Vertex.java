@@ -21,6 +21,8 @@ public interface Vertex extends Element {
 
     Iterable<Vertex> getVertices(Direction direction, String[] labels, Authorizations authorizations);
 
+    Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations);
+
     VertexQuery query(Authorizations authorizations);
 
     VertexQuery query(String queryString, Authorizations authorizations);
