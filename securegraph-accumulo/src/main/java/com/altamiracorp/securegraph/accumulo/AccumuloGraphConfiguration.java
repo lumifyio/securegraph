@@ -37,6 +37,7 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String HDFS_USER = HDFS_CONFIG_PREFIX + ".user";
     public static final String HDFS_ROOT_DIR = HDFS_CONFIG_PREFIX + ".rootDir";
     public static final String DATA_DIR = HDFS_CONFIG_PREFIX + ".dataDir";
+    public static final String USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER = "useServerSideElementVisibilityRowFilter";
 
     public static final String DEFAULT_ACCUMULO_PASSWORD = "password";
     public static final String DEFAULT_VALUE_SERIALIZER = JavaValueSerializer.class.getName();
@@ -49,6 +50,7 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String DEFAULT_HDFS_USER = "hadoop";
     public static final String DEFAULT_HDFS_ROOT_DIR = "";
     public static final String DEFAULT_DATA_DIR = "/accumuloGraph";
+    public static final boolean DEFAULT_USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER = true;
 
     public AccumuloGraphConfiguration(Map config) {
         super(config);
@@ -116,5 +118,9 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
 
     public String getDataDir() {
         return getConfigString(DATA_DIR, DEFAULT_DATA_DIR);
+    }
+
+    public boolean isUseServerSideElementVisibilityRowFilter() {
+        return getConfigBoolean(USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER, DEFAULT_USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER);
     }
 }
