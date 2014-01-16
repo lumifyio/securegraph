@@ -458,7 +458,11 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
                 VertexMaker maker = new VertexMaker(graph, next);
-                return maker.make();
+                Vertex vertex = maker.make();
+                if (vertex == null && getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
+                    throw new SecureGraphException("Invalid visibility. This could occur if other columns are returned without the element signal column being returned.");
+                }
+                return vertex;
             }
 
             @Override
@@ -538,7 +542,11 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
                 EdgeMaker maker = new EdgeMaker(graph, next);
-                return maker.make();
+                Edge edge = maker.make();
+                if (edge == null && getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
+                    throw new SecureGraphException("Invalid visibility. This could occur if other columns are returned without the element signal column being returned.");
+                }
+                return edge;
             }
 
             @Override

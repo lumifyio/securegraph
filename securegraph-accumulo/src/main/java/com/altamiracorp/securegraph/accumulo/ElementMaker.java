@@ -57,7 +57,7 @@ public abstract class ElementMaker<T> {
         }
 
         if (this.visibility == null) {
-            throw new SecureGraphException("Invalid visibility. This could occur if other columns are returned without the element signal column being returned.");
+            return null;
         }
 
         return makeElement();
