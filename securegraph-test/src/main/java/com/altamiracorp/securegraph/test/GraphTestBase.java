@@ -25,12 +25,12 @@ import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
-    protected static final Visibility VISIBILITY_A = new Visibility("a");
-    protected static final Visibility VISIBILITY_B = new Visibility("b");
-    protected static final Authorizations AUTHORIZATIONS_A = new Authorizations("a");
-    protected static final Authorizations AUTHORIZATIONS_B = new Authorizations("b");
-    protected static final Authorizations AUTHORIZATIONS_C = new Authorizations("c");
-    protected static final Authorizations AUTHORIZATIONS_A_AND_B = new Authorizations("a", "b");
+    public static final Visibility VISIBILITY_A = new Visibility("a");
+    public static final Visibility VISIBILITY_B = new Visibility("b");
+    public static final Authorizations AUTHORIZATIONS_A = new Authorizations("a");
+    public static final Authorizations AUTHORIZATIONS_B = new Authorizations("b");
+    public static final Authorizations AUTHORIZATIONS_C = new Authorizations("c");
+    public static final Authorizations AUTHORIZATIONS_A_AND_B = new Authorizations("a", "b");
     public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
 
     protected Graph graph;

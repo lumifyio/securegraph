@@ -92,5 +92,6 @@
         <module>securegraph-blueprints-test</module>
         <module>securegraph-elasticsearch</module>
         <module>securegraph-inmemory</module>
+        <module>securegraph-tools</module>
     </modules>
 </project>
