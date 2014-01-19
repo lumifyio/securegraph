@@ -2,18 +2,42 @@ package com.altamiracorp.securegraph.tools;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.util.JavaSerializableUtils;
+import com.beust.jcommander.Parameter;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GraphRestore {
+public class GraphRestore extends GraphToolBase {
+    @Parameter(names = {"--in", "-i"}, description = "Input filename")
+    private String inputFileName = null;
+
+    public static void main(String[] args) throws Exception {
+        GraphRestore graphRestore = new GraphRestore();
+        graphRestore.run(args);
+    }
+
+    protected void run(String[] args) throws Exception {
+        super.run(args);
+
+        InputStream in = createInputStream();
+        try {
+            restore(getGraph(), in, getAuthorizations());
+        } finally {
+            in.close();
+        }
+    }
+
+    private InputStream createInputStream() throws FileNotFoundException {
+        if (inputFileName == null) {
+            return System.in;
+        }
+        return new FileInputStream(inputFileName);
+    }
+
     public void restore(Graph graph, InputStream in, Authorizations authorizations) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;

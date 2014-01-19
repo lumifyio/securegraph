@@ -2,15 +2,44 @@ package com.altamiracorp.securegraph.tools;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.util.JavaSerializableUtils;
+import com.beust.jcommander.Parameter;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
-public class GraphBackup {
+public class GraphBackup extends GraphToolBase {
+    @Parameter(names = {"--out", "-o"}, description = "Output filename")
+    private String outputFileName = null;
+
+    public static void main(String[] args) throws Exception {
+        GraphBackup graphBackup = new GraphBackup();
+        graphBackup.run(args);
+    }
+
+    protected void run(String[] args) throws Exception {
+        super.run(args);
+
+        OutputStream out = createOutputStream();
+        try {
+            save(getGraph(), out, getAuthorizations());
+        } finally {
+            out.close();
+        }
+    }
+
+    private OutputStream createOutputStream() throws FileNotFoundException {
+        if (outputFileName == null) {
+            return System.out;
+        }
+        return new FileOutputStream(outputFileName);
+    }
+
     public void save(Graph graph, OutputStream out, Authorizations authorizations) throws IOException {
         saveVertices(graph.getVertices(authorizations), out);
         saveEdges(graph.getEdges(authorizations), out);
