@@ -148,7 +148,17 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
+    public void addPropertyValue(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        prepareMutation().addPropertyValue(id, name, value, metadata, visibility).save();
+    }
+
+    @Override
     public void setProperty(String name, Object value, Visibility visibility) {
         prepareMutation().setProperty(name, value, visibility).save();
+    }
+
+    @Override
+    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        prepareMutation().setProperty(name, value, metadata, visibility).save();
     }
 }

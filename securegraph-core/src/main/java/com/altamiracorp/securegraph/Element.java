@@ -1,5 +1,9 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.property.StreamingPropertyValue;
+
+import java.util.Map;
+
 public interface Element {
     Object getId();
 
@@ -23,5 +27,9 @@ public interface Element {
 
     void addPropertyValue(Object id, String name, Object value, Visibility visibility);
 
+    void addPropertyValue(Object id, String name, Object value, Map<String,Object> metadata, Visibility visibility);
+
     void setProperty(String name, Object value, Visibility visibility);
+
+    void setProperty(String name, Object value, Map<String,Object> metadata, Visibility visibility);
 }

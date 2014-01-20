@@ -1,16 +1,14 @@
 package com.altamiracorp.securegraph.tools;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.util.JavaSerializableUtils;
 import com.beust.jcommander.Parameter;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Map;
 
 public class GraphBackup extends GraphToolBase {
@@ -41,25 +39,27 @@ public class GraphBackup extends GraphToolBase {
     }
 
     public void save(Graph graph, OutputStream out, Authorizations authorizations) throws IOException {
-        saveVertices(graph.getVertices(authorizations), out);
-        saveEdges(graph.getEdges(authorizations), out);
+        saveVertices(graph.getVertices(authorizations), out, authorizations);
+        saveEdges(graph.getEdges(authorizations), out, authorizations);
     }
 
-    private void saveVertices(Iterable<Vertex> vertices, OutputStream out) throws IOException {
+    private void saveVertices(Iterable<Vertex> vertices, OutputStream out, Authorizations authorizations) throws IOException {
         for (Vertex vertex : vertices) {
             JSONObject json = vertexToJson(vertex);
             out.write('V');
             out.write(json.toString().getBytes());
             out.write('\n');
+            saveStreamingPropertyValues(out, vertex, authorizations);
         }
     }
 
-    private void saveEdges(Iterable<Edge> edges, OutputStream out) throws IOException {
+    private void saveEdges(Iterable<Edge> edges, OutputStream out, Authorizations authorizations) throws IOException {
         for (Edge edge : edges) {
             JSONObject json = edgeToJson(edge);
             out.write('E');
             out.write(json.toString().getBytes());
             out.write('\n');
+            saveStreamingPropertyValues(out, edge, authorizations);
         }
     }
 
@@ -86,6 +86,9 @@ public class GraphBackup extends GraphToolBase {
     private JSONArray propertiesToJson(Iterable<Property> properties) {
         JSONArray json = new JSONArray();
         for (Property property : properties) {
+            if (property.getValue() instanceof StreamingPropertyValue) {
+                continue;
+            }
             json.put(propertyToJson(property));
         }
         return json;
@@ -96,7 +99,10 @@ public class GraphBackup extends GraphToolBase {
         json.put("id", objectToJsonString(property.getId()));
         json.put("name", property.getName());
         json.put("visibility", property.getVisibility().getVisibilityString());
-        json.put("value", objectToJsonString(property.getValue()));
+        Object value = property.getValue();
+        if (!(value instanceof StreamingPropertyValue)) {
+            json.put("value", objectToJsonString(value));
+        }
         Map<String, Object> metadata = property.getMetadata();
         if (metadata != null) {
             json.put("metadata", metadataToJson(metadata));
@@ -110,6 +116,34 @@ public class GraphBackup extends GraphToolBase {
             json.put(m.getKey(), objectToJsonString(m.getValue()));
         }
         return json;
+    }
+
+    private void saveStreamingPropertyValues(OutputStream out, Element element, Authorizations authorizations) throws IOException {
+        for (Property property : element.getProperties()) {
+            if (property.getValue() instanceof StreamingPropertyValue) {
+                saveStreamingProperty(out, property, authorizations);
+            }
+        }
+    }
+
+    private void saveStreamingProperty(OutputStream out, Property property, Authorizations authorizations) throws IOException {
+        StreamingPropertyValue spv = (StreamingPropertyValue) property.getValue();
+        JSONObject json = propertyToJson(property);
+        json.put("valueType", spv.getValueType().getName());
+        out.write('D');
+        out.write(json.toString().getBytes());
+        out.write('\n');
+        InputStream in = spv.getInputStream(authorizations);
+        byte[] buffer = new byte[10 * 1024];
+        int read;
+        while ((read = in.read(buffer)) > 0) {
+            out.write(Integer.toString(read).getBytes());
+            out.write('\n');
+            out.write(buffer, 0, read);
+            out.write('\n');
+        }
+        out.write('0');
+        out.write('\n');
     }
 
     private String objectToJsonString(Object value) {
