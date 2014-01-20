@@ -16,4 +16,6 @@ public interface Edge extends Element {
      * Given a vertexId that represents one side of a relationship, get me the vertex of the other side.
      */
     Vertex getOtherVertex(Object myVertexId, Authorizations authorizations);
+
+    ElementMutation<Edge> prepareMutation();
 }

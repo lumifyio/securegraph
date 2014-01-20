@@ -24,4 +24,6 @@ public interface Vertex extends Element {
     VertexQuery query(Authorizations authorizations);
 
     VertexQuery query(String queryString, Authorizations authorizations);
+
+    ElementMutation<Vertex> prepareMutation();
 }
