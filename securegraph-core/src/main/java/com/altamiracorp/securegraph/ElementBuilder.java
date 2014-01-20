@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ElementBuilder<T> {
+public abstract class ElementBuilder<T extends Element> implements ElementMutation<T> {
     private final List<Property> properties = new ArrayList<Property>();
 
     public ElementBuilder<T> setProperty(String name, Object value, Visibility visibility) {

@@ -37,12 +37,13 @@ public abstract class AccumuloElement extends ElementBase {
 
     @Override
     public ElementMutation prepareMutation() {
-        return new ElementMutation() {
+        return new ElementMutationImpl() {
             @Override
-            public void save() {
+            public AccumuloElement save() {
                 List<Property> properties = getProperties();
                 setPropertiesInternal(properties);
                 getGraph().saveProperties(AccumuloElement.this, properties);
+                return AccumuloElement.this;
             }
         };
     }

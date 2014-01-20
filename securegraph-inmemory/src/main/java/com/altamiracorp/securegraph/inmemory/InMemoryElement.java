@@ -62,12 +62,13 @@ public abstract class InMemoryElement extends ElementBase {
 
     @Override
     public ElementMutation prepareMutation() {
-        return new ElementMutation() {
+        return new ElementMutationImpl() {
             @Override
-            public void save() {
+            public InMemoryElement save() {
                 List<Property> properties = getProperties();
                 setPropertiesInternal(properties);
                 getGraph().saveProperties(InMemoryElement.this, properties);
+                return InMemoryElement.this;
             }
         };
     }
