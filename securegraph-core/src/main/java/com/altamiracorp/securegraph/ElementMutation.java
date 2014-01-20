@@ -7,11 +7,11 @@ public interface ElementMutation<T extends Element> {
 
     T save();
 
-    ElementMutation setProperty(String name, Object value, Visibility visibility);
+    ElementMutation<T> setProperty(String name, Object value, Visibility visibility);
 
-    ElementMutation setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    ElementMutation<T> setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility);
 
-    ElementMutation addPropertyValue(Object id, String name, Object value, Visibility visibility);
+    ElementMutation<T> addPropertyValue(Object id, String name, Object value, Visibility visibility);
 
-    ElementMutation addPropertyValue(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    ElementMutation<T> addPropertyValue(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility);
 }

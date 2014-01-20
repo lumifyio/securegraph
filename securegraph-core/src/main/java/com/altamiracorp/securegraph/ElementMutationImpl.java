@@ -12,19 +12,19 @@ public abstract class ElementMutationImpl<T extends Element> implements ElementM
 
     public abstract T save();
 
-    public ElementMutation setProperty(String name, Object value, Visibility visibility) {
+    public ElementMutation<T> setProperty(String name, Object value, Visibility visibility) {
         return setProperty(name, value, new HashMap<String, Object>(), visibility);
     }
 
-    public ElementMutation setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public ElementMutation<T> setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         return addPropertyValue(DEFAULT_ID, name, value, metadata, visibility);
     }
 
-    public ElementMutation addPropertyValue(Object id, String name, Object value, Visibility visibility) {
+    public ElementMutation<T> addPropertyValue(Object id, String name, Object value, Visibility visibility) {
         return addPropertyValue(id, name, value, new HashMap<String, Object>(), visibility);
     }
 
-    public ElementMutation addPropertyValue(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public ElementMutation<T> addPropertyValue(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         properties.add(new MutableProperty(id, name, value, metadata, visibility));
         return this;
     }
