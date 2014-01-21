@@ -56,6 +56,7 @@ public abstract class ElementMaker<T> {
             processColumn(col.getKey(), col.getValue());
         }
 
+        // If the com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter isn't installed this will catch stray rows
         if (this.visibility == null) {
             return null;
         }
