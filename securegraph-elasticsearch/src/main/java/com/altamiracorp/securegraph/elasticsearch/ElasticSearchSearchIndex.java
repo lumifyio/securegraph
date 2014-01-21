@@ -109,7 +109,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 Object propertyValue = property.getValue();
                 if (propertyValue instanceof GeoPoint) {
                     GeoPoint geoPoint = (GeoPoint) propertyValue;
-                    propertyValue = new org.elasticsearch.common.geo.GeoPoint(geoPoint.getLatitude(), geoPoint.getLongitude());
+                    Map<String, Object> propertyValueMap = new HashMap<String, Object>();
+                    propertyValueMap.put("lat", geoPoint.getLatitude());
+                    propertyValueMap.put("lon", geoPoint.getLongitude());
+                    propertyValue = propertyValueMap;
                 } else if (propertyValue instanceof StreamingPropertyValue) {
                     StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
                     if (!streamingPropertyValue.isSearchIndex()) {

@@ -4,7 +4,10 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
+import com.altamiracorp.securegraph.query.GeoCompare;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
+import com.altamiracorp.securegraph.type.GeoCircle;
+import com.altamiracorp.securegraph.type.GeoPoint;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -507,6 +510,26 @@ public abstract class GraphTestBase {
                 .has("age", Compare.NOT_EQUAL, 25)
                 .vertices();
         assertEquals(1, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryGeoPoint() {
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("location", new GeoPoint(38.9186, -77.2297), VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A)
+                .setProperty("location", new GeoPoint(38.9544, -77.3464), VISIBILITY_A)
+                .save();
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 1))
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 15))
+                .vertices();
+        assertEquals(2, count(vertices));
     }
 
     private Date createDate(int year, int month, int day) {

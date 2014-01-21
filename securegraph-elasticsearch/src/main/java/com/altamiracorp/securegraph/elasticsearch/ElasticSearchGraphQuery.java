@@ -2,11 +2,14 @@ package com.altamiracorp.securegraph.elasticsearch;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.Compare;
+import com.altamiracorp.securegraph.query.GeoCompare;
 import com.altamiracorp.securegraph.query.GraphQueryBase;
+import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -110,7 +113,24 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                         filters.add(FilterBuilders.inFilter(has.key, (Object[]) has.value));
                         break;
                     default:
-                        throw new SecureGraphException("Unexpected compare predicate " + has.predicate);
+                        throw new SecureGraphException("Unexpected Compare predicate " + has.predicate);
+                }
+            } else if (has.predicate instanceof GeoCompare) {
+                GeoCompare compare = (GeoCompare) has.predicate;
+                switch (compare) {
+                    case WITHIN:
+                        if (has.value instanceof GeoCircle) {
+                            GeoCircle geoCircle = (GeoCircle) has.value;
+                            double lat = geoCircle.getLatitude();
+                            double lon = geoCircle.getLongitude();
+                            double distance = geoCircle.getRadius();
+                            filters.add(FilterBuilders.geoDistanceFilter(has.key).point(lat, lon).distance(distance, DistanceUnit.KILOMETERS));
+                        } else {
+                            throw new SecureGraphException("Unexpected has value type " + has.value.getClass().getName());
+                        }
+                        break;
+                    default:
+                        throw new SecureGraphException("Unexpected GeoCompare predicate " + has.predicate);
                 }
             } else {
                 throw new SecureGraphException("Unexpected predicate type " + has.predicate.getClass().getName());

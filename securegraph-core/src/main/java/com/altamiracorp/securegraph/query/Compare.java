@@ -48,7 +48,7 @@ public enum Compare implements Predicate {
             case IN:
                 return evaluateIn(first, (Object[]) second);
             default:
-                throw new IllegalArgumentException("Invalid state as no valid filter was provided");
+                throw new IllegalArgumentException("Invalid compare: " + this);
         }
     }
 
