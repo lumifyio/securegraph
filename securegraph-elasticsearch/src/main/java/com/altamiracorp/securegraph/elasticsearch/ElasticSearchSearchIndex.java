@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -194,6 +195,9 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } else if (dataType == Integer.class) {
             LOGGER.debug("Registering integer type for {}", propertyName);
             mapping.field("type", "integer");
+        } else if (dataType == Date.class) {
+            LOGGER.debug("Registering date type for {}", propertyName);
+            mapping.field("type", "date");
         } else if (dataType == Long.class) {
             LOGGER.debug("Registering long type for {}", propertyName);
             mapping.field("type", "long");

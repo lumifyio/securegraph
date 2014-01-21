@@ -14,10 +14,7 @@ import org.junit.runners.JUnit4;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
 import static com.altamiracorp.securegraph.test.util.IterableUtils.count;
@@ -454,13 +451,20 @@ public abstract class GraphTestBase {
     public void testGraphQueryHas() {
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("age", 25, VISIBILITY_A)
+                .setProperty("birthDate", createDate(1989, 1, 5), VISIBILITY_A)
                 .save();
         graph.prepareVertex("v2", VISIBILITY_A)
                 .setProperty("age", 30, VISIBILITY_A)
+                .setProperty("birthDate", createDate(1984, 1, 5), VISIBILITY_A)
                 .save();
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
                 .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("birthDate", Compare.EQUAL, createDate(1989, 1, 5))
                 .vertices();
         assertEquals(1, count(vertices));
 
@@ -493,6 +497,10 @@ public abstract class GraphTestBase {
                 .has("age", Compare.NOT_EQUAL, 25)
                 .vertices();
         assertEquals(1, count(vertices));
+    }
+
+    private Date createDate(int year, int month, int day) {
+        return new GregorianCalendar(year, month, day).getTime();
     }
 
     @Test
