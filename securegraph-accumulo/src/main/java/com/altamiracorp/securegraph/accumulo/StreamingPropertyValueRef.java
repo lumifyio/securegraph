@@ -7,9 +7,13 @@ import java.io.Serializable;
 
 abstract class StreamingPropertyValueRef implements Serializable {
     private final String valueType;
+    private final boolean searchIndex;
+    private final boolean store;
 
-    protected StreamingPropertyValueRef(Class valueType) {
-        this.valueType = valueType.getName();
+    protected StreamingPropertyValueRef(StreamingPropertyValue propertyValue) {
+        this.valueType = propertyValue.getValueType().getName();
+        this.searchIndex = propertyValue.isSearchIndex();
+        this.store = propertyValue.isStore();
     }
 
     public Class getValueType() {
@@ -18,6 +22,14 @@ abstract class StreamingPropertyValueRef implements Serializable {
         } catch (ClassNotFoundException e) {
             throw new SecureGraphException("Could not get type: " + valueType);
         }
+    }
+
+    public boolean isSearchIndex() {
+        return searchIndex;
+    }
+
+    public boolean isStore() {
+        return store;
     }
 
     public abstract StreamingPropertyValue toStreamingPropertyValue(AccumuloGraph graph);

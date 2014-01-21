@@ -171,16 +171,16 @@ public class AccumuloGraph extends GraphBase {
             }
 
             if (out.hasExceededSizeLimit()) {
-                return saveStreamingPropertyValueLarge(rowKey, property, largeDataStore, propertyValue.getValueType());
+                return saveStreamingPropertyValueLarge(rowKey, property, largeDataStore, propertyValue);
             } else {
-                return saveStreamingPropertyValueSmall(rowKey, property, out.getSmall(), propertyValue.getValueType(), columnVisibility);
+                return saveStreamingPropertyValueSmall(rowKey, property, out.getSmall(), propertyValue, columnVisibility);
             }
         } catch (IOException ex) {
             throw new SecureGraphException(ex);
         }
     }
 
-    private StreamingPropertyValueRef saveStreamingPropertyValueLarge(String rowKey, Property property, HdfsLargeDataStore largeDataStore, Class valueType) throws IOException {
+    private StreamingPropertyValueRef saveStreamingPropertyValueLarge(String rowKey, Property property, HdfsLargeDataStore largeDataStore, StreamingPropertyValue propertyValue) throws IOException {
         Path dir = new Path(dataDir, rowKey);
         fileSystem.mkdirs(dir);
         Path path = new Path(dir, property.getName() + "_" + property.getId());
@@ -188,15 +188,15 @@ public class AccumuloGraph extends GraphBase {
             fileSystem.delete(path, true);
         }
         fileSystem.rename(largeDataStore.getFileName(), path);
-        return new StreamingPropertyValueHdfsRef(path, valueType);
+        return new StreamingPropertyValueHdfsRef(path, propertyValue);
     }
 
-    private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, Class valueType, ColumnVisibility columnVisibility) {
+    private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, StreamingPropertyValue propertyValue, ColumnVisibility columnVisibility) {
         String dataRowKey = createTableDataRowKey(rowKey, property);
         Mutation dataMutation = new Mutation(dataRowKey);
         dataMutation.put(EMPTY_TEXT, EMPTY_TEXT, columnVisibility, new Value(data));
         addMutations(dataMutation);
-        return new StreamingPropertyValueTableRef(dataRowKey, valueType);
+        return new StreamingPropertyValueTableRef(dataRowKey, propertyValue);
     }
 
     private String createTableDataRowKey(String rowKey, Property property) {

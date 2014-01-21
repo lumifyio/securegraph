@@ -5,8 +5,8 @@ import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 class StreamingPropertyValueTableRef extends StreamingPropertyValueRef {
     private final String dataRowKey;
 
-    public StreamingPropertyValueTableRef(String dataRowKey, Class valueType) {
-        super(valueType);
+    public StreamingPropertyValueTableRef(String dataRowKey, StreamingPropertyValue propertyValue) {
+        super(propertyValue);
         this.dataRowKey = dataRowKey;
     }
 
@@ -16,6 +16,6 @@ class StreamingPropertyValueTableRef extends StreamingPropertyValueRef {
 
     @Override
     public StreamingPropertyValue toStreamingPropertyValue(AccumuloGraph graph) {
-        return new StreamingPropertyValueTable(graph, getDataRowKey(), getValueType());
+        return new StreamingPropertyValueTable(graph, getDataRowKey(), this);
     }
 }

@@ -13,8 +13,10 @@ class StreamingPropertyValueHdfs extends StreamingPropertyValue {
     private final FileSystem fs;
     private final Path path;
 
-    public StreamingPropertyValueHdfs(FileSystem fs, Path path, Class valueType) {
-        super(null, valueType);
+    public StreamingPropertyValueHdfs(FileSystem fs, Path path, StreamingPropertyValueRef streamingPropertyValueRef) {
+        super(null, streamingPropertyValueRef.getValueType());
+        this.store(streamingPropertyValueRef.isStore());
+        this.searchIndex(streamingPropertyValueRef.isSearchIndex());
         this.fs = fs;
         this.path = path;
     }

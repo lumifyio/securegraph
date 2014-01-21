@@ -10,8 +10,10 @@ class StreamingPropertyValueTable extends StreamingPropertyValue {
     private final AccumuloGraph graph;
     private final String dataRowKey;
 
-    StreamingPropertyValueTable(AccumuloGraph graph, String dataRowKey, Class valueType) {
-        super(null, valueType);
+    StreamingPropertyValueTable(AccumuloGraph graph, String dataRowKey, StreamingPropertyValueRef streamingPropertyValueRef) {
+        super(null, streamingPropertyValueRef.getValueType());
+        this.store(streamingPropertyValueRef.isStore());
+        this.searchIndex(streamingPropertyValueRef.isSearchIndex());
         this.graph = graph;
         this.dataRowKey = dataRowKey;
     }
