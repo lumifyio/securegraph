@@ -1,7 +1,6 @@
 package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
-import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
@@ -17,7 +16,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.*;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -197,7 +196,7 @@ public class AccumuloGraph extends GraphBase {
         Mutation dataMutation = new Mutation(dataRowKey);
         dataMutation.put(EMPTY_TEXT, EMPTY_TEXT, new Value(data));
         addMutations(dataMutation);
-        return new StreamingPropertyValueTableRef(dataRowKey, propertyValue);
+        return new StreamingPropertyValueTableRef(dataRowKey, propertyValue, data);
     }
 
     private String createTableDataRowKey(String rowKey, Property property) {
