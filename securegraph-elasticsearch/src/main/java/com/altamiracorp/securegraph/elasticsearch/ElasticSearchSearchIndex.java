@@ -204,7 +204,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             LOGGER.debug("Registering geo_point type for {}", propertyName);
             mapping.field("type", "geo_point");
         } else {
-            throw new SecureGraphException("Unexpected value type: " + dataType.getName());
+            throw new SecureGraphException("Unexpected value type for property \"" + propertyName + "\": " + dataType.getName());
         }
 
         mapping.field("store", "no");
