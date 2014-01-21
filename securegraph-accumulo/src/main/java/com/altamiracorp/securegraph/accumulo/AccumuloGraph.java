@@ -16,12 +16,11 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -30,11 +29,12 @@ import java.util.*;
 import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
     private static final Text EMPTY_TEXT = new Text("");
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
     public static final String DATA_ROW_KEY_PREFIX = "D";
-    public static final String VALUE_SEPERATOR = "\u001f";
+    public static final String VALUE_SEPARATOR = "\u001f";
+    private static final String ROW_DELETING_ITERATOR_NAME = RowDeletingIterator.class.getSimpleName();
+    private static final int ROW_DELETING_ITERATOR_PRIORITY = 7;
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private BatchWriter writer;
@@ -62,6 +62,7 @@ public class AccumuloGraph extends GraphBase {
         SearchIndex searchIndex = config.createSearchIndex();
         IdGenerator idGenerator = config.createIdGenerator();
         ensureTableExists(connector, config.getTableName());
+        ensureRowDeletingIteratorIsAttached(connector, config.getTableName());
         return new AccumuloGraph(config, idGenerator, searchIndex, connector, fs, valueSerializer);
     }
 
@@ -72,6 +73,17 @@ public class AccumuloGraph extends GraphBase {
             }
         } catch (Exception e) {
             throw new RuntimeException("Unable to create table " + tableName);
+        }
+    }
+
+    private static void ensureRowDeletingIteratorIsAttached(Connector connector, String tableName) {
+        try {
+            IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
+            if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
+                connector.tableOperations().attachIterator(tableName, is);
+            }
+        } catch (Exception e) {
+            throw new SecureGraphException("Could not attach RowDeletingIterator", e);
         }
     }
 
@@ -144,7 +156,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void addPropertyToMutation(Mutation m, String rowKey, Property property) {
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPERATOR + property.getId());
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getId());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
@@ -200,11 +212,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private String createTableDataRowKey(String rowKey, Property property) {
-        return DATA_ROW_KEY_PREFIX + rowKey + VALUE_SEPERATOR + property.getName() + VALUE_SEPERATOR + property.getId();
+        return DATA_ROW_KEY_PREFIX + rowKey + VALUE_SEPARATOR + property.getName() + VALUE_SEPARATOR + property.getId();
     }
 
     private void addPropertyRemoveToMutation(Mutation m, Property property) {
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPERATOR + property.getId());
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getId());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
@@ -395,14 +407,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void addDeleteRowToMutations(List<Mutation> mutations, String rowKey, Authorizations authorizations) {
-        // TODO: How do we delete rows if a user can't see all properties?
         try {
             Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
             scanner.setRange(new Range(rowKey));
             Mutation m = new Mutation(rowKey);
-            for (Map.Entry<Key, Value> col : scanner) {
-                m.putDelete(col.getKey().getColumnFamily(), col.getKey().getColumnQualifier(), new ColumnVisibility(col.getKey().getColumnVisibility()));
-            }
+            m.put(new byte[0], new byte[0], RowDeletingIterator.DELETE_ROW_VALUE.get());
             mutations.add(m);
         } catch (TableNotFoundException ex) {
             throw new SecureGraphException(ex);

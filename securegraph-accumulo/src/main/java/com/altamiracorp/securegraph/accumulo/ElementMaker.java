@@ -118,7 +118,7 @@ public abstract class ElementMaker<T> {
     }
 
     private String getPropertyNameFromColumnQualifier(String columnQualifier) {
-        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPERATOR);
+        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPARATOR);
         if (i < 0) {
             throw new SecureGraphException("Invalid property column qualifier");
         }
@@ -134,7 +134,7 @@ public abstract class ElementMaker<T> {
     }
 
     private String getPropertyIdFromColumnQualifier(String columnQualifier) {
-        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPERATOR);
+        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPARATOR);
         if (i < 0) {
             throw new SecureGraphException("Invalid property column qualifier");
         }
