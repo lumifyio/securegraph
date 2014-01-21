@@ -14,6 +14,12 @@ public class ElementVisibilityRowFilter extends RowFilter {
     public static final String OPT_FILTER_VERTICES = "vertex.enabled";
     public static final String OPT_FILTER_EDGES = "edge.enabled";
 
+    // must match com.altamiracorp.securegraph.accumulo.AccumuloVertex.CF_SIGNAL
+    private static final Text VERTEX_CF_SIGNAL = new Text("V");
+
+    // must match com.altamiracorp.securegraph.accumulo.AccumuloEdge.CF_SIGNAL
+    private static final Text EDGE_CF_SIGNAL = new Text("E");
+
     boolean filterVertices;
     boolean filterEdges;
 
@@ -42,8 +48,8 @@ public class ElementVisibilityRowFilter extends RowFilter {
     }
 
     private boolean isVisible(Key key) {
-        return (this.filterVertices && key.compareColumnFamily(new Text("V")) == 0) ||
-                (this.filterEdges && key.compareColumnFamily(new Text("E")) == 0);
+        return (this.filterVertices && key.compareColumnFamily(VERTEX_CF_SIGNAL) == 0) ||
+                (this.filterEdges && key.compareColumnFamily(EDGE_CF_SIGNAL) == 0);
     }
 
 }
