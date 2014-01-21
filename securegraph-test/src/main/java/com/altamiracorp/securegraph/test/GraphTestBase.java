@@ -479,6 +479,16 @@ public abstract class GraphTestBase {
         assertEquals(2, count(vertices));
 
         vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.IN, new Integer[]{25})
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.IN, new Integer[]{25, 30})
+                .vertices();
+        assertEquals(2, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
                 .has("age", Compare.GREATER_THAN, 25)
                 .vertices();
         assertEquals(1, count(vertices));

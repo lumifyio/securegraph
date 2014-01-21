@@ -106,6 +106,9 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                     case NOT_EQUAL:
                         filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(has.key, value)));
                         break;
+                    case IN:
+                        filters.add(FilterBuilders.inFilter(has.key, (Object[]) has.value));
+                        break;
                     default:
                         throw new SecureGraphException("Unexpected compare predicate " + has.predicate);
                 }
