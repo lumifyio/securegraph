@@ -1,12 +1,11 @@
 package com.altamiracorp.securegraph.accumulo.iterator;
 
-import com.altamiracorp.securegraph.accumulo.AccumuloEdge;
-import com.altamiracorp.securegraph.accumulo.AccumuloVertex;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RowFilter;
+import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.util.Map;
@@ -43,8 +42,8 @@ public class ElementVisibilityRowFilter extends RowFilter {
     }
 
     private boolean isVisible(Key key) {
-        return (this.filterVertices && key.compareColumnFamily(AccumuloVertex.CF_SIGNAL) == 0) ||
-                (this.filterEdges && key.compareColumnFamily(AccumuloEdge.CF_SIGNAL) == 0);
+        return (this.filterVertices && key.compareColumnFamily(new Text("V")) == 0) ||
+                (this.filterEdges && key.compareColumnFamily(new Text("E")) == 0);
     }
 
 }
