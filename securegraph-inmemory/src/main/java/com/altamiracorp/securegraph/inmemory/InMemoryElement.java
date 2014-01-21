@@ -40,7 +40,7 @@ public abstract class InMemoryElement extends ElementBase {
             for (Property property : properties) {
                 if (property.getValue() instanceof StreamingPropertyValue) {
                     StreamingPropertyValue value = (StreamingPropertyValue) property.getValue();
-                    byte[] valueData = StreamUtils.toBytes(value.getInputStream(null));
+                    byte[] valueData = StreamUtils.toBytes(value.getInputStream());
                     ((MutableProperty) property).setValue(new InMemoryStreamingPropertyValue(valueData, value.getValueType()));
                 }
             }

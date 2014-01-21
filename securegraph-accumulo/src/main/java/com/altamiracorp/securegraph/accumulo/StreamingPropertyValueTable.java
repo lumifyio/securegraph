@@ -1,6 +1,5 @@
 package com.altamiracorp.securegraph.accumulo;
 
-import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 
 import java.io.ByteArrayInputStream;
@@ -19,7 +18,7 @@ class StreamingPropertyValueTable extends StreamingPropertyValue {
     }
 
     @Override
-    public InputStream getInputStream(Authorizations authorizations) {
-        return new ByteArrayInputStream(this.graph.streamingPropertyValueTableData(this.dataRowKey, authorizations));
+    public InputStream getInputStream() {
+        return new ByteArrayInputStream(this.graph.streamingPropertyValueTableData(this.dataRowKey));
     }
 }

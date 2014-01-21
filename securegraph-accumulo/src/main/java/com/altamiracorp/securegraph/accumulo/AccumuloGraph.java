@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
@@ -16,7 +17,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.security.*;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -148,7 +149,7 @@ public class AccumuloGraph extends GraphBase {
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
-            StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue, columnVisibility);
+            StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue);
             ((MutableProperty) property).setValue(streamingPropertyValueRef.toStreamingPropertyValue(this));
             propertyValue = streamingPropertyValueRef;
         }
@@ -160,12 +161,12 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
-    private StreamingPropertyValueRef saveStreamingPropertyValue(String rowKey, Property property, StreamingPropertyValue propertyValue, ColumnVisibility columnVisibility) {
+    private StreamingPropertyValueRef saveStreamingPropertyValue(String rowKey, Property property, StreamingPropertyValue propertyValue) {
         try {
             HdfsLargeDataStore largeDataStore = new HdfsLargeDataStore(this.fileSystem);
             LimitOutputStream out = new LimitOutputStream(largeDataStore, maxStreamingPropertyValueTableDataSize);
             try {
-                StreamUtils.copy(propertyValue.getInputStream(null), out);
+                StreamUtils.copy(propertyValue.getInputStream(), out);
             } finally {
                 out.close();
             }
@@ -173,7 +174,7 @@ public class AccumuloGraph extends GraphBase {
             if (out.hasExceededSizeLimit()) {
                 return saveStreamingPropertyValueLarge(rowKey, property, largeDataStore, propertyValue);
             } else {
-                return saveStreamingPropertyValueSmall(rowKey, property, out.getSmall(), propertyValue, columnVisibility);
+                return saveStreamingPropertyValueSmall(rowKey, property, out.getSmall(), propertyValue);
             }
         } catch (IOException ex) {
             throw new SecureGraphException(ex);
@@ -191,10 +192,10 @@ public class AccumuloGraph extends GraphBase {
         return new StreamingPropertyValueHdfsRef(path, propertyValue);
     }
 
-    private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, StreamingPropertyValue propertyValue, ColumnVisibility columnVisibility) {
+    private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, StreamingPropertyValue propertyValue) {
         String dataRowKey = createTableDataRowKey(rowKey, property);
         Mutation dataMutation = new Mutation(dataRowKey);
-        dataMutation.put(EMPTY_TEXT, EMPTY_TEXT, columnVisibility, new Value(data));
+        dataMutation.put(EMPTY_TEXT, EMPTY_TEXT, new Value(data));
         addMutations(dataMutation);
         return new StreamingPropertyValueTableRef(dataRowKey, propertyValue);
     }
@@ -499,6 +500,9 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private org.apache.accumulo.core.security.Authorizations toAccumuloAuthorizations(Authorizations authorizations) {
+        if (authorizations == null) {
+            throw new NullPointerException("authorizations is required");
+        }
         return new org.apache.accumulo.core.security.Authorizations(authorizations.getAuthorizations());
     }
 
@@ -583,9 +587,9 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
-    public byte[] streamingPropertyValueTableData(String dataRowKey, Authorizations authorizations) {
+    public byte[] streamingPropertyValueTableData(String dataRowKey) {
         try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
+            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), new org.apache.accumulo.core.security.Authorizations());
             scanner.setRange(new Range(dataRowKey));
             Iterator<Map.Entry<Key, Value>> it = scanner.iterator();
             if (it.hasNext()) {

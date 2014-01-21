@@ -1,6 +1,5 @@
 package com.altamiracorp.securegraph.accumulo;
 
-import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.SecureGraphException;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import org.apache.hadoop.fs.FileSystem;
@@ -22,7 +21,7 @@ class StreamingPropertyValueHdfs extends StreamingPropertyValue {
     }
 
     @Override
-    public InputStream getInputStream(Authorizations authorizations) {
+    public InputStream getInputStream() {
         try {
             return fs.open(this.path);
         } catch (IOException ex) {

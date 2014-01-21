@@ -88,8 +88,8 @@ public abstract class GraphTestBase {
         assertTrue("propSmallValue was " + propSmallValue.getClass().getName(), propSmallValue instanceof StreamingPropertyValue);
         StreamingPropertyValue value = (StreamingPropertyValue) propSmallValue;
         assertEquals(String.class, value.getValueType());
-        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
-        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals("value1", IOUtils.toString(value.getInputStream()));
+        assertEquals("value1", IOUtils.toString(value.getInputStream()));
 
         Iterable<Object> propLargeValues = v1.getPropertyValues("propLarge");
         assertEquals(1, count(propLargeValues));
@@ -97,8 +97,8 @@ public abstract class GraphTestBase {
         assertTrue("propLargeValue was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propLargeValue;
         assertEquals(String.class, value.getValueType());
-        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
-        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         propSmallValues = v1.getPropertyValues("propSmall");
@@ -107,8 +107,8 @@ public abstract class GraphTestBase {
         assertTrue("propSmallValue was " + propSmallValue.getClass().getName(), propSmallValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propSmallValue;
         assertEquals(String.class, value.getValueType());
-        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
-        assertEquals("value1", IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals("value1", IOUtils.toString(value.getInputStream()));
+        assertEquals("value1", IOUtils.toString(value.getInputStream()));
 
         propLargeValues = v1.getPropertyValues("propLarge");
         assertEquals(1, count(propLargeValues));
@@ -116,8 +116,8 @@ public abstract class GraphTestBase {
         assertTrue("propLargeValue was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propLargeValue;
         assertEquals(String.class, value.getValueType());
-        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
-        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream(AUTHORIZATIONS_A)));
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
+        assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
     }
 
     @Test

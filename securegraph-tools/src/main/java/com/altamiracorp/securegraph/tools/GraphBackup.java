@@ -39,27 +39,27 @@ public class GraphBackup extends GraphToolBase {
     }
 
     public void save(Graph graph, OutputStream out, Authorizations authorizations) throws IOException {
-        saveVertices(graph.getVertices(authorizations), out, authorizations);
-        saveEdges(graph.getEdges(authorizations), out, authorizations);
+        saveVertices(graph.getVertices(authorizations), out);
+        saveEdges(graph.getEdges(authorizations), out);
     }
 
-    private void saveVertices(Iterable<Vertex> vertices, OutputStream out, Authorizations authorizations) throws IOException {
+    private void saveVertices(Iterable<Vertex> vertices, OutputStream out) throws IOException {
         for (Vertex vertex : vertices) {
             JSONObject json = vertexToJson(vertex);
             out.write('V');
             out.write(json.toString().getBytes());
             out.write('\n');
-            saveStreamingPropertyValues(out, vertex, authorizations);
+            saveStreamingPropertyValues(out, vertex);
         }
     }
 
-    private void saveEdges(Iterable<Edge> edges, OutputStream out, Authorizations authorizations) throws IOException {
+    private void saveEdges(Iterable<Edge> edges, OutputStream out) throws IOException {
         for (Edge edge : edges) {
             JSONObject json = edgeToJson(edge);
             out.write('E');
             out.write(json.toString().getBytes());
             out.write('\n');
-            saveStreamingPropertyValues(out, edge, authorizations);
+            saveStreamingPropertyValues(out, edge);
         }
     }
 
@@ -118,22 +118,22 @@ public class GraphBackup extends GraphToolBase {
         return json;
     }
 
-    private void saveStreamingPropertyValues(OutputStream out, Element element, Authorizations authorizations) throws IOException {
+    private void saveStreamingPropertyValues(OutputStream out, Element element) throws IOException {
         for (Property property : element.getProperties()) {
             if (property.getValue() instanceof StreamingPropertyValue) {
-                saveStreamingProperty(out, property, authorizations);
+                saveStreamingProperty(out, property);
             }
         }
     }
 
-    private void saveStreamingProperty(OutputStream out, Property property, Authorizations authorizations) throws IOException {
+    private void saveStreamingProperty(OutputStream out, Property property) throws IOException {
         StreamingPropertyValue spv = (StreamingPropertyValue) property.getValue();
         JSONObject json = propertyToJson(property);
         json.put("valueType", spv.getValueType().getName());
         out.write('D');
         out.write(json.toString().getBytes());
         out.write('\n');
-        InputStream in = spv.getInputStream(authorizations);
+        InputStream in = spv.getInputStream();
         byte[] buffer = new byte[10 * 1024];
         int read;
         while ((read = in.read(buffer)) > 0) {

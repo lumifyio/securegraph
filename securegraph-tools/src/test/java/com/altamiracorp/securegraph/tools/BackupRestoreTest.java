@@ -97,7 +97,7 @@ public class BackupRestoreTest {
             StreamingPropertyValue spv = (StreamingPropertyValue) v1.getPropertyValue("largeData", 0);
             assertNotNull("largeData property not found", spv);
             assertEquals(String.class, spv.getValueType());
-            assertEquals(expectedLargeValue, IOUtils.toString(spv.getInputStream(GraphTestBase.AUTHORIZATIONS_A)));
+            assertEquals(expectedLargeValue, IOUtils.toString(spv.getInputStream()));
 
             v2 = loadedGraph.getVertex("v2", GraphTestBase.AUTHORIZATIONS_A_AND_B);
             assertEquals(1, count(v2.getEdges(Direction.BOTH, GraphTestBase.AUTHORIZATIONS_A_AND_B)));

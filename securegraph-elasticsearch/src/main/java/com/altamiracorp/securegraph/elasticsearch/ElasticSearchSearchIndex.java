@@ -117,7 +117,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                     }
                     Class valueType = streamingPropertyValue.getValueType();
                     if (valueType == String.class) {
-                        propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream(null));
+                        propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream());
                     } else {
                         throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                     }
