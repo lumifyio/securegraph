@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,9 +72,13 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 XContentBuilder mapping = XContentFactory.jsonBuilder()
                         .startObject()
                         .startObject(ELEMENT_TYPE)
-                        .startObject("properties");
-                mapping.startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").endObject();
-                mapping
+                        .startObject("_source")
+                        .field("enabled", false)
+                        .endObject()
+                        .startObject("properties")
+                        .startObject(ELEMENT_TYPE_FIELD_NAME)
+                        .field("type", "string")
+                        .endObject()
                         .endObject()
                         .endObject()
                         .endObject();
@@ -108,7 +113,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 Object propertyValue = property.getValue();
                 if (propertyValue instanceof GeoPoint) {
                     GeoPoint geoPoint = (GeoPoint) propertyValue;
-                    propertyValue = new org.elasticsearch.common.geo.GeoPoint(geoPoint.getLatitude(), geoPoint.getLongitude());
+                    Map<String, Object> propertyValueMap = new HashMap<String, Object>();
+                    propertyValueMap.put("lat", geoPoint.getLatitude());
+                    propertyValueMap.put("lon", geoPoint.getLongitude());
+                    propertyValue = propertyValueMap;
                 } else if (propertyValue instanceof StreamingPropertyValue) {
                     StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
                     if (!streamingPropertyValue.isSearchIndex()) {
@@ -116,7 +124,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                     }
                     Class valueType = streamingPropertyValue.getValueType();
                     if (valueType == String.class) {
-                        propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream(null));
+                        propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream());
                     } else {
                         throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                     }
@@ -194,6 +202,9 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } else if (dataType == Integer.class) {
             LOGGER.debug("Registering integer type for {}", propertyName);
             mapping.field("type", "integer");
+        } else if (dataType == Date.class) {
+            LOGGER.debug("Registering date type for {}", propertyName);
+            mapping.field("type", "date");
         } else if (dataType == Long.class) {
             LOGGER.debug("Registering long type for {}", propertyName);
             mapping.field("type", "long");
@@ -204,7 +215,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             LOGGER.debug("Registering geo_point type for {}", propertyName);
             mapping.field("type", "geo_point");
         } else {
-            throw new SecureGraphException("Unexpected value type: " + dataType.getName());
+            throw new SecureGraphException("Unexpected value type for property \"" + propertyName + "\": " + dataType.getName());
         }
 
         mapping.field("store", "no");

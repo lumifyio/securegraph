@@ -1,7 +1,5 @@
 package com.altamiracorp.securegraph.property;
 
-import com.altamiracorp.securegraph.Authorizations;
-
 import java.io.InputStream;
 
 public class StreamingPropertyValue extends PropertyValue {
@@ -13,7 +11,7 @@ public class StreamingPropertyValue extends PropertyValue {
         this.valueType = valueType;
     }
 
-    public InputStream getInputStream(Authorizations authorizations) {
+    public InputStream getInputStream() {
         return inputStream;
     }
 

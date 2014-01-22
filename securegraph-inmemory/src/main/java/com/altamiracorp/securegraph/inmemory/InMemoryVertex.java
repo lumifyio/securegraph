@@ -4,10 +4,11 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
-import org.json.JSONObject;
+
+import java.util.List;
 
 public class InMemoryVertex extends InMemoryElement implements Vertex {
-    protected InMemoryVertex(Graph graph, Object id, Visibility visibility, Property[] properties) {
+    protected InMemoryVertex(Graph graph, Object id, Visibility visibility, List<Property> properties) {
         super(graph, id, visibility, properties);
     }
 
@@ -44,6 +45,36 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
                     }
                 }
                 return false;
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, label, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, labels, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
             }
         };
     }
@@ -91,11 +122,5 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     @Override
     public VertexQuery query(String queryString, Authorizations authorizations) {
         return getGraph().getSearchIndex().queryVertex(getGraph(), this, queryString, authorizations);
-    }
-
-    static InMemoryVertex fromJson(Graph graph, Object id, JSONObject jsonObject) {
-        Visibility visibility = InMemoryElement.fromJsonVisibility(jsonObject);
-        Property[] properties = InMemoryElement.fromJsonProperties(jsonObject);
-        return new InMemoryVertex(graph, id, visibility, properties);
     }
 }

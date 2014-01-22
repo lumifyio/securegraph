@@ -4,9 +4,7 @@ import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public abstract class ElementBase implements Element {
     private final Graph graph;
@@ -16,7 +14,7 @@ public abstract class ElementBase implements Element {
     // The key to this map is the property id + property name
     private final Map<Object, Property> properties;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility, Property[] properties) {
+    protected ElementBase(Graph graph, Object id, Visibility visibility, List<Property> properties) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
@@ -32,6 +30,11 @@ public abstract class ElementBase implements Element {
                 return p.getValue();
             }
         };
+    }
+
+    @Override
+    public Object getPropertyValue(String name) {
+        return getPropertyValue(name, 0);
     }
 
     @Override
@@ -71,11 +74,8 @@ public abstract class ElementBase implements Element {
         };
     }
 
-    @Override
-    public abstract void setProperties(Property... properties);
-
     // this method differs setProperties in that it only updates the in memory representation of the properties
-    protected void setPropertiesInternal(Property[] properties) {
+    protected void setPropertiesInternal(List<Property> properties) {
         for (Property property : properties) {
             if (property.getId() == null) {
                 throw new IllegalArgumentException("id is required for property");
@@ -84,15 +84,35 @@ public abstract class ElementBase implements Element {
             if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
                 continue;
             }
-            this.properties.put(property.getId() + property.getName(), property);
+            this.properties.put(getPropertyKey(property.getId(), property.getName()), property);
         }
     }
 
     protected Property removePropertyInternal(Object propertyId, String name) {
-        String key = propertyId + name;
+        String key = getPropertyKey(propertyId, name);
         Property property = this.properties.get(key);
         this.properties.remove(key);
         return property;
+    }
+
+    private String getPropertyKey(Object propertyId, String name) {
+        return propertyId + name;
+    }
+
+    protected Iterable<Property> removePropertyInternal(String name) {
+        List<Property> removedProperties = new ArrayList<Property>();
+        for (Property p : this.properties.values()) {
+            if (p.getName().equals(name)) {
+                removedProperties.add(p);
+            }
+        }
+
+        for (Property p : removedProperties) {
+            Object key = getPropertyKey(p.getId(), p.getName());
+            this.properties.remove(key);
+        }
+
+        return removedProperties;
     }
 
     public Graph getGraph() {
@@ -119,5 +139,31 @@ public abstract class ElementBase implements Element {
             return getId().equals(objElem.getId());
         }
         return super.equals(obj);
+    }
+
+    @Override
+    public abstract ElementMutation prepareMutation();
+
+    @Override
+    public abstract void removeProperty(String propertyId, String name);
+
+    @Override
+    public void addPropertyValue(Object id, String name, Object value, Visibility visibility) {
+        prepareMutation().addPropertyValue(id, name, value, visibility).save();
+    }
+
+    @Override
+    public void addPropertyValue(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        prepareMutation().addPropertyValue(id, name, value, metadata, visibility).save();
+    }
+
+    @Override
+    public void setProperty(String name, Object value, Visibility visibility) {
+        prepareMutation().setProperty(name, value, visibility).save();
+    }
+
+    @Override
+    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        prepareMutation().setProperty(name, value, metadata, visibility).save();
     }
 }

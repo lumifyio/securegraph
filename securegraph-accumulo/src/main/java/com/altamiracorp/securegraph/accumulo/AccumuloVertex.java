@@ -10,6 +10,7 @@ import org.apache.hadoop.io.Text;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class AccumuloVertex extends AccumuloElement implements Vertex {
@@ -25,11 +26,11 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     private final Set<Object> inVertexIds;
     private final Set<Object> outVertexIds;
 
-    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Property[] properties) {
+    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, List<Property> properties) {
         this(graph, vertexId, vertexVisibility, properties, new HashSet<Object>(), new HashSet<Object>(), new HashSet<Object>(), new HashSet<Object>());
     }
 
-    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Property[] properties, Set<Object> inEdgeIds, Set<Object> outEdgeIds, Set<Object> inVertexIds, Set<Object> outVertexIds) {
+    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, List<Property> properties, Set<Object> inEdgeIds, Set<Object> outEdgeIds, Set<Object> inVertexIds, Set<Object> outVertexIds) {
         super(graph, vertexId, vertexVisibility, properties);
         this.inEdgeIds = inEdgeIds;
         this.outEdgeIds = outEdgeIds;
@@ -76,21 +77,38 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     }
 
     @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, label, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return new FilterIterable<Edge>(getEdges(direction, labels, authorizations)) {
+            @Override
+            protected boolean isIncluded(Edge edge) {
+                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
+            }
+        };
+    }
+
+    @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
-        switch (direction) {
-            case BOTH:
-                // TODO: Can't we concat the two id lists together and do a single scan, skipping the JoinIterable?
-                return new JoinIterable<Vertex>(
-                        new VerticesByIdsIterable(getGraph(), inVertexIds, authorizations),
-                        new VerticesByIdsIterable(getGraph(), outVertexIds, authorizations)
-                );
-            case IN:
-                return new VerticesByIdsIterable(getGraph(), inVertexIds, authorizations);
-            case OUT:
-                return new VerticesByIdsIterable(getGraph(), outVertexIds, authorizations);
-            default:
-                throw new SecureGraphException("Unexpected direction: " + direction);
-        }
+        return new VerticesByIdsIterable(getGraph(), getVertexIds(direction, authorizations), authorizations);
     }
 
     @Override
@@ -106,6 +124,19 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
                 return edge.getOtherVertex(getId(), authorizations);
             }
         };
+    }
+
+    public Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations) {
+        switch (direction) {
+            case BOTH:
+                return new JoinIterable<Object>(inVertexIds, outVertexIds);
+            case IN:
+                return this.inVertexIds;
+            case OUT:
+                return this.outVertexIds;
+            default:
+                throw new SecureGraphException("Unexpected direction: " + direction);
+        }
     }
 
     @Override
@@ -140,10 +171,10 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     private static abstract class ElementsByIdsIterable<T> extends LookAheadIterable<Object, T> {
         protected final Graph graph;
-        protected final Set<Object> idsList;
+        protected final Iterable<Object> idsList;
         protected final Authorizations authorizations;
 
-        public ElementsByIdsIterable(Graph graph, Set<Object> idsList, Authorizations authorizations) {
+        public ElementsByIdsIterable(Graph graph, Iterable<Object> idsList, Authorizations authorizations) {
             this.graph = graph;
             this.idsList = idsList;
             this.authorizations = authorizations;
@@ -175,7 +206,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     }
 
     private static class VerticesByIdsIterable extends ElementsByIdsIterable<Vertex> {
-        public VerticesByIdsIterable(Graph graph, Set<Object> idsList, Authorizations authorizations) {
+        public VerticesByIdsIterable(Graph graph, Iterable<Object> idsList, Authorizations authorizations) {
             super(graph, idsList, authorizations);
         }
 

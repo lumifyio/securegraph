@@ -3,14 +3,14 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.SecureGraphException;
 import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.property.MutableProperty;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public abstract class ElementMaker<T> {
     private final Iterator<Map.Entry<Key, Value>> row;
@@ -40,6 +40,12 @@ public abstract class ElementMaker<T> {
             ColumnVisibility columnVisibility = new ColumnVisibility(col.getKey().getColumnVisibility().toString());
             Value value = col.getValue();
 
+            if (columnFamily.equals(AccumuloGraph.DELETE_ROW_COLUMN_FAMILY)
+                    && columnQualifier.equals(AccumuloGraph.DELETE_ROW_COLUMN_QUALIFIER)
+                    && value.equals(RowDeletingIterator.DELETE_ROW_VALUE)) {
+                return null;
+            }
+
             if (AccumuloElement.CF_PROPERTY.compareTo(columnFamily) == 0) {
                 extractPropertyData(columnQualifier, columnVisibility, value);
                 continue;
@@ -57,8 +63,9 @@ public abstract class ElementMaker<T> {
             processColumn(col.getKey(), col.getValue());
         }
 
+        // If the com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter isn't installed this will catch stray rows
         if (this.visibility == null) {
-            throw new SecureGraphException("Invalid visibility. This could occur if other columns are returned without the element signal column being returned.");
+            return null;
         }
 
         return makeElement();
@@ -84,9 +91,8 @@ public abstract class ElementMaker<T> {
         return graph;
     }
 
-    protected Property[] getProperties() {
-        Property[] results = new Property[propertyValues.size()];
-        int i = 0;
+    protected List<Property> getProperties() {
+        List<Property> results = new ArrayList<Property>(propertyValues.size());
         for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
             String propertyNameAndId = propertyValueEntry.getKey();
             String propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
@@ -94,7 +100,7 @@ public abstract class ElementMaker<T> {
             Object propertyValue = propertyValueEntry.getValue();
             Visibility visibility = propertyVisibilities.get(propertyNameAndId);
             Map<String, Object> metadata = propertyMetadata.get(propertyNameAndId);
-            results[i++] = new AccumuloProperty(propertyId, propertyName, propertyValue, metadata, visibility);
+            results.add(new MutableProperty(propertyId, propertyName, propertyValue, metadata, visibility));
         }
         return results;
     }
@@ -120,7 +126,7 @@ public abstract class ElementMaker<T> {
     }
 
     private String getPropertyNameFromColumnQualifier(String columnQualifier) {
-        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPERATOR);
+        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPARATOR);
         if (i < 0) {
             throw new SecureGraphException("Invalid property column qualifier");
         }
@@ -136,7 +142,7 @@ public abstract class ElementMaker<T> {
     }
 
     private String getPropertyIdFromColumnQualifier(String columnQualifier) {
-        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPERATOR);
+        int i = columnQualifier.indexOf(AccumuloGraph.VALUE_SEPARATOR);
         if (i < 0) {
             throw new SecureGraphException("Invalid property column qualifier");
         }
