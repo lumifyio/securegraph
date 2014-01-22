@@ -35,6 +35,8 @@ public class AccumuloGraph extends GraphBase {
     public static final String VALUE_SEPARATOR = "\u001f";
     private static final String ROW_DELETING_ITERATOR_NAME = RowDeletingIterator.class.getSimpleName();
     private static final int ROW_DELETING_ITERATOR_PRIORITY = 7;
+    public static final Text DELETE_ROW_COLUMN_FAMILY = new Text("");
+    public static final Text DELETE_ROW_COLUMN_QUALIFIER = new Text("");
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private BatchWriter writer;
@@ -407,15 +409,9 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void addDeleteRowToMutations(List<Mutation> mutations, String rowKey, Authorizations authorizations) {
-        try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
-            scanner.setRange(new Range(rowKey));
-            Mutation m = new Mutation(rowKey);
-            m.put(new byte[0], new byte[0], RowDeletingIterator.DELETE_ROW_VALUE.get());
-            mutations.add(m);
-        } catch (TableNotFoundException ex) {
-            throw new SecureGraphException(ex);
-        }
+        Mutation m = new Mutation(rowKey);
+        m.put(DELETE_ROW_COLUMN_FAMILY, DELETE_ROW_COLUMN_QUALIFIER, RowDeletingIterator.DELETE_ROW_VALUE);
+        mutations.add(m);
     }
 
     public ValueSerializer getValueSerializer() {
@@ -467,11 +463,7 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
                 VertexMaker maker = new VertexMaker(graph, next);
-                Vertex vertex = maker.make();
-                if (vertex == null && getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
-                    throw new SecureGraphException("Invalid visibility. This could occur if other columns are returned without the element signal column being returned.");
-                }
-                return vertex;
+                return maker.make();
             }
 
             @Override
@@ -554,11 +546,7 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
                 EdgeMaker maker = new EdgeMaker(graph, next);
-                Edge edge = maker.make();
-                if (edge == null && getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
-                    throw new SecureGraphException("Invalid visibility. This could occur if other columns are returned without the element signal column being returned.");
-                }
-                return edge;
+                return maker.make();
             }
 
             @Override
@@ -569,6 +557,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void printTable(Authorizations authorizations) {
+        System.out.println("---------------------------------------------- BEGIN printTable ----------------------------------------------");
         try {
             Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
             RowIterator it = new RowIterator(scanner.iterator());
@@ -593,6 +582,7 @@ public class AccumuloGraph extends GraphBase {
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
         }
+        System.out.println("---------------------------------------------- END printTable ------------------------------------------------");
     }
 
     public byte[] streamingPropertyValueTableData(String dataRowKey) {

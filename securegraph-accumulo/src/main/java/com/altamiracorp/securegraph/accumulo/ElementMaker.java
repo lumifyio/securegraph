@@ -6,6 +6,7 @@ import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.property.MutableProperty;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -38,6 +39,12 @@ public abstract class ElementMaker<T> {
             Text columnQualifier = col.getKey().getColumnQualifier();
             ColumnVisibility columnVisibility = new ColumnVisibility(col.getKey().getColumnVisibility().toString());
             Value value = col.getValue();
+
+            if (columnFamily.equals(AccumuloGraph.DELETE_ROW_COLUMN_FAMILY)
+                    && columnQualifier.equals(AccumuloGraph.DELETE_ROW_COLUMN_QUALIFIER)
+                    && value.equals(RowDeletingIterator.DELETE_ROW_VALUE)) {
+                return null;
+            }
 
             if (AccumuloElement.CF_PROPERTY.compareTo(columnFamily) == 0) {
                 extractPropertyData(columnQualifier, columnVisibility, value);
