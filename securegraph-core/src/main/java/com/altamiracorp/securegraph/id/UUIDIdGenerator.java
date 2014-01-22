@@ -10,6 +10,6 @@ public class UUIDIdGenerator implements IdGenerator {
 
     @Override
     public Object nextId() {
-        return UUID.randomUUID().toString();
+        return UUID.randomUUID().toString().replaceAll("-", "");
     }
 }
