@@ -33,6 +33,11 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
+    public Object getPropertyValue(String name) {
+        return getPropertyValue(name, 0);
+    }
+
+    @Override
     public Object getPropertyValue(String name, int index) {
         Iterator<Object> values = getPropertyValues(name).iterator();
         while (values.hasNext() && index >= 0) {

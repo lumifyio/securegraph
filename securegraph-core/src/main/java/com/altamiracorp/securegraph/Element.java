@@ -15,6 +15,8 @@ public interface Element {
 
     Iterable<Object> getPropertyValues(String name);
 
+    Object getPropertyValue(String name);
+
     Object getPropertyValue(String name, int index);
 
     ElementMutation prepareMutation();

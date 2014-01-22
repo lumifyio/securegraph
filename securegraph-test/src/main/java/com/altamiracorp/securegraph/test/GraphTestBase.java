@@ -355,6 +355,8 @@ public abstract class GraphTestBase {
         assertEquals(2, count(e.getProperties()));
         assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
         assertEquals("valueB", e.getPropertyValues("propB").iterator().next());
+        assertEquals("valueA", e.getPropertyValue("propA"));
+        assertEquals("valueB", e.getPropertyValue("propB"));
     }
 
     @Test

@@ -72,9 +72,13 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 XContentBuilder mapping = XContentFactory.jsonBuilder()
                         .startObject()
                         .startObject(ELEMENT_TYPE)
-                        .startObject("properties");
-                mapping.startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").endObject();
-                mapping
+                        .startObject("_source")
+                        .field("enabled", false)
+                        .endObject()
+                        .startObject("properties")
+                        .startObject(ELEMENT_TYPE_FIELD_NAME)
+                        .field("type", "string")
+                        .endObject()
                         .endObject()
                         .endObject()
                         .endObject();
