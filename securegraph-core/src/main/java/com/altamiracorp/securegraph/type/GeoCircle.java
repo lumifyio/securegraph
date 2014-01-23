@@ -1,7 +1,6 @@
 package com.altamiracorp.securegraph.type;
 
 import com.altamiracorp.securegraph.SecureGraphException;
-
 import java.io.Serializable;
 
 public class GeoCircle implements Serializable, GeoShape {
@@ -35,5 +34,35 @@ public class GeoCircle implements Serializable, GeoShape {
             return GeoPoint.distanceBetween(getLatitude(), getLongitude(), pt.getLatitude(), pt.getLongitude()) <= getRadius();
         }
         throw new SecureGraphException("Not implemented for argument type " + geoShape.getClass().getName());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 61 * hash + (int) (Double.doubleToLongBits(this.latitude) ^ (Double.doubleToLongBits(this.latitude) >>> 32));
+        hash = 61 * hash + (int) (Double.doubleToLongBits(this.longitude) ^ (Double.doubleToLongBits(this.longitude) >>> 32));
+        hash = 61 * hash + (int) (Double.doubleToLongBits(this.radius) ^ (Double.doubleToLongBits(this.radius) >>> 32));
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final GeoCircle other = (GeoCircle) obj;
+        if (Double.doubleToLongBits(this.latitude) != Double.doubleToLongBits(other.latitude)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.longitude) != Double.doubleToLongBits(other.longitude)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.radius) != Double.doubleToLongBits(other.radius)) {
+            return false;
+        }
+        return true;
     }
 }

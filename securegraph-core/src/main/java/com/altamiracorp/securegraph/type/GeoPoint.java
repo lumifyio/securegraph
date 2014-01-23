@@ -1,7 +1,6 @@
 package com.altamiracorp.securegraph.type;
 
 import com.altamiracorp.securegraph.SecureGraphException;
-
 import java.io.Serializable;
 
 public class GeoPoint implements Serializable, GeoShape {
@@ -36,6 +35,36 @@ public class GeoPoint implements Serializable, GeoShape {
     @Override
     public boolean within(GeoShape geoShape) {
         throw new SecureGraphException("Not implemented for argument type " + geoShape.getClass().getName());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 47 * hash + (int) (Double.doubleToLongBits(this.latitude) ^ (Double.doubleToLongBits(this.latitude) >>> 32));
+        hash = 47 * hash + (int) (Double.doubleToLongBits(this.longitude) ^ (Double.doubleToLongBits(this.longitude) >>> 32));
+        hash = 47 * hash + (this.altitude != null ? this.altitude.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final GeoPoint other = (GeoPoint) obj;
+        if (Double.doubleToLongBits(this.latitude) != Double.doubleToLongBits(other.latitude)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.longitude) != Double.doubleToLongBits(other.longitude)) {
+            return false;
+        }
+        if (this.altitude != other.altitude && (this.altitude == null || !this.altitude.equals(other.altitude))) {
+            return false;
+        }
+        return true;
     }
 
     // see http://www.movable-type.co.uk/scripts/latlong.html
