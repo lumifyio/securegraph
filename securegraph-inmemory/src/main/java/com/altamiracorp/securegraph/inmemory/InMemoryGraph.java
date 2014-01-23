@@ -32,7 +32,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility) {
+    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
@@ -81,7 +81,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
         }

@@ -50,7 +50,7 @@ public class GraphRestore extends GraphToolBase {
                 JSONObject json = new JSONObject(line.substring(1));
                 switch (type) {
                     case 'V':
-                        element = restoreVertex(graph, json);
+                        element = restoreVertex(graph, json, authorizations);
                         break;
                     case 'D':
                         restoreStreamingPropertyValue(in, graph, json, element);
@@ -89,10 +89,10 @@ public class GraphRestore extends GraphToolBase {
         return new String(buffer.toByteArray());
     }
 
-    private Vertex restoreVertex(Graph graph, JSONObject json) {
+    private Vertex restoreVertex(Graph graph, JSONObject json, Authorizations authorizations) {
         Visibility visibility = jsonToVisibility(json);
         Object vertexId = jsonStringToObject(json.getString("id"));
-        VertexBuilder v = graph.prepareVertex(vertexId, visibility);
+        VertexBuilder v = graph.prepareVertex(vertexId, visibility, authorizations);
         jsonToProperties(json, v);
         return v.save();
     }
@@ -105,7 +105,7 @@ public class GraphRestore extends GraphToolBase {
         String label = json.getString("label");
         Vertex outVertex = graph.getVertex(outVertexId, authorizations);
         Vertex inVertex = graph.getVertex(inVertexId, authorizations);
-        EdgeBuilder e = graph.prepareEdge(edgeId, outVertex, inVertex, label, visibility);
+        EdgeBuilder e = graph.prepareEdge(edgeId, outVertex, inVertex, label, visibility, authorizations);
         jsonToProperties(json, e);
         e.save();
     }

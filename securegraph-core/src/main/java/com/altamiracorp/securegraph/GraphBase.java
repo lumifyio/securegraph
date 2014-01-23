@@ -24,18 +24,18 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Vertex addVertex(Visibility visibility) {
-        return prepareVertex(visibility).save();
+    public Vertex addVertex(Visibility visibility, Authorizations authorizations) {
+        return prepareVertex(visibility, authorizations).save();
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility visibility) {
-        return prepareVertex(vertexId, visibility).save();
+    public Vertex addVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
+        return prepareVertex(vertexId, visibility, authorizations).save();
     }
 
     @Override
-    public VertexBuilder prepareVertex(Visibility visibility) {
-        return prepareVertex(getIdGenerator().nextId(), visibility);
+    public VertexBuilder prepareVertex(Visibility visibility, Authorizations authorizations) {
+        return prepareVertex(getIdGenerator().nextId(), visibility, authorizations);
     }
 
     @Override
@@ -65,18 +65,18 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
-        return prepareEdge(outVertex, inVertex, label, visibility).save();
+    public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(outVertex, inVertex, label, visibility, authorizations).save();
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save();
+    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(edgeId, outVertex, inVertex, label, visibility, authorizations).save();
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
-        return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility);
+    public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility, authorizations);
     }
 
     @Override

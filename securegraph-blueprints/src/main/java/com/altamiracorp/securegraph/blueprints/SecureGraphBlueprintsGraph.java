@@ -30,7 +30,7 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
     @Override
     public Vertex addVertex(Object id) {
         Visibility visibility = getVisibilityProvider().getVisibilityForVertex(id);
-        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().addVertex(SecureGraphBlueprintsConvert.idToString(id), visibility));
+        return SecureGraphBlueprintsVertex.create(this, getSecureGraph().addVertex(SecureGraphBlueprintsConvert.idToString(id), visibility, getAuthorizationsProvider().getAuthorizations()));
     }
 
     @Override
@@ -76,7 +76,7 @@ public abstract class SecureGraphBlueprintsGraph implements com.tinkerpop.bluepr
         com.altamiracorp.securegraph.Vertex sgOutVertex = SecureGraphBlueprintsConvert.toSecureGraph(outVertex);
         com.altamiracorp.securegraph.Vertex sgInVertex = SecureGraphBlueprintsConvert.toSecureGraph(inVertex);
         Visibility visibility = getVisibilityProvider().getVisibilityForEdge(id, sgOutVertex, sgInVertex, label);
-        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().addEdge(SecureGraphBlueprintsConvert.idToString(id), sgOutVertex, sgInVertex, label, visibility));
+        return SecureGraphBlueprintsEdge.create(this, getSecureGraph().addEdge(SecureGraphBlueprintsConvert.idToString(id), sgOutVertex, sgInVertex, label, visibility, getAuthorizationsProvider().getAuthorizations()));
     }
 
     @Override

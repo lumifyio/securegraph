@@ -97,12 +97,12 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility vertexVisibility) {
-        return prepareVertex(vertexId, vertexVisibility).save();
+    public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Authorizations authorizations) {
+        return prepareVertex(vertexId, vertexVisibility, authorizations).save();
     }
 
     @Override
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility) {
+    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
@@ -286,7 +286,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
         if (outVertex == null) {
             throw new IllegalArgumentException("outVertex is required");
         }
@@ -341,8 +341,8 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility).save();
+    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Authorizations authorizations) {
+        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility, authorizations).save();
     }
 
     @Override

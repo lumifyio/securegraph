@@ -40,16 +40,16 @@ public class BackupRestoreTest {
         String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(largePropertyValueSize));
         StreamingPropertyValue largeDataValue = new StreamingPropertyValue(new ByteArrayInputStream(expectedLargeValue.getBytes()), String.class);
 
-        Vertex v1 = graph.prepareVertex("v1", GraphTestBase.VISIBILITY_A)
+        Vertex v1 = graph.prepareVertex("v1", GraphTestBase.VISIBILITY_A, GraphTestBase.AUTHORIZATIONS_A)
                 .addPropertyValue("id1a", "prop1", "value1a", prop1Metadata, GraphTestBase.VISIBILITY_A)
                 .addPropertyValue("id1b", "prop1", "value1b", GraphTestBase.VISIBILITY_A)
                 .addPropertyValue("id2", "prop2", "value2", GraphTestBase.VISIBILITY_B)
                 .setProperty("largeData", largeDataValue, GraphTestBase.VISIBILITY_A)
                 .save();
-        Vertex v2 = graph.addVertex("v2", GraphTestBase.VISIBILITY_A);
-        Vertex v3 = graph.addVertex("v3", GraphTestBase.VISIBILITY_B);
-        graph.addEdge("e1to2", v1, v2, "label1", GraphTestBase.VISIBILITY_A);
-        graph.addEdge("e1to3", v1, v3, "label1", GraphTestBase.VISIBILITY_B);
+        Vertex v2 = graph.addVertex("v2", GraphTestBase.VISIBILITY_A, GraphTestBase.AUTHORIZATIONS_A);
+        Vertex v3 = graph.addVertex("v3", GraphTestBase.VISIBILITY_B, GraphTestBase.AUTHORIZATIONS_B);
+        graph.addEdge("e1to2", v1, v2, "label1", GraphTestBase.VISIBILITY_A, GraphTestBase.AUTHORIZATIONS_A);
+        graph.addEdge("e1to3", v1, v3, "label1", GraphTestBase.VISIBILITY_B, GraphTestBase.AUTHORIZATIONS_B);
 
         File tmp = File.createTempFile(getClass().getName(), ".json");
         FileOutputStream out = new FileOutputStream(tmp);
