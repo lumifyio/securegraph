@@ -36,6 +36,11 @@ public class InMemoryGraphTest extends GraphTestBase {
         return (InMemoryGraph) super.getGraph();
     }
 
+    @Override
+    protected Authorizations createAuthorizations(String... auths) {
+        return new InMemoryAuthorizations(auths);
+    }
+
     @Before
     @Override
     public void before() throws Exception {

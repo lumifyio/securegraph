@@ -3,6 +3,7 @@ package com.altamiracorp.securegraph.tools;
 import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.GraphFactory;
+import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
 import com.altamiracorp.securegraph.util.MapUtils;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -45,7 +46,8 @@ public abstract class GraphToolBase {
     }
 
     protected Authorizations getAuthorizations() {
-        return new Authorizations(authString.split(","));
+        // TODO change this to be configurable
+        return new AccumuloAuthorizations(authString.split(","));
     }
 
     protected Graph getGraph() {

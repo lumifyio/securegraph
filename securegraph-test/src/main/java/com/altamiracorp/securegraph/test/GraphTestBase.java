@@ -27,10 +27,10 @@ import static org.junit.Assert.*;
 public abstract class GraphTestBase {
     public static final Visibility VISIBILITY_A = new Visibility("a");
     public static final Visibility VISIBILITY_B = new Visibility("b");
-    public static final Authorizations AUTHORIZATIONS_A = new Authorizations("a");
-    public static final Authorizations AUTHORIZATIONS_B = new Authorizations("b");
-    public static final Authorizations AUTHORIZATIONS_C = new Authorizations("c");
-    public static final Authorizations AUTHORIZATIONS_A_AND_B = new Authorizations("a", "b");
+    public final Authorizations AUTHORIZATIONS_A;
+    public final Authorizations AUTHORIZATIONS_B;
+    public final Authorizations AUTHORIZATIONS_C;
+    public final Authorizations AUTHORIZATIONS_A_AND_B;
     public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
 
     protected Graph graph;
@@ -40,6 +40,15 @@ public abstract class GraphTestBase {
     public Graph getGraph() {
         return graph;
     }
+
+    public GraphTestBase() {
+        AUTHORIZATIONS_A = createAuthorizations("a");
+        AUTHORIZATIONS_B = createAuthorizations("b");
+        AUTHORIZATIONS_C = createAuthorizations("c");
+        AUTHORIZATIONS_A_AND_B = createAuthorizations("a", "b");
+    }
+
+    protected abstract Authorizations createAuthorizations(String... auths);
 
     @Before
     public void before() throws Exception {

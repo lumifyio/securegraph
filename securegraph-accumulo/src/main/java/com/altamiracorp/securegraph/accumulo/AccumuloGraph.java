@@ -507,7 +507,7 @@ public class AccumuloGraph extends GraphBase {
         if (authorizations == null) {
             throw new NullPointerException("authorizations is required");
         }
-        return new org.apache.accumulo.core.security.Authorizations(authorizations.getAuthorizations());
+        return new org.apache.accumulo.core.security.Authorizations(((AccumuloAuthorizations) authorizations).getAuthorizations());
     }
 
     @Override
