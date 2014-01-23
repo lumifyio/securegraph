@@ -14,8 +14,8 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    public void removeProperty(String propertyId, String name) {
-        Property property = removePropertyInternal(propertyId, name);
+    public void removeProperty(String key, String name) {
+        Property property = removePropertyInternal(key, name);
         if (property != null) {
             getGraph().removeProperty(this, property);
         }
