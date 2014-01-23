@@ -11,9 +11,11 @@ import java.util.Map;
 public class GraphConfiguration {
     public static final String IDGENERATOR_PROP_PREFIX = "idgenerator";
     public static final String SEARCH_INDEX_PROP_PREFIX = "search";
+    public static final String AUTO_FLUSH = "autoFlush";
 
     public static final String DEFAULT_IDGENERATOR = UUIDIdGenerator.class.getName();
     public static final String DEFAULT_SEARCH_INDEX = DefaultSearchIndex.class.getName();
+    public static final boolean DEFAULT_AUTO_FLUSH = false;
 
     private final Map config;
 

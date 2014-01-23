@@ -35,4 +35,9 @@ public class DefaultSearchIndex implements SearchIndex {
     public VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations) {
         return new DefaultVertexQuery(graph, vertex, queryString, authorizations);
     }
+
+    @Override
+    public void flush() {
+
+    }
 }

@@ -21,6 +21,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -29,6 +31,7 @@ import java.util.*;
 import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
     private static final Text EMPTY_TEXT = new Text("");
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
     public static final String DATA_ROW_KEY_PREFIX = "D";
@@ -363,6 +366,7 @@ public class AccumuloGraph extends GraphBase {
                 throw new SecureGraphException("Could not flush", e);
             }
         }
+        getSearchIndex().flush();
     }
 
     @Override

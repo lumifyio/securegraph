@@ -130,7 +130,7 @@ public class InMemoryGraph extends GraphBase {
 
     @Override
     public void flush() {
-
+        getSearchIndex().flush();
     }
 
     @Override

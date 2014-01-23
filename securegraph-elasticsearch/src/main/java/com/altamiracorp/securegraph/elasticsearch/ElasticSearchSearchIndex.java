@@ -35,20 +35,27 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     public static final String ELEMENT_TYPE_EDGE = "edge";
     public static final int DEFAULT_ES_PORT = 9300;
     private final TransportClient client;
+    private final boolean autoflush;
     private String indexName;
     private Map<String, Boolean> existingProperties = new HashMap<String, Boolean>();
 
     public ElasticSearchSearchIndex(Map config) {
-        String esLocationsString = (String) config.get(ES_LOCATIONS);
+        String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ES_LOCATIONS);
         if (esLocationsString == null) {
-            throw new SecureGraphException(ES_LOCATIONS + " is a required configuration parameter");
+            throw new SecureGraphException(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ES_LOCATIONS + " is a required configuration parameter");
         }
+        LOGGER.info("Using elastic search locations: " + esLocationsString);
         String[] esLocations = esLocationsString.split(",");
 
-        indexName = (String) config.get(INDEX_NAME);
+        indexName = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + INDEX_NAME);
         if (indexName == null) {
             indexName = DEFAULT_INDEX_NAME;
         }
+        LOGGER.info("Using index: " + indexName);
+
+        // TODO convert this to use a proper config object
+        autoflush = "true".equals(config.get(GraphConfiguration.AUTO_FLUSH));
+        LOGGER.info("Auto flush: " + autoflush);
 
         client = new TransportClient();
         for (String esLocation : esLocations) {
@@ -140,13 +147,18 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             if (response.getId() == null) {
                 throw new SecureGraphException("Could not index document " + element.getId());
             }
-            LOGGER.debug(response.toString());
 
-            // TODO get autoflush setting
-            client.admin().indices().prepareFlush(indexName).execute().actionGet();
+            if (autoflush) {
+                client.admin().indices().prepareFlush(indexName).execute().actionGet();
+            }
         } catch (Exception e) {
             throw new SecureGraphException("Could not add document", e);
         }
+    }
+
+    @Override
+    public void flush() {
+        client.admin().indices().prepareFlush(indexName).execute().actionGet();
     }
 
     private void addPropertiesToIndex(Iterable<Property> properties) {

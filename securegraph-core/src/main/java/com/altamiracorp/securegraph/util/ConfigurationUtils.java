@@ -7,12 +7,11 @@ import java.util.Map;
 
 public class ConfigurationUtils {
     public static <T> T createProvider(Map config, String propPrefix, String defaultProvider) throws SecureGraphException {
-        Map subsetConfig = MapUtils.getAllWithPrefix(config, propPrefix);
         String implClass = (String) config.get(propPrefix);
         if (implClass == null) {
             implClass = defaultProvider;
         }
-        return createProvider(implClass, subsetConfig);
+        return createProvider(implClass, config);
     }
 
     @SuppressWarnings("unchecked")

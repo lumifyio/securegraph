@@ -15,4 +15,6 @@ public interface SearchIndex {
     GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations);
 
     VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations);
+
+    void flush();
 }

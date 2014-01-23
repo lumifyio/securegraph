@@ -31,7 +31,6 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String ACCUMULO_PASSWORD = "password";
     public static final String ZOOKEEPER_SERVERS = "zookeeperServers";
     public static final String VALUE_SERIALIZER_PROP_PREFIX = "serializer";
-    public static final String AUTO_FLUSH = "autoFlush";
     public static final String TABLE_NAME = "tableName";
     public static final String MAX_STREAMING_PROPERTY_VALUE_TABLE_DATA_SIZE = "maxStreamingPropertyValueTableDataSize";
     public static final String HDFS_USER = HDFS_CONFIG_PREFIX + ".user";
@@ -44,7 +43,6 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     public static final String DEFAULT_ACCUMULO_USERNAME = "root";
     public static final String DEFAULT_ACCUMULO_INSTANCE_NAME = "securegraph";
     public static final String DEFAULT_ZOOKEEPER_SERVERS = "localhost";
-    public static final boolean DEFAULT_AUTO_FLUSH = false;
     public static final String DEFAULT_TABLE_NAME = "securegraph";
     public static final int DEFAULT_MAX_STREAMING_PROPERTY_VALUE_TABLE_DATA_SIZE = 10 * 1024 * 1024;
     public static final String DEFAULT_HDFS_USER = "hadoop";
