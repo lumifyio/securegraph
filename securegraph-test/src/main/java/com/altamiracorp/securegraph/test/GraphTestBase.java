@@ -555,6 +555,12 @@ public abstract class GraphTestBase {
                 .vertices();
         assertEquals(1, count(vertices));
 
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("name", "Joe")
+                .has("name", "Ferner")
+                .vertices();
+        assertEquals(1, count(vertices));
+
         // TODO should this work?
 //        vertices = graph.query(AUTHORIZATIONS_A)
 //                .has("name", "Joe Ferner")
