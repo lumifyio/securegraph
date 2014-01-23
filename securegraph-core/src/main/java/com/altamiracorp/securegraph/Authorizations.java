@@ -1,4 +1,6 @@
 package com.altamiracorp.securegraph;
 
-public interface Authorizations {
+import java.io.Serializable;
+
+public interface Authorizations extends Serializable {
 }

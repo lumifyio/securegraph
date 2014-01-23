@@ -2,9 +2,10 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.Authorizations;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class AccumuloAuthorizations implements Authorizations {
+public class AccumuloAuthorizations implements Authorizations, Serializable {
     private final String[] authorizations;
 
     public AccumuloAuthorizations(String... authorizations) {
