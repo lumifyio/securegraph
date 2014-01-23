@@ -92,7 +92,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 }
                 switch (compare) {
                     case EQUAL:
-                        filters.add(FilterBuilders.inFilter(has.key, value));
+                        filters.add(FilterBuilders.termFilter(has.key, value));
                         break;
                     case GREATER_THAN_EQUAL:
                         filters.add(FilterBuilders.rangeFilter(has.key).gte(value));

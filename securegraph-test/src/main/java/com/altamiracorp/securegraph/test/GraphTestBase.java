@@ -19,8 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
-import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
-import static com.altamiracorp.securegraph.test.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.test.util.IterableUtils.*;
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
@@ -521,6 +520,46 @@ public abstract class GraphTestBase {
                 .has("age", Compare.NOT_EQUAL, 25)
                 .vertices();
         assertEquals(1, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryHasWithSpaces() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("name", "Joe Ferner", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("name", "Joe Smith", VISIBILITY_A)
+                .save();
+
+        Iterable<Vertex> vertices = graph.query("Ferner", AUTHORIZATIONS_A)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query("joe", AUTHORIZATIONS_A)
+                .vertices();
+        assertEquals(2, count(vertices));
+
+        vertices = graph.query("joe AND ferner", AUTHORIZATIONS_A)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query("joe smith", AUTHORIZATIONS_A)
+                .vertices();
+        List<Vertex> verticesList = toList(vertices);
+        assertEquals(2, verticesList.size());
+        assertEquals("v2", verticesList.get(0).getId());
+        assertEquals("v1", verticesList.get(1).getId());
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("name", "Ferner")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        // TODO should this work?
+//        vertices = graph.query(AUTHORIZATIONS_A)
+//                .has("name", "Joe Ferner")
+//                .vertices();
+//        assertEquals(1, count(vertices));
     }
 
     @Test

@@ -1,5 +1,8 @@
 package com.altamiracorp.securegraph.test.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.Assert.assertTrue;
 
 public class IterableUtils {
@@ -25,5 +28,13 @@ public class IterableUtils {
             first = false;
         }
         assertTrue("Iterable does not contain [" + expected + "], found [" + found + "]", false);
+    }
+
+    public static <T> List<T> toList(Iterable<T> iterable) {
+        List<T> results = new ArrayList<T>();
+        for (T o : iterable) {
+            results.add(o);
+        }
+        return results;
     }
 }
