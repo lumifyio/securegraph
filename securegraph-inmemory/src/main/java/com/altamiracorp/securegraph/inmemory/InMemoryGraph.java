@@ -2,14 +2,21 @@ package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.id.IdGenerator;
+import com.altamiracorp.securegraph.id.UUIDIdGenerator;
+import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 
 import java.util.*;
 
 public class InMemoryGraph extends GraphBase {
+    private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<Object, InMemoryVertex> vertices;
     private final Map<Object, InMemoryEdge> edges;
+
+    public InMemoryGraph() {
+        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION.getConfig()), new DefaultSearchIndex(DEFAULT_CONFIGURATION.getConfig()));
+    }
 
     public InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this(configuration, idGenerator, searchIndex, new HashMap<Object, InMemoryVertex>(), new HashMap<Object, InMemoryEdge>());
