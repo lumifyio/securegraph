@@ -4,6 +4,7 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
+import com.altamiracorp.securegraph.query.DefaultGraphQuery;
 import com.altamiracorp.securegraph.query.GeoCompare;
 import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
@@ -540,13 +541,19 @@ public abstract class GraphTestBase {
                 .vertices();
         assertEquals(2, count(vertices));
 
-        if (!isInMemoryGraph(graph)) {
+        if (!isUsingDefaultQuery(graph)) {
             vertices = graph.query("joe AND ferner", AUTHORIZATIONS_A)
                     .vertices();
             assertEquals(1, count(vertices));
         }
 
-        if (!isInMemoryGraph(graph)) {
+        if (!isUsingDefaultQuery(graph)) {
+            vertices = graph.query("name:\"joe ferner\"", AUTHORIZATIONS_A)
+                    .vertices();
+            assertEquals(1, count(vertices));
+        }
+
+        if (!isUsingDefaultQuery(graph)) {
             vertices = graph.query("joe smith", AUTHORIZATIONS_A)
                     .vertices();
             List<Vertex> verticesList = toList(vertices);
@@ -573,8 +580,8 @@ public abstract class GraphTestBase {
 //        assertEquals(1, count(vertices));
     }
 
-    protected boolean isInMemoryGraph(Graph graph) {
-        return graph.getClass().getName().contains("InMemory");
+    protected boolean isUsingDefaultQuery(Graph graph) {
+        return graph.query(AUTHORIZATIONS_A) instanceof DefaultGraphQuery;
     }
 
     @Test
