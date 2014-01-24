@@ -72,7 +72,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      */
     public abstract T save();
 
-    protected List<Property> getProperties() {
+    public Iterable<Property> getProperties() {
         return properties;
     }
 }

@@ -6,10 +6,9 @@ import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.util.StreamUtils;
 
 import java.io.IOException;
-import java.util.List;
 
 public abstract class InMemoryElement extends ElementBase {
-    protected InMemoryElement(Graph graph, Object id, Visibility visibility, List<Property> properties) {
+    protected InMemoryElement(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
     }
 
@@ -35,7 +34,7 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    protected void setPropertiesInternal(List<Property> properties) {
+    protected void setPropertiesInternal(Iterable<Property> properties) {
         try {
             for (Property property : properties) {
                 if (property.getValue() instanceof StreamingPropertyValue) {
@@ -62,13 +61,13 @@ public abstract class InMemoryElement extends ElementBase {
 
     @Override
     public ElementMutation prepareMutation() {
-        return new ElementMutationImpl() {
+        return new ExistingElementMutationImpl<InMemoryElement>(this) {
             @Override
             public InMemoryElement save() {
-                List<Property> properties = getProperties();
+                Iterable<Property> properties = getProperties();
                 setPropertiesInternal(properties);
-                getGraph().saveProperties(InMemoryElement.this, properties);
-                return InMemoryElement.this;
+                getGraph().saveProperties(getElement(), properties);
+                return getElement();
             }
         };
     }

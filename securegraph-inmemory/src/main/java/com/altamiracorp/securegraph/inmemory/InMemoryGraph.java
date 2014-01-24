@@ -40,7 +40,7 @@ public class InMemoryGraph extends GraphBase {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save() {
-                List<Property> properties = getProperties();
+                Iterable<Property> properties = getProperties();
                 InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties);
                 vertices.put(getVertexId(), vertex);
 
@@ -170,7 +170,7 @@ public class InMemoryGraph extends GraphBase {
         return false;
     }
 
-    public void saveProperties(Element element, List<Property> properties) {
+    public void saveProperties(Element element, Iterable<Property> properties) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
             vertex.setPropertiesInternal(properties);

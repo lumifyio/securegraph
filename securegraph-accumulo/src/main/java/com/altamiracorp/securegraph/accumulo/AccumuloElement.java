@@ -3,13 +3,11 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.*;
 import org.apache.hadoop.io.Text;
 
-import java.util.List;
-
 public abstract class AccumuloElement extends ElementBase {
     public static final Text CF_PROPERTY = new Text("PROP");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
 
-    protected AccumuloElement(Graph graph, Object id, Visibility visibility, List<Property> properties) {
+    protected AccumuloElement(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
     }
 
@@ -37,13 +35,13 @@ public abstract class AccumuloElement extends ElementBase {
 
     @Override
     public ElementMutation prepareMutation() {
-        return new ElementMutationImpl() {
+        return new ExistingElementMutationImpl<AccumuloElement>(this) {
             @Override
             public AccumuloElement save() {
-                List<Property> properties = getProperties();
+                Iterable<Property> properties = getProperties();
                 setPropertiesInternal(properties);
-                getGraph().saveProperties(AccumuloElement.this, properties);
-                return AccumuloElement.this;
+                getGraph().saveProperties(getElement(), properties);
+                return getElement();
             }
         };
     }

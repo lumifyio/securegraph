@@ -14,7 +14,7 @@ public abstract class ElementBase implements Element {
     // The key to this map is the property id + property name
     private final Map<Object, Property> properties;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility, List<Property> properties) {
+    protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
@@ -75,7 +75,7 @@ public abstract class ElementBase implements Element {
     }
 
     // this method differs setProperties in that it only updates the in memory representation of the properties
-    protected void setPropertiesInternal(List<Property> properties) {
+    protected void setPropertiesInternal(Iterable<Property> properties) {
         for (Property property : properties) {
             if (property.getId() == null) {
                 throw new IllegalArgumentException("id is required for property");

@@ -57,4 +57,9 @@ public interface ElementMutation<T extends Element> {
      * @param visibility The visibility to give this property.
      */
     ElementMutation<T> addPropertyValue(Object key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
+
+    /**
+     * Gets the properties currently in this mutation.
+     */
+    Iterable<Property> getProperties();
 }

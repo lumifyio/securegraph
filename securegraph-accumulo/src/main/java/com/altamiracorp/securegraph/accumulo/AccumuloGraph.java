@@ -127,7 +127,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    void saveProperties(AccumuloElement element, List<Property> properties) {
+    void saveProperties(AccumuloElement element, Iterable<Property> properties) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
