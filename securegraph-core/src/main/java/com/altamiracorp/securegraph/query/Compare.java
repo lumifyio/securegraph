@@ -1,9 +1,7 @@
 package com.altamiracorp.securegraph.query;
 
-import com.altamiracorp.securegraph.SecureGraphException;
-
 public enum Compare implements Predicate {
-    EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, IN, CONTAINS;
+    EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, IN;
 
     @Override
     public boolean evaluate(final Iterable<Object> propertyValues, final Object second) {
@@ -24,14 +22,6 @@ public enum Compare implements Predicate {
         }
 
         switch (this) {
-            case CONTAINS:
-                if (null == first) {
-                    return second == null;
-                }
-                if (!(first instanceof String) || !(second instanceof String)) {
-                    throw new SecureGraphException("Contains is not valid for non-string fields");
-                }
-                return ((String) first).contains((String) second);
             case EQUAL:
                 if (null == first) {
                     return second == null;

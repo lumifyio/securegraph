@@ -5,6 +5,7 @@ import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
 import com.altamiracorp.securegraph.query.GeoCompare;
+import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.type.GeoPoint;
@@ -555,13 +556,13 @@ public abstract class GraphTestBase {
         }
 
         vertices = graph.query(AUTHORIZATIONS_A)
-                .has("name", Compare.CONTAINS, "Ferner")
+                .has("name", TextPredicate.CONTAINS, "Ferner")
                 .vertices();
         assertEquals(1, count(vertices));
 
         vertices = graph.query(AUTHORIZATIONS_A)
-                .has("name", Compare.CONTAINS, "Joe")
-                .has("name", Compare.CONTAINS, "Ferner")
+                .has("name", TextPredicate.CONTAINS, "Joe")
+                .has("name", TextPredicate.CONTAINS, "Ferner")
                 .vertices();
         assertEquals(1, count(vertices));
 

@@ -4,6 +4,7 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.Compare;
 import com.altamiracorp.securegraph.query.GeoCompare;
 import com.altamiracorp.securegraph.query.GraphQueryBase;
+import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -92,7 +93,6 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 }
                 switch (compare) {
                     case EQUAL:
-                    case CONTAINS:
                         filters.add(FilterBuilders.termFilter(has.key, value));
                         break;
                     case GREATER_THAN_EQUAL:
@@ -115,6 +115,19 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                         break;
                     default:
                         throw new SecureGraphException("Unexpected Compare predicate " + has.predicate);
+                }
+            } else if (has.predicate instanceof TextPredicate) {
+                TextPredicate compare = (TextPredicate) has.predicate;
+                Object value = has.value;
+                if (value instanceof String) {
+                    value = ((String) value).toLowerCase(); // using the standard analyzer all strings are lower-cased.
+                }
+                switch (compare) {
+                    case CONTAINS:
+                        filters.add(FilterBuilders.termFilter(has.key, value));
+                        break;
+                    default:
+                        throw new SecureGraphException("Unexpected text predicate " + has.predicate);
                 }
             } else if (has.predicate instanceof GeoCompare) {
                 GeoCompare compare = (GeoCompare) has.predicate;
