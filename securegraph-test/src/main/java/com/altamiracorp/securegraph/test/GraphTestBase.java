@@ -539,25 +539,29 @@ public abstract class GraphTestBase {
                 .vertices();
         assertEquals(2, count(vertices));
 
-        vertices = graph.query("joe AND ferner", AUTHORIZATIONS_A)
+        if (!isInMemoryGraph(graph)) {
+            vertices = graph.query("joe AND ferner", AUTHORIZATIONS_A)
+                    .vertices();
+            assertEquals(1, count(vertices));
+        }
+
+        if (!isInMemoryGraph(graph)) {
+            vertices = graph.query("joe smith", AUTHORIZATIONS_A)
+                    .vertices();
+            List<Vertex> verticesList = toList(vertices);
+            assertEquals(2, verticesList.size());
+            assertEquals("v2", verticesList.get(0).getId());
+            assertEquals("v1", verticesList.get(1).getId());
+        }
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("name", Compare.CONTAINS, "Ferner")
                 .vertices();
         assertEquals(1, count(vertices));
 
-        vertices = graph.query("joe smith", AUTHORIZATIONS_A)
-                .vertices();
-        List<Vertex> verticesList = toList(vertices);
-        assertEquals(2, verticesList.size());
-        assertEquals("v2", verticesList.get(0).getId());
-        assertEquals("v1", verticesList.get(1).getId());
-
         vertices = graph.query(AUTHORIZATIONS_A)
-                .has("name", "Ferner")
-                .vertices();
-        assertEquals(1, count(vertices));
-
-        vertices = graph.query(AUTHORIZATIONS_A)
-                .has("name", "Joe")
-                .has("name", "Ferner")
+                .has("name", Compare.CONTAINS, "Joe")
+                .has("name", Compare.CONTAINS, "Ferner")
                 .vertices();
         assertEquals(1, count(vertices));
 
@@ -566,6 +570,10 @@ public abstract class GraphTestBase {
 //                .has("name", "Joe Ferner")
 //                .vertices();
 //        assertEquals(1, count(vertices));
+    }
+
+    protected boolean isInMemoryGraph(Graph graph) {
+        return graph.getClass().getName().contains("InMemory");
     }
 
     @Test

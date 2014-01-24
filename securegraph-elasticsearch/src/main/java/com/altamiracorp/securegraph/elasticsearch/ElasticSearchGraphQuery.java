@@ -92,6 +92,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 }
                 switch (compare) {
                     case EQUAL:
+                    case CONTAINS:
                         filters.add(FilterBuilders.termFilter(has.key, value));
                         break;
                     case GREATER_THAN_EQUAL:
