@@ -63,6 +63,15 @@ public interface Graph {
     Iterable<Vertex> getVertices(Authorizations authorizations);
 
     /**
+     * Gets all vertices matching the given ids on the graph.
+     *
+     * @param ids            The ids of the vertices to get.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return An iterable of all the vertices.
+     */
+    Iterable<Vertex> getVertices(Iterable<Object> ids, Authorizations authorizations);
+
+    /**
      * Removes a vertex from the graph.
      *
      * @param vertex         The vertex to remove.
@@ -146,6 +155,15 @@ public interface Graph {
      * @return An iterable of all the edges.
      */
     Iterable<Edge> getEdges(Authorizations authorizations);
+
+    /**
+     * Gets all edges on the graph matching the given ids.
+     *
+     * @param ids            The ids of the edges to get.
+     * @param authorizations The authorizations required to load the edge.
+     * @return An iterable of all the edges.
+     */
+    Iterable<Edge> getEdges(Iterable<Object> ids, Authorizations authorizations);
 
     /**
      * Removes an edge from the graph.

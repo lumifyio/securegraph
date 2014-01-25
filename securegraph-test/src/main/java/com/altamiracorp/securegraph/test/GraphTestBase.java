@@ -280,6 +280,57 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGetVerticesWithIds() {
+        graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        List<Object> ids = new ArrayList<Object>();
+        ids.add("v1");
+        ids.add("v2");
+        Iterable<Vertex> vertices = graph.getVertices(ids, AUTHORIZATIONS_A);
+        boolean foundV1 = false, foundV2 = false;
+        for (Vertex v : vertices) {
+            if (v.getId().equals("v1")) {
+                foundV1 = true;
+            } else if (v.getId().equals("v2")) {
+                foundV2 = true;
+            } else {
+                assertTrue("Unexpected vertex id", false);
+            }
+        }
+        assertTrue("v1 not found", foundV1);
+        assertTrue("v2 not found", foundV2);
+    }
+
+    @Test
+    public void testGetEdgesWithIds() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("e2", v1, v3, "", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("e3", v2, v3, "", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        List<Object> ids = new ArrayList<Object>();
+        ids.add("e1");
+        ids.add("e2");
+        Iterable<Edge> edges = graph.getEdges(ids, AUTHORIZATIONS_A);
+        boolean foundE1 = false, foundE2 = false;
+        for (Edge e : edges) {
+            if (e.getId().equals("e1")) {
+                foundE1 = true;
+            } else if (e.getId().equals("e2")) {
+                foundE2 = true;
+            } else {
+                assertTrue("Unexpected vertex id", false);
+            }
+        }
+        assertTrue("e1 not found", foundE1);
+        assertTrue("e2 not found", foundE2);
+    }
+
+    @Test
     public void testRemoveVertex() {
         graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
 
