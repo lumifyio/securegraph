@@ -474,6 +474,12 @@ public class AccumuloGraph extends GraphBase {
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
                 return batchScanner.iterator();
             }
+
+            @Override
+            protected void done() {
+                super.done();
+                batchScanner.close();
+            }
         };
     }
 
@@ -514,6 +520,12 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
                 return new RowIterator(scanner.iterator());
+            }
+
+            @Override
+            protected void done() {
+                super.done();
+                scanner.close();
             }
         };
     }
@@ -632,6 +644,12 @@ public class AccumuloGraph extends GraphBase {
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
                 return batchScanner.iterator();
             }
+
+            @Override
+            protected void done() {
+                super.done();
+                batchScanner.close();
+            }
         };
     }
 
@@ -672,6 +690,12 @@ public class AccumuloGraph extends GraphBase {
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
                 return new RowIterator(scanner.iterator());
+            }
+
+            @Override
+            protected void done() {
+                super.done();
+                scanner.close();
             }
         };
     }

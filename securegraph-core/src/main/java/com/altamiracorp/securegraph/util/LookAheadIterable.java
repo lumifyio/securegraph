@@ -3,6 +3,8 @@ package com.altamiracorp.securegraph.util;
 import java.util.Iterator;
 
 public abstract class LookAheadIterable<TSource, TDest> implements Iterable<TDest> {
+    private boolean doneCalled;
+
     @Override
     public Iterator<TDest> iterator() {
         final Iterator<TSource> it = createIterator();
@@ -14,6 +16,9 @@ public abstract class LookAheadIterable<TSource, TDest> implements Iterable<TDes
             @Override
             public boolean hasNext() {
                 loadNext();
+                if (next == null) {
+                    callDone();
+                }
                 return next != null;
             }
 
@@ -47,6 +52,17 @@ public abstract class LookAheadIterable<TSource, TDest> implements Iterable<TDes
                 }
             }
         };
+    }
+
+    private void callDone() {
+        if (!doneCalled) {
+            doneCalled = true;
+            done();
+        }
+    }
+
+    protected void done() {
+
     }
 
     protected abstract boolean isIncluded(TSource src, TDest dest);
