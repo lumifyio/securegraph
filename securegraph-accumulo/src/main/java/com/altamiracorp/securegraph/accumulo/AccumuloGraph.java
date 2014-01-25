@@ -17,6 +17,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
+import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -436,6 +437,46 @@ public class AccumuloGraph extends GraphBase {
         return null;
     }
 
+    @Override
+    public Iterable<Vertex> getVertices(Iterable<Object> ids, Authorizations authorizations) {
+        final AccumuloGraph graph = this;
+
+        List<Range> ranges = new ArrayList<Range>();
+        for (Object id : ids) {
+            Key startKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + id);
+            Key endKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + id + "~");
+            ranges.add(new Range(startKey, endKey));
+        }
+
+        final BatchScanner batchScanner = createVertexBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
+        batchScanner.setRanges(ranges);
+        batchScanner.clearColumns();
+
+        return new LookAheadIterable<Map.Entry<Key, Value>, Vertex>() {
+
+            @Override
+            protected boolean isIncluded(Map.Entry<Key, Value> src, Vertex dest) {
+                return dest != null;
+            }
+
+            @Override
+            protected Vertex convert(Map.Entry<Key, Value> wholeRow) {
+                try {
+                    SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
+                    VertexMaker maker = new VertexMaker(graph, row.entrySet().iterator());
+                    return maker.make();
+                } catch (IOException ex) {
+                    throw new SecureGraphException("Could not recreate row", ex);
+                }
+            }
+
+            @Override
+            protected Iterator<Map.Entry<Key, Value>> createIterator() {
+                return batchScanner.iterator();
+            }
+        };
+    }
+
     private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final Scanner scanner = createVertexScanner(authorizations);
         final AccumuloGraph graph = this;
@@ -503,6 +544,41 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
+    private BatchScanner createVertexBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
+        return createElementVisibilityBatchScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES, numQueryThreads);
+    }
+
+    private BatchScanner createEdgeBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
+        return createElementVisibilityBatchScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_EDGES, numQueryThreads);
+    }
+
+    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, String elementMode, int numQueryThreads) throws SecureGraphException {
+        try {
+            BatchScanner scanner = connector.createBatchScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations), numQueryThreads);
+            IteratorSetting iteratorSetting;
+            if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
+                iteratorSetting = new IteratorSetting(
+                        100,
+                        ElementVisibilityRowFilter.class.getSimpleName(),
+                        ElementVisibilityRowFilter.class
+                );
+                iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
+                scanner.addScanIterator(iteratorSetting);
+            }
+
+            iteratorSetting = new IteratorSetting(
+                    101,
+                    WholeRowIterator.class.getSimpleName(),
+                    WholeRowIterator.class
+            );
+            scanner.addScanIterator(iteratorSetting);
+
+            return scanner;
+        } catch (TableNotFoundException e) {
+            throw new SecureGraphException(e);
+        }
+    }
+
     private org.apache.accumulo.core.security.Authorizations toAccumuloAuthorizations(Authorizations authorizations) {
         if (authorizations == null) {
             throw new NullPointerException("authorizations is required");
@@ -517,6 +593,46 @@ public class AccumuloGraph extends GraphBase {
             return edges.next();
         }
         return null;
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Iterable<Object> ids, Authorizations authorizations) {
+        final AccumuloGraph graph = this;
+
+        List<Range> ranges = new ArrayList<Range>();
+        for (Object id : ids) {
+            Key startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + id);
+            Key endKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + id + "~");
+            ranges.add(new Range(startKey, endKey));
+        }
+
+        final BatchScanner batchScanner = createEdgeBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
+        batchScanner.setRanges(ranges);
+        batchScanner.clearColumns();
+
+        return new LookAheadIterable<Map.Entry<Key, Value>, Edge>() {
+
+            @Override
+            protected boolean isIncluded(Map.Entry<Key, Value> src, Edge dest) {
+                return dest != null;
+            }
+
+            @Override
+            protected Edge convert(Map.Entry<Key, Value> wholeRow) {
+                try {
+                    SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
+                    EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator());
+                    return maker.make();
+                } catch (IOException ex) {
+                    throw new SecureGraphException("Could not recreate row", ex);
+                }
+            }
+
+            @Override
+            protected Iterator<Map.Entry<Key, Value>> createIterator() {
+                return batchScanner.iterator();
+            }
+        };
     }
 
     private Iterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
