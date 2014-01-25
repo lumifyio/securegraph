@@ -3,7 +3,7 @@ package com.altamiracorp.securegraph;
 import java.util.Map;
 
 public interface ElementMutation<T extends Element> {
-    static final Object DEFAULT_ID = "";
+    static final String DEFAULT_ID = "";
 
     /**
      * saves the properties to the graph.
@@ -45,7 +45,7 @@ public interface ElementMutation<T extends Element> {
      * @param value      The value of the property.
      * @param visibility The visibility to give this property.
      */
-    ElementMutation<T> addPropertyValue(Object key, String name, Object value, Visibility visibility);
+    ElementMutation<T> addPropertyValue(String key, String name, Object value, Visibility visibility);
 
     /**
      * Adds or updates a property.
@@ -56,7 +56,7 @@ public interface ElementMutation<T extends Element> {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    ElementMutation<T> addPropertyValue(Object key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    ElementMutation<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
 
     /**
      * Gets the properties currently in this mutation.

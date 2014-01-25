@@ -98,11 +98,11 @@ public class BackupRestoreTest {
             boolean prop1_id1b_found = false;
             for (Property property : properties) {
                 if (property.getName().equals("prop1")) {
-                    if (property.getId().equals("id1a")) {
+                    if (property.getKey().equals("id1a")) {
                         prop1_id1a_found = true;
                         assertEquals("value1a", property.getValue());
                     }
-                    if (property.getId().equals("id1b")) {
+                    if (property.getKey().equals("id1b")) {
                         prop1_id1b_found = true;
                         assertEquals("value1b", property.getValue());
                     }

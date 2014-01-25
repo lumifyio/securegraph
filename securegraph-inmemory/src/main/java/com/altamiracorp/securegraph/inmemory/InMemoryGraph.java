@@ -193,10 +193,10 @@ public class InMemoryGraph extends GraphBase {
     public void removeProperty(Element element, Property property) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
-            vertex.removePropertyInternal(property.getId(), property.getName());
+            vertex.removePropertyInternal(property.getKey(), property.getName());
         } else if (element instanceof Edge) {
             InMemoryEdge edge = edges.get(element.getId());
-            edge.removePropertyInternal(property.getId(), property.getName());
+            edge.removePropertyInternal(property.getKey(), property.getName());
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }

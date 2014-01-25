@@ -161,7 +161,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void addPropertyToMutation(Mutation m, String rowKey, Property property) {
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getId());
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
@@ -200,7 +200,7 @@ public class AccumuloGraph extends GraphBase {
     private StreamingPropertyValueRef saveStreamingPropertyValueLarge(String rowKey, Property property, HdfsLargeDataStore largeDataStore, StreamingPropertyValue propertyValue) throws IOException {
         Path dir = new Path(dataDir, rowKey);
         fileSystem.mkdirs(dir);
-        Path path = new Path(dir, property.getName() + "_" + property.getId());
+        Path path = new Path(dir, property.getName() + "_" + property.getKey());
         if (fileSystem.exists(path)) {
             fileSystem.delete(path, true);
         }
@@ -217,11 +217,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private String createTableDataRowKey(String rowKey, Property property) {
-        return DATA_ROW_KEY_PREFIX + rowKey + VALUE_SEPARATOR + property.getName() + VALUE_SEPARATOR + property.getId();
+        return DATA_ROW_KEY_PREFIX + rowKey + VALUE_SEPARATOR + property.getName() + VALUE_SEPARATOR + property.getKey();
     }
 
     private void addPropertyRemoveToMutation(Mutation m, Property property) {
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getId());
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
         ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);

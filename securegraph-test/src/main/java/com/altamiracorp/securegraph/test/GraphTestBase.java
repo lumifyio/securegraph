@@ -218,6 +218,26 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testMultivaluedPropertyOrder() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .addPropertyValue("a", "prop", "a", VISIBILITY_A)
+                .addPropertyValue("aa", "prop", "aa", VISIBILITY_A)
+                .addPropertyValue("b", "prop", "b", VISIBILITY_A)
+                .addPropertyValue("0", "prop", "0", VISIBILITY_A)
+                .addPropertyValue("A", "prop", "A", VISIBILITY_A)
+                .addPropertyValue("Z", "prop", "Z", VISIBILITY_A)
+                .save();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("0", v1.getPropertyValue("prop", 0));
+        assertEquals("A", v1.getPropertyValue("prop", 1));
+        assertEquals("Z", v1.getPropertyValue("prop", 2));
+        assertEquals("a", v1.getPropertyValue("prop", 3));
+        assertEquals("aa", v1.getPropertyValue("prop", 4));
+        assertEquals("b", v1.getPropertyValue("prop", 5));
+    }
+
+    @Test
     public void testRemoveProperty() {
         Vertex v = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
 

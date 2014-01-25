@@ -55,8 +55,8 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    protected Property removePropertyInternal(Object propertyId, String name) {
-        return super.removePropertyInternal(propertyId, name);
+    protected Property removePropertyInternal(Object key, String name) {
+        return super.removePropertyInternal(key, name);
     }
 
     @Override

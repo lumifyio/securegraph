@@ -47,7 +47,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * @param value      The value of the property.
      * @param visibility The visibility to give this property.
      */
-    public ElementBuilder<T> addPropertyValue(Object key, String name, Object value, Visibility visibility) {
+    public ElementBuilder<T> addPropertyValue(String key, String name, Object value, Visibility visibility) {
         return addPropertyValue(key, name, value, new HashMap<String, Object>(), visibility);
     }
 
@@ -60,7 +60,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    public ElementBuilder<T> addPropertyValue(Object key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public ElementBuilder<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         this.properties.add(new MutableProperty(key, name, value, metadata, visibility));
         return this;
     }

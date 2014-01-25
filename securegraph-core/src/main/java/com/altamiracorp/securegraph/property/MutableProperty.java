@@ -6,8 +6,8 @@ import com.altamiracorp.securegraph.Visibility;
 import java.util.Map;
 
 public class MutableProperty extends Property {
-    public MutableProperty(Object id, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        super(id, name, value, metadata, visibility);
+    public MutableProperty(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        super(key, name, value, metadata, visibility);
     }
 
     @Override

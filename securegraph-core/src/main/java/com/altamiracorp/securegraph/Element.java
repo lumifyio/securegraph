@@ -27,6 +27,14 @@ public interface Element {
     Iterable<Property> getProperties();
 
     /**
+     * Gets a property by key and name.
+     * @param key the key of the property.
+     * @param name the name of the property.
+     * @return The property if found. null, if not found.
+     */
+    Property getProperty(Object key, String name);
+
+    /**
      * an Iterable of all the properties with the given name on this element that you have access to based on the authorizations
      * used to retrieve the element.
      *
@@ -106,7 +114,7 @@ public interface Element {
      * @param value      The value of the property.
      * @param visibility The visibility to give this property.
      */
-    void addPropertyValue(Object key, String name, Object value, Visibility visibility);
+    void addPropertyValue(String key, String name, Object value, Visibility visibility);
 
     /**
      * Adds or updates a property.
@@ -117,7 +125,7 @@ public interface Element {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    void addPropertyValue(Object key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
 
     /**
      * Sets or updates a property value. The property key will be set to a constant. This is a convenience method

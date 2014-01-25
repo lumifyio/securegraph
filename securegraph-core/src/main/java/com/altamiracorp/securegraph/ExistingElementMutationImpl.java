@@ -25,11 +25,11 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
         return addPropertyValue(DEFAULT_ID, name, value, metadata, visibility);
     }
 
-    public ElementMutation<T> addPropertyValue(Object key, String name, Object value, Visibility visibility) {
+    public ElementMutation<T> addPropertyValue(String key, String name, Object value, Visibility visibility) {
         return addPropertyValue(key, name, value, new HashMap<String, Object>(), visibility);
     }
 
-    public ElementMutation<T> addPropertyValue(Object key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public ElementMutation<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         properties.add(new MutableProperty(key, name, value, metadata, visibility));
         return this;
     }

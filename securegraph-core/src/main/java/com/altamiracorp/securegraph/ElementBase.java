@@ -11,14 +11,13 @@ public abstract class ElementBase implements Element {
     private final Object id;
     private final Visibility visibility;
 
-    // The key to this map is the property id + property name
-    private final Map<Object, Property> properties;
+    private final TreeSet<Property> properties;
 
     protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
-        this.properties = new HashMap<Object, Property>();
+        this.properties = new TreeSet<Property>();
         setPropertiesInternal(properties);
     }
 
@@ -33,6 +32,16 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
+    public Property getProperty(Object key, String name) {
+        for (Property p : getProperties()) {
+            if (p.getKey().equals(key) && p.getName().equals(name)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Object getPropertyValue(String name) {
         return getPropertyValue(name, 0);
     }
@@ -41,8 +50,9 @@ public abstract class ElementBase implements Element {
     public Object getPropertyValue(String name, int index) {
         Iterator<Object> values = getPropertyValues(name).iterator();
         while (values.hasNext() && index >= 0) {
+            Object v = values.next();
             if (index == 0) {
-                return values.next();
+                return v;
             }
             index--;
         }
@@ -61,7 +71,7 @@ public abstract class ElementBase implements Element {
 
     @Override
     public Iterable<Property> getProperties() {
-        return this.properties.values();
+        return this.properties;
     }
 
     @Override
@@ -77,39 +87,34 @@ public abstract class ElementBase implements Element {
     // this method differs setProperties in that it only updates the in memory representation of the properties
     protected void setPropertiesInternal(Iterable<Property> properties) {
         for (Property property : properties) {
-            if (property.getId() == null) {
-                throw new IllegalArgumentException("id is required for property");
+            if (property.getKey() == null) {
+                throw new IllegalArgumentException("key is required for property");
             }
             Object propertyValue = property.getValue();
             if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
                 continue;
             }
-            this.properties.put(getPropertyKey(property.getId(), property.getName()), property);
+            this.properties.remove(property);
+            this.properties.add(property);
         }
     }
 
-    protected Property removePropertyInternal(Object propertyId, String name) {
-        String key = getPropertyKey(propertyId, name);
-        Property property = this.properties.get(key);
-        this.properties.remove(key);
+    protected Property removePropertyInternal(Object key, String name) {
+        Property property = getProperty(key, name);
+        this.properties.remove(property);
         return property;
-    }
-
-    private String getPropertyKey(Object propertyId, String name) {
-        return propertyId + name;
     }
 
     protected Iterable<Property> removePropertyInternal(String name) {
         List<Property> removedProperties = new ArrayList<Property>();
-        for (Property p : this.properties.values()) {
+        for (Property p : this.properties) {
             if (p.getName().equals(name)) {
                 removedProperties.add(p);
             }
         }
 
         for (Property p : removedProperties) {
-            Object key = getPropertyKey(p.getId(), p.getName());
-            this.properties.remove(key);
+            this.properties.remove(p);
         }
 
         return removedProperties;
@@ -148,12 +153,12 @@ public abstract class ElementBase implements Element {
     public abstract void removeProperty(String key, String name);
 
     @Override
-    public void addPropertyValue(Object key, String name, Object value, Visibility visibility) {
+    public void addPropertyValue(String key, String name, Object value, Visibility visibility) {
         prepareMutation().addPropertyValue(key, name, value, visibility).save();
     }
 
     @Override
-    public void addPropertyValue(Object key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         prepareMutation().addPropertyValue(key, name, value, metadata, visibility).save();
     }
 
