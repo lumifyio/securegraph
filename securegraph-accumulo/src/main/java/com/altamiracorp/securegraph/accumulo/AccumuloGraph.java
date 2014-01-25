@@ -438,21 +438,21 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Iterable<Object> ids, Authorizations authorizations) {
+    public Iterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
-        List<Range> ranges = new ArrayList<Range>();
+        final List<Range> ranges = new ArrayList<Range>();
         for (Object id : ids) {
             Key startKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + id);
             Key endKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + id + "~");
             ranges.add(new Range(startKey, endKey));
         }
-
-        final BatchScanner batchScanner = createVertexBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
-        batchScanner.setRanges(ranges);
-        batchScanner.clearColumns();
+        if (ranges.size() == 0) {
+            return new ArrayList<Vertex>();
+        }
 
         return new LookAheadIterable<Map.Entry<Key, Value>, Vertex>() {
+            public BatchScanner batchScanner;
 
             @Override
             protected boolean isIncluded(Map.Entry<Key, Value> src, Vertex dest) {
@@ -472,6 +472,9 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
+                batchScanner = createVertexBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
+                batchScanner.setRanges(ranges);
+                batchScanner.clearColumns();
                 return batchScanner.iterator();
             }
 
@@ -484,27 +487,24 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
-        final Scanner scanner = createVertexScanner(authorizations);
         final AccumuloGraph graph = this;
 
-        Key startKey;
+        final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloVertex.ROW_KEY_PREFIX);
         } else {
             startKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + startId);
         }
 
-        Key endKey;
+        final Key endKey;
         if (endId == null) {
             endKey = new Key(AccumuloVertex.AFTER_ROW_KEY_PREFIX);
         } else {
             endKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + endId + "~");
         }
 
-        scanner.setRange(new Range(startKey, endKey));
-        scanner.clearColumns();
-
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
+            public Scanner scanner;
 
             @Override
             protected boolean isIncluded(Iterator<Map.Entry<Key, Value>> src, Vertex dest) {
@@ -519,6 +519,9 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
+                scanner = createVertexScanner(authorizations);
+                scanner.setRange(new Range(startKey, endKey));
+                scanner.clearColumns();
                 return new RowIterator(scanner.iterator());
             }
 
@@ -608,21 +611,21 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Edge> getEdges(Iterable<Object> ids, Authorizations authorizations) {
+    public Iterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
-        List<Range> ranges = new ArrayList<Range>();
+        final List<Range> ranges = new ArrayList<Range>();
         for (Object id : ids) {
             Key startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + id);
             Key endKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + id + "~");
             ranges.add(new Range(startKey, endKey));
         }
-
-        final BatchScanner batchScanner = createEdgeBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
-        batchScanner.setRanges(ranges);
-        batchScanner.clearColumns();
+        if (ranges.size() == 0) {
+            return new ArrayList<Edge>();
+        }
 
         return new LookAheadIterable<Map.Entry<Key, Value>, Edge>() {
+            public BatchScanner batchScanner;
 
             @Override
             protected boolean isIncluded(Map.Entry<Key, Value> src, Edge dest) {
@@ -642,6 +645,9 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
+                batchScanner = createEdgeBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
+                batchScanner.setRanges(ranges);
+                batchScanner.clearColumns();
                 return batchScanner.iterator();
             }
 
@@ -654,27 +660,24 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private Iterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
-        final Scanner scanner = createEdgeScanner(authorizations);
         final AccumuloGraph graph = this;
 
-        Key startKey;
+        final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX);
         } else {
             startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + startId);
         }
 
-        Key endKey;
+        final Key endKey;
         if (endId == null) {
             endKey = new Key(AccumuloEdge.AFTER_ROW_KEY_PREFIX);
         } else {
             endKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + endId + "~");
         }
 
-        scanner.setRange(new Range(startKey, endKey));
-        scanner.clearColumns();
-
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Edge>() {
+            public Scanner scanner;
 
             @Override
             protected boolean isIncluded(Iterator<Map.Entry<Key, Value>> src, Edge dest) {
@@ -689,6 +692,9 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
+                scanner = createEdgeScanner(authorizations);
+                scanner.setRange(new Range(startKey, endKey));
+                scanner.clearColumns();
                 return new RowIterator(scanner.iterator());
             }
 

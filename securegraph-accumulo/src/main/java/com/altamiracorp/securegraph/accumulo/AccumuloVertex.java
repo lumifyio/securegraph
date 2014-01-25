@@ -43,13 +43,13 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
             case BOTH:
                 // TODO: Can't we concat the two id lists together and do a single scan, skipping the JoinIterable?
                 return new JoinIterable<Edge>(
-                        new EdgesByIdsIterable(getGraph(), inEdgeIds, authorizations),
-                        new EdgesByIdsIterable(getGraph(), outEdgeIds, authorizations)
+                        getGraph().getEdges(inEdgeIds, authorizations),
+                        getGraph().getEdges(outEdgeIds, authorizations)
                 );
             case IN:
-                return new EdgesByIdsIterable(getGraph(), inEdgeIds, authorizations);
+                return getGraph().getEdges(inEdgeIds, authorizations);
             case OUT:
-                return new EdgesByIdsIterable(getGraph(), outEdgeIds, authorizations);
+                return getGraph().getEdges(outEdgeIds, authorizations);
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }
@@ -107,7 +107,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
-        return new VerticesByIdsIterable(getGraph(), getVertexIds(direction, authorizations), authorizations);
+        return getGraph().getVertices(getVertexIds(direction, authorizations), authorizations);
     }
 
     @Override
@@ -190,28 +190,6 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         @Override
         protected Iterator<Object> createIterator() {
             return idsList.iterator();
-        }
-    }
-
-    private static class EdgesByIdsIterable extends ElementsByIdsIterable<Edge> {
-        public EdgesByIdsIterable(Graph graph, Set<Object> idsList, Authorizations authorizations) {
-            super(graph, idsList, authorizations);
-        }
-
-        @Override
-        protected Edge convert(Object id) {
-            return graph.getEdge(id, authorizations);
-        }
-    }
-
-    private static class VerticesByIdsIterable extends ElementsByIdsIterable<Vertex> {
-        public VerticesByIdsIterable(Graph graph, Iterable<Object> idsList, Authorizations authorizations) {
-            super(graph, idsList, authorizations);
-        }
-
-        @Override
-        protected Vertex convert(Object id) {
-            return graph.getVertex(id, authorizations);
         }
     }
 }
