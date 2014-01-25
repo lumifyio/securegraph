@@ -101,7 +101,9 @@ public abstract class ElementBase implements Element {
 
     protected Property removePropertyInternal(Object key, String name) {
         Property property = getProperty(key, name);
-        this.properties.remove(property);
+        if (property != null) {
+            this.properties.remove(property);
+        }
         return property;
     }
 
