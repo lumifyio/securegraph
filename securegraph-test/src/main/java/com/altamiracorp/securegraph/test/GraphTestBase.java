@@ -309,7 +309,7 @@ public abstract class GraphTestBase {
                 assertEquals("v2", v.getPropertyValue("prop1"));
                 foundV2 = true;
             } else {
-                assertTrue("Unexpected vertex id", false);
+                assertTrue("Unexpected vertex id: " + v.getId(), false);
             }
         }
         assertTrue("v1 not found", foundV1);
@@ -323,6 +323,9 @@ public abstract class GraphTestBase {
         Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.prepareEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("prop1", "e1", VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e1a", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e1a", VISIBILITY_A)
                 .save();
         graph.prepareEdge("e2", v1, v3, "", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("prop1", "e2", VISIBILITY_A)
@@ -344,7 +347,7 @@ public abstract class GraphTestBase {
                 assertEquals("e2", e.getPropertyValue("prop1"));
                 foundE2 = true;
             } else {
-                assertTrue("Unexpected vertex id", false);
+                assertTrue("Unexpected vertex id: " + e.getId(), false);
             }
         }
         assertTrue("e1 not found", foundE1);

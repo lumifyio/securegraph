@@ -443,9 +443,8 @@ public class AccumuloGraph extends GraphBase {
 
         final List<Range> ranges = new ArrayList<Range>();
         for (Object id : ids) {
-            Key startKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + id);
-            Key endKey = new Key(AccumuloVertex.ROW_KEY_PREFIX + id + "~");
-            ranges.add(new Range(startKey, endKey));
+            Text rowKey = new Text(AccumuloVertex.ROW_KEY_PREFIX + id);
+            ranges.add(new Range(rowKey));
         }
         if (ranges.size() == 0) {
             return new ArrayList<Vertex>();
@@ -616,9 +615,8 @@ public class AccumuloGraph extends GraphBase {
 
         final List<Range> ranges = new ArrayList<Range>();
         for (Object id : ids) {
-            Key startKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + id);
-            Key endKey = new Key(AccumuloEdge.ROW_KEY_PREFIX + id + "~");
-            ranges.add(new Range(startKey, endKey));
+            Text rowKey = new Text(AccumuloEdge.ROW_KEY_PREFIX + id);
+            ranges.add(new Range(rowKey));
         }
         if (ranges.size() == 0) {
             return new ArrayList<Edge>();
