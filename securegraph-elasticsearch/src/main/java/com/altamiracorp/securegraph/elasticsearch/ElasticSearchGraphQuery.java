@@ -6,7 +6,7 @@ import com.altamiracorp.securegraph.query.GeoCompare;
 import com.altamiracorp.securegraph.query.GraphQueryBase;
 import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.type.GeoCircle;
-import com.altamiracorp.securegraph.util.LookAheadIterable;
+import com.altamiracorp.securegraph.util.ConvertingIterable;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
@@ -21,8 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 
 public class ElasticSearchGraphQuery extends GraphQueryBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQuery.class);
@@ -39,46 +40,28 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
     public Iterable<Vertex> vertices() {
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndex.ELEMENT_TYPE_VERTEX);
         final SearchHits hits = response.getHits();
-        return new LookAheadIterable<SearchHit, Vertex>() {
+        List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
-            protected boolean isIncluded(SearchHit src, Vertex vertex) {
-                return vertex != null;
+            protected Object convert(SearchHit searchHit) {
+                return searchHit.getId();
             }
-
-            @Override
-            protected Vertex convert(SearchHit searchHit) {
-                String id = searchHit.getId();
-                return getGraph().getVertex(id, getParameters().getAuthorizations());
-            }
-
-            @Override
-            protected Iterator<SearchHit> createIterator() {
-                return hits.iterator();
-            }
-        };
+        });
+        LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits());
+        return getGraph().getVertices(ids, getParameters().getAuthorizations());
     }
 
     @Override
     public Iterable<Edge> edges() {
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndex.ELEMENT_TYPE_EDGE);
         final SearchHits hits = response.getHits();
-        return new LookAheadIterable<SearchHit, Edge>() {
+        List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
-            protected boolean isIncluded(SearchHit src, Edge edge) {
-                return edge != null;
+            protected Object convert(SearchHit searchHit) {
+                return searchHit.getId();
             }
-
-            @Override
-            protected Edge convert(SearchHit searchHit) {
-                String id = searchHit.getId();
-                return getGraph().getEdge(id, getParameters().getAuthorizations());
-            }
-
-            @Override
-            protected Iterator<SearchHit> createIterator() {
-                return hits.iterator();
-            }
-        };
+        });
+        LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits());
+        return getGraph().getEdges(ids, getParameters().getAuthorizations());
     }
 
     private SearchResponse getSearchResponse(String elementType) {

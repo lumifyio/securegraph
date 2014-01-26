@@ -281,9 +281,15 @@ public abstract class GraphTestBase {
 
     @Test
     public void testGetVerticesWithIds() {
-        graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v1", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v2", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v3", VISIBILITY_A)
+                .save();
 
         List<Object> ids = new ArrayList<Object>();
         ids.add("v1");
@@ -292,8 +298,10 @@ public abstract class GraphTestBase {
         boolean foundV1 = false, foundV2 = false;
         for (Vertex v : vertices) {
             if (v.getId().equals("v1")) {
+                assertEquals("v1", v.getPropertyValue("prop1"));
                 foundV1 = true;
             } else if (v.getId().equals("v2")) {
+                assertEquals("v2", v.getPropertyValue("prop1"));
                 foundV2 = true;
             } else {
                 assertTrue("Unexpected vertex id", false);
@@ -308,9 +316,15 @@ public abstract class GraphTestBase {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge("e2", v1, v3, "", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge("e3", v2, v3, "", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.prepareEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e1", VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e2", v1, v3, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e2", VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e3", v2, v3, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e3", VISIBILITY_A)
+                .save();
 
         List<Object> ids = new ArrayList<Object>();
         ids.add("e1");
@@ -319,8 +333,10 @@ public abstract class GraphTestBase {
         boolean foundE1 = false, foundE2 = false;
         for (Edge e : edges) {
             if (e.getId().equals("e1")) {
+                assertEquals("e1", e.getPropertyValue("prop1"));
                 foundE1 = true;
             } else if (e.getId().equals("e2")) {
+                assertEquals("e2", e.getPropertyValue("prop1"));
                 foundE2 = true;
             } else {
                 assertTrue("Unexpected vertex id", false);
