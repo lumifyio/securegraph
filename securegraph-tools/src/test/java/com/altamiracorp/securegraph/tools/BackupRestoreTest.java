@@ -17,7 +17,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.altamiracorp.securegraph.test.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.count;
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)

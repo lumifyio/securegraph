@@ -21,7 +21,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
-import static com.altamiracorp.securegraph.test.util.IterableUtils.*;
+import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
+import static com.altamiracorp.securegraph.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
@@ -283,6 +285,9 @@ public abstract class GraphTestBase {
     public void testGetVerticesWithIds() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("prop1", "v1", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v1b", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v1b", VISIBILITY_A)
                 .save();
         graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("prop1", "v2", VISIBILITY_A)
