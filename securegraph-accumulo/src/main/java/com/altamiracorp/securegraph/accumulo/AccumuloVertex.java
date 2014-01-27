@@ -18,8 +18,6 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_IN_EDGE = new Text("EIN");
     public static final Text CF_OUT_VERTEX = new Text("VOUT");
     public static final Text CF_IN_VERTEX = new Text("VIN");
-    public static final String ROW_KEY_PREFIX = "V";
-    public static final String AFTER_ROW_KEY_PREFIX = "W";
     private final Set<Object> inEdgeIds;
     private final Set<Object> outEdgeIds;
     private final Set<Object> inVertexIds;
