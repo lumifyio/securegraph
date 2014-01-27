@@ -14,6 +14,13 @@ public enum Compare implements Predicate {
     }
 
     private boolean evaluate(Object first, Object second) {
+        if (first instanceof String) {
+            first = ((String) first).toLowerCase();
+        }
+        if (second instanceof String) {
+            second = ((String) second).toLowerCase();
+        }
+
         switch (this) {
             case EQUAL:
                 if (null == first) {

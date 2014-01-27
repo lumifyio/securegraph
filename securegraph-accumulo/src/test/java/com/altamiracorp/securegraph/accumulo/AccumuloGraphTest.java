@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph.accumulo;
 
+import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.SecureGraphException;
 import com.altamiracorp.securegraph.accumulo.helpers.TestHelpers;
@@ -19,6 +20,11 @@ public class AccumuloGraphTest extends GraphTestBase {
     @Override
     protected Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException, InterruptedException, IOException, URISyntaxException {
         return TestHelpers.createGraph();
+    }
+
+    @Override
+    protected Authorizations createAuthorizations(String... auths) {
+        return new AccumuloAuthorizations(auths);
     }
 
     @Before

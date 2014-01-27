@@ -4,7 +4,9 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
+import com.altamiracorp.securegraph.query.DefaultGraphQuery;
 import com.altamiracorp.securegraph.query.GeoCompare;
+import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.type.GeoPoint;
@@ -20,17 +22,18 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
-import static com.altamiracorp.securegraph.test.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
     public static final Visibility VISIBILITY_A = new Visibility("a");
     public static final Visibility VISIBILITY_B = new Visibility("b");
-    public static final Authorizations AUTHORIZATIONS_A = new Authorizations("a");
-    public static final Authorizations AUTHORIZATIONS_B = new Authorizations("b");
-    public static final Authorizations AUTHORIZATIONS_C = new Authorizations("c");
-    public static final Authorizations AUTHORIZATIONS_A_AND_B = new Authorizations("a", "b");
+    public final Authorizations AUTHORIZATIONS_A;
+    public final Authorizations AUTHORIZATIONS_B;
+    public final Authorizations AUTHORIZATIONS_C;
+    public final Authorizations AUTHORIZATIONS_A_AND_B;
     public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
 
     protected Graph graph;
@@ -40,6 +43,15 @@ public abstract class GraphTestBase {
     public Graph getGraph() {
         return graph;
     }
+
+    public GraphTestBase() {
+        AUTHORIZATIONS_A = createAuthorizations("a");
+        AUTHORIZATIONS_B = createAuthorizations("b");
+        AUTHORIZATIONS_C = createAuthorizations("c");
+        AUTHORIZATIONS_A_AND_B = createAuthorizations("a", "b");
+    }
+
+    protected abstract Authorizations createAuthorizations(String... auths);
 
     @Before
     public void before() throws Exception {
@@ -208,6 +220,26 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testMultivaluedPropertyOrder() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .addPropertyValue("a", "prop", "a", VISIBILITY_A)
+                .addPropertyValue("aa", "prop", "aa", VISIBILITY_A)
+                .addPropertyValue("b", "prop", "b", VISIBILITY_A)
+                .addPropertyValue("0", "prop", "0", VISIBILITY_A)
+                .addPropertyValue("A", "prop", "A", VISIBILITY_A)
+                .addPropertyValue("Z", "prop", "Z", VISIBILITY_A)
+                .save();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("0", v1.getPropertyValue("prop", 0));
+        assertEquals("A", v1.getPropertyValue("prop", 1));
+        assertEquals("Z", v1.getPropertyValue("prop", 2));
+        assertEquals("a", v1.getPropertyValue("prop", 3));
+        assertEquals("aa", v1.getPropertyValue("prop", 4));
+        assertEquals("b", v1.getPropertyValue("prop", 5));
+    }
+
+    @Test
     public void testRemoveProperty() {
         Vertex v = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
 
@@ -247,6 +279,79 @@ public abstract class GraphTestBase {
 
         Iterable<Vertex> allVertices = graph.getVertices(AUTHORIZATIONS_A_AND_B);
         assertEquals(2, count(allVertices));
+    }
+
+    @Test
+    public void testGetVerticesWithIds() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v1", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v1b", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v1b", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v2", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "v3", VISIBILITY_A)
+                .save();
+
+        List<Object> ids = new ArrayList<Object>();
+        ids.add("v1");
+        ids.add("v2");
+        Iterable<Vertex> vertices = graph.getVertices(ids, AUTHORIZATIONS_A);
+        boolean foundV1 = false, foundV2 = false;
+        for (Vertex v : vertices) {
+            if (v.getId().equals("v1")) {
+                assertEquals("v1", v.getPropertyValue("prop1"));
+                foundV1 = true;
+            } else if (v.getId().equals("v2")) {
+                assertEquals("v2", v.getPropertyValue("prop1"));
+                foundV2 = true;
+            } else {
+                assertTrue("Unexpected vertex id: " + v.getId(), false);
+            }
+        }
+        assertTrue("v1 not found", foundV1);
+        assertTrue("v2 not found", foundV2);
+    }
+
+    @Test
+    public void testGetEdgesWithIds() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.prepareEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e1", VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e1a", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e1a", VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e2", v1, v3, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e2", VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e3", v2, v3, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "e3", VISIBILITY_A)
+                .save();
+
+        List<Object> ids = new ArrayList<Object>();
+        ids.add("e1");
+        ids.add("e2");
+        Iterable<Edge> edges = graph.getEdges(ids, AUTHORIZATIONS_A);
+        boolean foundE1 = false, foundE2 = false;
+        for (Edge e : edges) {
+            if (e.getId().equals("e1")) {
+                assertEquals("e1", e.getPropertyValue("prop1"));
+                foundE1 = true;
+            } else if (e.getId().equals("e2")) {
+                assertEquals("e2", e.getPropertyValue("prop1"));
+                foundE2 = true;
+            } else {
+                assertTrue("Unexpected vertex id: " + e.getId(), false);
+            }
+        }
+        assertTrue("e1 not found", foundE1);
+        assertTrue("e2 not found", foundE2);
     }
 
     @Test
@@ -512,6 +617,66 @@ public abstract class GraphTestBase {
                 .has("age", Compare.NOT_EQUAL, 25)
                 .vertices();
         assertEquals(1, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryHasWithSpaces() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("name", "Joe Ferner", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("name", "Joe Smith", VISIBILITY_A)
+                .save();
+
+        Iterable<Vertex> vertices = graph.query("Ferner", AUTHORIZATIONS_A)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query("joe", AUTHORIZATIONS_A)
+                .vertices();
+        assertEquals(2, count(vertices));
+
+        if (!isUsingDefaultQuery(graph)) {
+            vertices = graph.query("joe AND ferner", AUTHORIZATIONS_A)
+                    .vertices();
+            assertEquals(1, count(vertices));
+        }
+
+        if (!isUsingDefaultQuery(graph)) {
+            vertices = graph.query("name:\"joe ferner\"", AUTHORIZATIONS_A)
+                    .vertices();
+            assertEquals(1, count(vertices));
+        }
+
+        if (!isUsingDefaultQuery(graph)) {
+            vertices = graph.query("joe smith", AUTHORIZATIONS_A)
+                    .vertices();
+            List<Vertex> verticesList = toList(vertices);
+            assertEquals(2, verticesList.size());
+            assertEquals("v2", verticesList.get(0).getId());
+            assertEquals("v1", verticesList.get(1).getId());
+        }
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("name", TextPredicate.CONTAINS, "Ferner")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("name", TextPredicate.CONTAINS, "Joe")
+                .has("name", TextPredicate.CONTAINS, "Ferner")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        // TODO should this work?
+//        vertices = graph.query(AUTHORIZATIONS_A)
+//                .has("name", "Joe Ferner")
+//                .vertices();
+//        assertEquals(1, count(vertices));
+    }
+
+    protected boolean isUsingDefaultQuery(Graph graph) {
+        return graph.query(AUTHORIZATIONS_A) instanceof DefaultGraphQuery;
     }
 
     @Test

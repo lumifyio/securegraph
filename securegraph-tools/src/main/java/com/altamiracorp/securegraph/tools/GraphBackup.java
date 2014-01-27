@@ -96,7 +96,7 @@ public class GraphBackup extends GraphToolBase {
 
     private JSONObject propertyToJson(Property property) {
         JSONObject json = new JSONObject();
-        json.put("id", objectToJsonString(property.getId()));
+        json.put("key", property.getKey());
         json.put("name", property.getName());
         json.put("visibility", property.getVisibility().getVisibilityString());
         Object value = property.getValue();

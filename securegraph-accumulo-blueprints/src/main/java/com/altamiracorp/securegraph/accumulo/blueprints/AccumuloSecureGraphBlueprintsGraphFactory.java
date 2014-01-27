@@ -36,7 +36,7 @@ public class AccumuloSecureGraphBlueprintsGraphFactory extends SecureGraphBluepr
 
     private AuthorizationsProvider createAuthorizationsProvider(Map config) {
         try {
-            return ConfigurationUtils.createProvider(config, "authorizationsProvider", DefaultAuthorizationsProvider.class.getName());
+            return ConfigurationUtils.createProvider(config, "authorizationsProvider", null);
         } catch (Exception ex) {
             throw new SecureGraphException("Could not create authorization provider", ex);
         }

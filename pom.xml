@@ -101,5 +101,6 @@
         <module>securegraph-tools</module>
         <module>securegraph-accumulo-iterators</module>
         <module>securegraph-performance-test</module>
+        <module>securegraph-accumulo-tools</module>
     </modules>
 </project>

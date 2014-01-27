@@ -19,6 +19,11 @@
         </dependency>
         <dependency>
             <groupId>com.altamiracorp.securegraph</groupId>
+            <artifactId>securegraph-accumulo</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.altamiracorp.securegraph</groupId>
             <artifactId>securegraph-inmemory</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>test</scope>
@@ -46,4 +51,25 @@
             <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptor>src/main/assembly/descriptor.xml</descriptor>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

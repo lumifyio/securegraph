@@ -39,8 +39,8 @@ public class DefaultGraphQuery extends GraphQueryBase {
         if (value == null) {
             return false;
         }
-        String valueString = value.toString();
-        return valueString.contains(queryString);
+        String valueString = value.toString().toLowerCase();
+        return valueString.contains(queryString.toLowerCase());
     }
 
     private class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {

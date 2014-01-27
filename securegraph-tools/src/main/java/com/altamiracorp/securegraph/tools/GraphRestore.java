@@ -123,23 +123,23 @@ public class GraphRestore extends GraphToolBase {
     }
 
     private void jsonToProperty(JSONObject propertyJson, ElementBuilder e) {
-        Object id = jsonStringToObject(propertyJson.getString("id"));
+        String key = propertyJson.getString("key");
         String name = propertyJson.getString("name");
         Object value = jsonStringToObject(propertyJson.getString("value"));
         Map<String, Object> metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
         Visibility visibility = new Visibility(propertyJson.getString("visibility"));
-        e.addPropertyValue(id, name, value, metadata, visibility);
+        e.addPropertyValue(key, name, value, metadata, visibility);
     }
 
     private void restoreStreamingPropertyValue(InputStream in, Graph graph, JSONObject propertyJson, Element element) throws ClassNotFoundException, IOException {
-        Object id = jsonStringToObject(propertyJson.getString("id"));
+        String key = propertyJson.getString("key");
         String name = propertyJson.getString("name");
         Map<String, Object> metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
         Visibility visibility = new Visibility(propertyJson.getString("visibility"));
         Class valueType = Class.forName(propertyJson.getString("valueType"));
         InputStream spvin = new StreamingPropertyValueInputStream(in);
         StreamingPropertyValue value = new StreamingPropertyValue(spvin, valueType);
-        element.addPropertyValue(id, name, value, metadata, visibility);
+        element.addPropertyValue(key, name, value, metadata, visibility);
     }
 
     private Map<String, Object> jsonToPropertyMetadata(JSONObject metadataJson) {

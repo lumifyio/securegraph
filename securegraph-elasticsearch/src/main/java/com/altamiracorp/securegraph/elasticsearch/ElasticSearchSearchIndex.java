@@ -54,7 +54,8 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         LOGGER.info("Using index: " + indexName);
 
         // TODO convert this to use a proper config object
-        autoflush = "true".equals(config.get(GraphConfiguration.AUTO_FLUSH));
+        Object autoFlushObj = config.get(GraphConfiguration.AUTO_FLUSH);
+        autoflush = autoFlushObj != null && "true".equals(autoFlushObj.toString());
         LOGGER.info("Auto flush: " + autoflush);
 
         client = new TransportClient();

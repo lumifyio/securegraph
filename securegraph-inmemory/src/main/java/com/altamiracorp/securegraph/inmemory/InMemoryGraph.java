@@ -2,14 +2,21 @@ package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.id.IdGenerator;
+import com.altamiracorp.securegraph.id.UUIDIdGenerator;
+import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 
 import java.util.*;
 
 public class InMemoryGraph extends GraphBase {
+    private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<Object, InMemoryVertex> vertices;
     private final Map<Object, InMemoryEdge> edges;
+
+    public InMemoryGraph() {
+        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION.getConfig()), new DefaultSearchIndex(DEFAULT_CONFIGURATION.getConfig()));
+    }
 
     public InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this(configuration, idGenerator, searchIndex, new HashMap<Object, InMemoryVertex>(), new HashMap<Object, InMemoryEdge>());
@@ -40,7 +47,7 @@ public class InMemoryGraph extends GraphBase {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save() {
-                List<Property> properties = getProperties();
+                Iterable<Property> properties = getProperties();
                 InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties);
                 vertices.put(getVertexId(), vertex);
 
@@ -162,7 +169,7 @@ public class InMemoryGraph extends GraphBase {
 
     private boolean hasAccess(Visibility visibility, Authorizations authorizations) {
         // TODO handle more complex accessibility. borrow code from Accumulo?
-        for (String a : authorizations.getAuthorizations()) {
+        for (String a : ((InMemoryAuthorizations) authorizations).getAuthorizations()) {
             if (visibility.getVisibilityString().equals(a)) {
                 return true;
             }
@@ -170,7 +177,7 @@ public class InMemoryGraph extends GraphBase {
         return false;
     }
 
-    public void saveProperties(Element element, List<Property> properties) {
+    public void saveProperties(Element element, Iterable<Property> properties) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
             vertex.setPropertiesInternal(properties);
@@ -186,10 +193,10 @@ public class InMemoryGraph extends GraphBase {
     public void removeProperty(Element element, Property property) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
-            vertex.removePropertyInternal(property.getId(), property.getName());
+            vertex.removePropertyInternal(property.getKey(), property.getName());
         } else if (element instanceof Edge) {
             InMemoryEdge edge = edges.get(element.getId());
-            edge.removePropertyInternal(property.getId(), property.getName());
+            edge.removePropertyInternal(property.getKey(), property.getName());
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }

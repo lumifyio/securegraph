@@ -6,16 +6,15 @@ import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.util.StreamUtils;
 
 import java.io.IOException;
-import java.util.List;
 
 public abstract class InMemoryElement extends ElementBase {
-    protected InMemoryElement(Graph graph, Object id, Visibility visibility, List<Property> properties) {
+    protected InMemoryElement(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
     }
 
     @Override
-    public void removeProperty(String propertyId, String name) {
-        Property property = removePropertyInternal(propertyId, name);
+    public void removeProperty(String key, String name) {
+        Property property = removePropertyInternal(key, name);
         if (property != null) {
             getGraph().removeProperty(this, property);
         }
@@ -35,7 +34,7 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    protected void setPropertiesInternal(List<Property> properties) {
+    protected void setPropertiesInternal(Iterable<Property> properties) {
         try {
             for (Property property : properties) {
                 if (property.getValue() instanceof StreamingPropertyValue) {
@@ -56,19 +55,19 @@ public abstract class InMemoryElement extends ElementBase {
     }
 
     @Override
-    protected Property removePropertyInternal(Object propertyId, String name) {
-        return super.removePropertyInternal(propertyId, name);
+    protected Property removePropertyInternal(Object key, String name) {
+        return super.removePropertyInternal(key, name);
     }
 
     @Override
     public ElementMutation prepareMutation() {
-        return new ElementMutationImpl() {
+        return new ExistingElementMutationImpl<InMemoryElement>(this) {
             @Override
             public InMemoryElement save() {
-                List<Property> properties = getProperties();
+                Iterable<Property> properties = getProperties();
                 setPropertiesInternal(properties);
-                getGraph().saveProperties(InMemoryElement.this, properties);
-                return InMemoryElement.this;
+                getGraph().saveProperties(getElement(), properties);
+                return getElement();
             }
         };
     }

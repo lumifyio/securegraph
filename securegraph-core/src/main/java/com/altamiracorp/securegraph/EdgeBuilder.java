@@ -15,6 +15,11 @@ public abstract class EdgeBuilder extends ElementBuilder<Edge> {
         this.visibility = visibility;
     }
 
+    /**
+     * Save the edge along with any properties that were set to the graph.
+     *
+     * @return The newly created edge.
+     */
     @Override
     public abstract Edge save();
 

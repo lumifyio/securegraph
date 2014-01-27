@@ -1,10 +1,11 @@
 package com.altamiracorp.securegraph.accumulo.blueprints.util;
 
+import com.altamiracorp.securegraph.Authorizations;
+import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
 import com.altamiracorp.securegraph.accumulo.AccumuloGraph;
 import com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration;
 import com.altamiracorp.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraph;
 import com.altamiracorp.securegraph.blueprints.AuthorizationsProvider;
-import com.altamiracorp.securegraph.blueprints.DefaultAuthorizationsProvider;
 import com.altamiracorp.securegraph.blueprints.DefaultVisibilityProvider;
 import com.altamiracorp.securegraph.blueprints.VisibilityProvider;
 import com.tinkerpop.blueprints.Graph;
@@ -19,7 +20,12 @@ import java.util.HashMap;
 public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     private final AccumuloSecureGraphBlueprintsGraph defaultGraph;
     private final VisibilityProvider visibilityProvider = new DefaultVisibilityProvider(new HashMap());
-    private final AuthorizationsProvider authorizationsProvider = new DefaultAuthorizationsProvider(new HashMap());
+    private final AuthorizationsProvider authorizationsProvider = new AuthorizationsProvider() {
+        @Override
+        public Authorizations getAuthorizations() {
+            return new AccumuloAuthorizations();
+        }
+    };
 
     public AccumuloBlueprintsGraphTestHelper() {
         try {

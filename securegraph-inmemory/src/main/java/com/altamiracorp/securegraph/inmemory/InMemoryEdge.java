@@ -2,14 +2,12 @@ package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
 
-import java.util.List;
-
 public class InMemoryEdge extends InMemoryElement implements Edge {
     private final Object outVertexId;
     private final Object inVertexId;
     private final String label;
 
-    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, List<Property> properties) {
+    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties) {
         super(graph, edgeId, visibility, properties);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;

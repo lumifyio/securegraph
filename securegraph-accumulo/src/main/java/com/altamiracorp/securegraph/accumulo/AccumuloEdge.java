@@ -3,19 +3,15 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.*;
 import org.apache.hadoop.io.Text;
 
-import java.util.List;
-
 public class AccumuloEdge extends AccumuloElement implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
     public static final Text CF_OUT_VERTEX = new Text("EOUT");
     public static final Text CF_IN_VERTEX = new Text("EIN");
-    public static final String ROW_KEY_PREFIX = "E";
-    public static final String AFTER_ROW_KEY_PREFIX = "F";
     private final Object outVertexId;
     private final Object inVertexId;
     private final String label;
 
-    AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, List<Property> properties) {
+    AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;

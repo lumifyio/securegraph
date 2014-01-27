@@ -5,9 +5,11 @@ import com.altamiracorp.securegraph.path.PathFindingAlgorithm;
 import com.altamiracorp.securegraph.path.RecursivePathFindingAlgorithm;
 import com.altamiracorp.securegraph.query.GraphQuery;
 import com.altamiracorp.securegraph.search.SearchIndex;
+import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.List;
 
 public abstract class GraphBase implements Graph {
@@ -50,6 +52,27 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public Iterable<Vertex> getVertices(final Iterable<Object> ids, final Authorizations authorizations) {
+        LOGGER.warn("Getting each vertex one by one! Override getVertices(java.lang.Iterable<java.lang.Object>, com.altamiracorp.securegraph.Authorizations)");
+        return new LookAheadIterable<Object, Vertex>() {
+            @Override
+            protected boolean isIncluded(Object src, Vertex vertex) {
+                return vertex != null;
+            }
+
+            @Override
+            protected Vertex convert(Object id) {
+                return getVertex(id, authorizations);
+            }
+
+            @Override
+            protected Iterator<Object> createIterator() {
+                return ids.iterator();
+            }
+        };
+    }
+
+    @Override
     public abstract Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException;
 
     @Override
@@ -88,6 +111,27 @@ public abstract class GraphBase implements Graph {
             }
         }
         return null;
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Iterable<Object> ids, final Authorizations authorizations) {
+        LOGGER.warn("Getting each edge one by one! Override getEdges(java.lang.Iterable<java.lang.Object>, com.altamiracorp.securegraph.Authorizations)");
+        return new LookAheadIterable<Object, Edge>() {
+            @Override
+            protected boolean isIncluded(Object src, Edge edge) {
+                return edge != null;
+            }
+
+            @Override
+            protected Edge convert(Object id) {
+                return getEdge(id, authorizations);
+            }
+
+            @Override
+            protected Iterator<Object> createIterator() {
+                return ids.iterator();
+            }
+        };
     }
 
     @Override
