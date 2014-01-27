@@ -18,12 +18,15 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
 public class ItemCountMR extends Configured implements Tool {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ItemCountMR.class);
     private static final IntWritable INT_WRITABLE_1 = new IntWritable(1);
     private static final Text DATA_COUNT = new Text(AccumuloConstants.DATA_ROW_KEY_PREFIX);
     private static final Text VERTEX_COUNT = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
@@ -31,22 +34,20 @@ public class ItemCountMR extends Configured implements Tool {
 
     public static class CountMapper extends Mapper<Text, PeekingIterator<Map.Entry<Key, Value>>, Text, IntWritable> {
         public void map(Key key, PeekingIterator<Map.Entry<Key, Value>> row, Context context) throws IOException, InterruptedException {
-            if (row.hasNext()) {
-                Map.Entry<Key, Value> col = row.next();
-                String prefix = "" + col.getKey().getRow().toString().charAt(0);
-                if (AccumuloConstants.DATA_ROW_KEY_PREFIX.equals(prefix)) {
-                    context.write(DATA_COUNT, INT_WRITABLE_1);
-                    return;
-                }
-                if (AccumuloConstants.VERTEX_ROW_KEY_PREFIX.equals(prefix)) {
-                    context.write(VERTEX_COUNT, INT_WRITABLE_1);
-                    return;
-                }
-                if (AccumuloConstants.EDGE_ROW_KEY_PREFIX.equals(prefix)) {
-                    context.write(EDGE_COUNT, INT_WRITABLE_1);
-                    return;
-                }
+            String prefix = "" + key.getRow().toString().charAt(0);
+            if (AccumuloConstants.DATA_ROW_KEY_PREFIX.equals(prefix)) {
+                context.write(DATA_COUNT, INT_WRITABLE_1);
+                return;
             }
+            if (AccumuloConstants.VERTEX_ROW_KEY_PREFIX.equals(prefix)) {
+                context.write(VERTEX_COUNT, INT_WRITABLE_1);
+                return;
+            }
+            if (AccumuloConstants.EDGE_ROW_KEY_PREFIX.equals(prefix)) {
+                context.write(EDGE_COUNT, INT_WRITABLE_1);
+                return;
+            }
+            LOGGER.warn("Unrecognized row key prefix: " + prefix);
         }
     }
 
