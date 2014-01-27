@@ -102,6 +102,10 @@ public class ItemCountMR extends Configured implements Tool {
 
         job.waitForCompletion(true);
 
+        if (job.isSuccessful()) {
+            System.out.println("Results can be found in " + outputDirectory);
+        }
+
         return job.isSuccessful() ? 0 : 1;
     }
 
