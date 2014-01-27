@@ -43,8 +43,8 @@ public class EdgeMaker extends ElementMaker<Edge> {
 
     @Override
     protected String getIdFromRowKey(String rowKey) {
-        if (rowKey.startsWith(AccumuloEdge.ROW_KEY_PREFIX)) {
-            return rowKey.substring(AccumuloEdge.ROW_KEY_PREFIX.length());
+        if (rowKey.startsWith(AccumuloConstants.EDGE_ROW_KEY_PREFIX)) {
+            return rowKey.substring(AccumuloConstants.EDGE_ROW_KEY_PREFIX.length());
         }
         throw new SecureGraphException("Invalid row key for edge: " + rowKey);
     }

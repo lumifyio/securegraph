@@ -52,8 +52,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
 
     @Override
     protected String getIdFromRowKey(String rowKey) throws SecureGraphException {
-        if (rowKey.startsWith(AccumuloVertex.ROW_KEY_PREFIX)) {
-            return rowKey.substring(AccumuloVertex.ROW_KEY_PREFIX.length());
+        if (rowKey.startsWith(AccumuloConstants.VERTEX_ROW_KEY_PREFIX)) {
+            return rowKey.substring(AccumuloConstants.VERTEX_ROW_KEY_PREFIX.length());
         }
         throw new SecureGraphException("Invalid row key for vertex: " + rowKey);
     }
