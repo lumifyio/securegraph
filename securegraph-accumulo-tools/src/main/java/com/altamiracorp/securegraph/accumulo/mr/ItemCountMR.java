@@ -22,19 +22,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
 
 public class ItemCountMR extends Configured implements Tool {
     private static final Logger LOGGER = LoggerFactory.getLogger(ItemCountMR.class);
     private static final IntWritable INT_WRITABLE_1 = new IntWritable(1);
-    private static final Text DATA_COUNT = new Text(AccumuloConstants.DATA_ROW_KEY_PREFIX);
-    private static final Text VERTEX_COUNT = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
-    private static final Text EDGE_COUNT = new Text(AccumuloConstants.EDGE_ROW_KEY_PREFIX);
+    private static final Text DATA_COUNT = new Text("Data");
+    private static final Text VERTEX_COUNT = new Text("Vertices");
+    private static final Text EDGE_COUNT = new Text("Edges");
 
     public static class CountMapper extends Mapper<Text, PeekingIterator<Map.Entry<Key, Value>>, Text, IntWritable> {
-        public void map(Key key, PeekingIterator<Map.Entry<Key, Value>> row, Context context) throws IOException, InterruptedException {
-            String prefix = "" + key.getRow().toString().charAt(0);
+        public void map(Text key, PeekingIterator<Map.Entry<Key, Value>> row, Context context) throws IOException, InterruptedException {
+            String prefix = "" + key.toString().charAt(0);
             if (AccumuloConstants.DATA_ROW_KEY_PREFIX.equals(prefix)) {
                 context.write(DATA_COUNT, INT_WRITABLE_1);
                 return;
@@ -52,10 +51,11 @@ public class ItemCountMR extends Configured implements Tool {
     }
 
     public static class CountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-        public void reduce(Text key, Iterator<IntWritable> values, Context context) throws IOException, InterruptedException {
+        @Override
+        protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int sum = 0;
-            while (values.hasNext()) {
-                sum += values.next().get();
+            for (IntWritable i : values) {
+                sum += i.get();
             }
             context.write(key, new IntWritable(sum));
         }
