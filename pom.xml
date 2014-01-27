@@ -100,5 +100,6 @@
         <module>securegraph-inmemory</module>
         <module>securegraph-tools</module>
         <module>securegraph-accumulo-iterators</module>
+        <module>securegraph-accumulo-tools</module>
     </modules>
 </project>
