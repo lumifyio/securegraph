@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph.accumulo.mr;
 
+import com.altamiracorp.securegraph.accumulo.AccumuloConstants;
 import org.apache.accumulo.core.client.mapreduce.AccumuloRowInputFormat;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
@@ -19,17 +20,43 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 
 public class ItemCountMR extends Configured implements Tool {
+    private static final IntWritable INT_WRITABLE_1 = new IntWritable(1);
+    private static final Text DATA_COUNT = new Text(AccumuloConstants.DATA_ROW_KEY_PREFIX);
+    private static final Text VERTEX_COUNT = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
+    private static final Text EDGE_COUNT = new Text(AccumuloConstants.EDGE_ROW_KEY_PREFIX);
+
     public static class CountMapper extends Mapper<Text, PeekingIterator<Map.Entry<Key, Value>>, Text, IntWritable> {
         public void map(Key key, PeekingIterator<Map.Entry<Key, Value>> row, Context context) throws IOException, InterruptedException {
-            context.write(new Text("D"), new IntWritable(1));
+            if (row.hasNext()) {
+                Map.Entry<Key, Value> col = row.next();
+                String prefix = "" + col.getKey().getRow().toString().charAt(0);
+                if (AccumuloConstants.DATA_ROW_KEY_PREFIX.equals(prefix)) {
+                    context.write(DATA_COUNT, INT_WRITABLE_1);
+                    return;
+                }
+                if (AccumuloConstants.VERTEX_ROW_KEY_PREFIX.equals(prefix)) {
+                    context.write(VERTEX_COUNT, INT_WRITABLE_1);
+                    return;
+                }
+                if (AccumuloConstants.EDGE_ROW_KEY_PREFIX.equals(prefix)) {
+                    context.write(EDGE_COUNT, INT_WRITABLE_1);
+                    return;
+                }
+            }
         }
     }
 
     public static class CountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-        public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+        public void reduce(Text key, Iterator<IntWritable> values, Context context) throws IOException, InterruptedException {
+            int sum = 0;
+            while (values.hasNext()) {
+                sum += values.next().get();
+            }
+            context.write(key, new IntWritable(sum));
         }
     }
 
