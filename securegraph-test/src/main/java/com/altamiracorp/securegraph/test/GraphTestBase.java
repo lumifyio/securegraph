@@ -167,6 +167,16 @@ public abstract class GraphTestBase {
         assertEquals(2, prop1Metadata.keySet().size());
         assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
         assertEquals("metadata2Value", prop1Metadata.get("metadata2"));
+
+        // make sure we clear out old values
+        prop1Metadata = new HashMap<String, Object>();
+        v.setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A);
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v.getProperties("prop1")));
+        prop1 = v.getProperties("prop1").iterator().next();
+        prop1Metadata = prop1.getMetadata();
+        assertEquals(0, prop1Metadata.keySet().size());
     }
 
     @Test
