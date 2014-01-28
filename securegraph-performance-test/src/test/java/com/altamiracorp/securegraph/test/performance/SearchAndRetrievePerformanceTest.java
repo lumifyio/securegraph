@@ -2,6 +2,7 @@ package com.altamiracorp.securegraph.test.performance;
 
 import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
+import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,7 +20,7 @@ public class SearchAndRetrievePerformanceTest extends PerformanceTestBase {
         time("total", new Runnable() {
             @Override
             public void run() {
-                final Authorizations authorizations = new Authorizations();
+                final Authorizations authorizations = new AccumuloAuthorizations();
                 final Graph graph = createGraph();
                 time("insert", new Runnable() {
                     @Override
