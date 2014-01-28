@@ -346,17 +346,15 @@ public class AccumuloGraph extends GraphBase {
                     addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
                 }
 
-                Value edgeLabelValue = new Value(getLabel().getBytes());
-
                 // Update out vertex.
                 Mutation addEdgeToOutMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + getOutVertex().getId());
-                addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
-                addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_VERTEX, new Text(getInVertex().getId().toString()), edgeColumnVisibility, edgeLabelValue);
+                EdgeInfo edgeInfo = new EdgeInfo(getLabel(), getInVertex().getId());
+                addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, getValueSerializer().objectToValue(edgeInfo));
 
                 // Update in vertex.
                 Mutation addEdgeToInMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + getInVertex().getId());
-                addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
-                addEdgeToInMutation.put(AccumuloVertex.CF_IN_VERTEX, new Text(getOutVertex().getId().toString()), edgeColumnVisibility, edgeLabelValue);
+                edgeInfo = new EdgeInfo(getLabel(), getOutVertex().getId());
+                addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, getValueSerializer().objectToValue(edgeInfo));
 
                 addMutations(getEdgesWriter(), addEdgeMutation);
                 addMutations(getVerticesWriter(), addEdgeToOutMutation, addEdgeToInMutation);
@@ -400,11 +398,9 @@ public class AccumuloGraph extends GraphBase {
 
         Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + out.getId());
         outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), visibility);
-        outMutation.putDelete(AccumuloVertex.CF_OUT_VERTEX, new Text(in.getId().toString()), visibility);
 
         Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + in.getId());
         inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), visibility);
-        inMutation.putDelete(AccumuloVertex.CF_IN_VERTEX, new Text(out.getId().toString()), visibility);
 
         addMutations(getVerticesWriter(), outMutation, inMutation);
 

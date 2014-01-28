@@ -5,34 +5,26 @@ import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 import com.altamiracorp.securegraph.util.JoinIterable;
-import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
     public static final Text CF_OUT_EDGE = new Text("EOUT");
     public static final Text CF_IN_EDGE = new Text("EIN");
-    public static final Text CF_OUT_VERTEX = new Text("VOUT");
-    public static final Text CF_IN_VERTEX = new Text("VIN");
-    private final Set<Object> inEdgeIds;
-    private final Set<Object> outEdgeIds;
-    private final Set<Object> inVertexIds;
-    private final Set<Object> outVertexIds;
+    private final Map<Object, EdgeInfo> inEdges;
+    private final Map<Object, EdgeInfo> outEdges;
 
     AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties) {
-        this(graph, vertexId, vertexVisibility, properties, new HashSet<Object>(), new HashSet<Object>(), new HashSet<Object>(), new HashSet<Object>());
+        this(graph, vertexId, vertexVisibility, properties, new HashMap<Object, EdgeInfo>(), new HashMap<Object, EdgeInfo>());
     }
 
-    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties, Set<Object> inEdgeIds, Set<Object> outEdgeIds, Set<Object> inVertexIds, Set<Object> outVertexIds) {
+    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties, Map<Object, EdgeInfo> inEdges, Map<Object, EdgeInfo> outEdges) {
         super(graph, vertexId, vertexVisibility, properties);
-        this.inEdgeIds = inEdgeIds;
-        this.outEdgeIds = outEdgeIds;
-        this.inVertexIds = inVertexIds;
-        this.outVertexIds = outVertexIds;
+        this.inEdges = inEdges;
+        this.outEdges = outEdges;
     }
 
     @Override
@@ -41,13 +33,13 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
             case BOTH:
                 // TODO: Can't we concat the two id lists together and do a single scan, skipping the JoinIterable?
                 return new JoinIterable<Edge>(
-                        getGraph().getEdges(inEdgeIds, authorizations),
-                        getGraph().getEdges(outEdgeIds, authorizations)
+                        getGraph().getEdges(inEdges.keySet(), authorizations),
+                        getGraph().getEdges(outEdges.keySet(), authorizations)
                 );
             case IN:
-                return getGraph().getEdges(inEdgeIds, authorizations);
+                return getGraph().getEdges(inEdges.keySet(), authorizations);
             case OUT:
-                return getGraph().getEdges(outEdgeIds, authorizations);
+                return getGraph().getEdges(outEdges.keySet(), authorizations);
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }
@@ -126,11 +118,21 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     public Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations) {
         switch (direction) {
             case BOTH:
-                return new JoinIterable<Object>(inVertexIds, outVertexIds);
+                return new JoinIterable<Object>(getVertexIds(Direction.IN, authorizations), getVertexIds(Direction.OUT, authorizations));
             case IN:
-                return this.inVertexIds;
+                return new ConvertingIterable<EdgeInfo, Object>(this.inEdges.values()) {
+                    @Override
+                    protected Object convert(EdgeInfo o) {
+                        return o.getVertexId();
+                    }
+                };
             case OUT:
-                return this.outVertexIds;
+                return new ConvertingIterable<EdgeInfo, Object>(this.outEdges.values()) {
+                    @Override
+                    protected Object convert(EdgeInfo o) {
+                        return o.getVertexId();
+                    }
+                };
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }
@@ -147,47 +149,18 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     }
 
     void addOutEdge(Edge edge) {
-        this.outEdgeIds.add(edge.getId().toString());
-        this.outVertexIds.add(edge.getVertexId(Direction.IN));
+        this.outEdges.put(edge.getId(), new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.IN)));
     }
 
     void removeOutEdge(Edge edge) {
-        this.outEdgeIds.remove(edge.getId().toString());
-        this.outVertexIds.remove(edge.getVertexId(Direction.IN));
+        this.outEdges.remove(edge.getId());
     }
 
     void addInEdge(Edge edge) {
-        this.inEdgeIds.add(edge.getId().toString());
-        this.inVertexIds.add(edge.getVertexId(Direction.OUT));
+        this.inEdges.put(edge.getId(), new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.OUT)));
     }
 
     void removeInEdge(Edge edge) {
-        this.inEdgeIds.remove(edge.getId().toString());
-        this.inVertexIds.remove(edge.getVertexId(Direction.OUT));
-    }
-
-    private static abstract class ElementsByIdsIterable<T> extends LookAheadIterable<Object, T> {
-        protected final Graph graph;
-        protected final Iterable<Object> idsList;
-        protected final Authorizations authorizations;
-
-        public ElementsByIdsIterable(Graph graph, Iterable<Object> idsList, Authorizations authorizations) {
-            this.graph = graph;
-            this.idsList = idsList;
-            this.authorizations = authorizations;
-        }
-
-        @Override
-        protected abstract T convert(Object edgeId);
-
-        @Override
-        protected boolean isIncluded(Object src, T dest) {
-            return dest != null;
-        }
-
-        @Override
-        protected Iterator<Object> createIterator() {
-            return idsList.iterator();
-        }
+        this.inEdges.remove(edge.getId());
     }
 }

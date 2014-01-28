@@ -6,7 +6,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -14,10 +14,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private static final String VISIBILITY_SIGNAL = AccumuloVertex.CF_SIGNAL.toString();
 
     private final AccumuloGraph graph;
-    private final HashSet<Object> outEdgeIds = new HashSet<Object>();
-    private final HashSet<Object> inEdgeIds = new HashSet<Object>();
-    private final HashSet<Object> outVertexIds = new HashSet<Object>();
-    private final HashSet<Object> inVertexIds = new HashSet<Object>();
+    private final Map<Object, EdgeInfo> outEdges = new HashMap<Object, EdgeInfo>();
+    private final Map<Object, EdgeInfo> inEdges = new HashMap<Object, EdgeInfo>();
 
     public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
         super(graph, row);
@@ -30,22 +28,16 @@ public class VertexMaker extends ElementMaker<Vertex> {
         Text columnQualifier = key.getColumnQualifier();
 
         if (AccumuloVertex.CF_OUT_EDGE.compareTo(columnFamily) == 0) {
-            outEdgeIds.add(columnQualifier.toString());
+            String edgeId = columnQualifier.toString();
+            EdgeInfo edgeInfo = graph.getValueSerializer().valueToObject(value);
+            outEdges.put(edgeId, edgeInfo);
             return;
         }
 
         if (AccumuloVertex.CF_IN_EDGE.compareTo(columnFamily) == 0) {
-            inEdgeIds.add(columnQualifier.toString());
-            return;
-        }
-
-        if (AccumuloVertex.CF_OUT_VERTEX.compareTo(columnFamily) == 0) {
-            outVertexIds.add(columnQualifier.toString());
-            return;
-        }
-
-        if (AccumuloVertex.CF_IN_VERTEX.compareTo(columnFamily) == 0) {
-            inVertexIds.add(columnQualifier.toString());
+            String edgeId = columnQualifier.toString();
+            EdgeInfo edgeInfo = graph.getValueSerializer().valueToObject(value);
+            inEdges.put(edgeId, edgeInfo);
             return;
         }
     }
@@ -70,10 +62,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.getId(),
                 this.getVisibility(),
                 this.getProperties(),
-                this.inEdgeIds,
-                this.outEdgeIds,
-                this.inVertexIds,
-                this.outVertexIds);
+                this.inEdges,
+                this.outEdges);
     }
 
 }

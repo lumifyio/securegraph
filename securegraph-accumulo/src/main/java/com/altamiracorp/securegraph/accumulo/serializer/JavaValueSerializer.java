@@ -16,7 +16,7 @@ public class JavaValueSerializer implements ValueSerializer {
     }
 
     @Override
-    public Object valueToObject(Value value) {
-        return JavaSerializableUtils.bytesToObject(value.get());
+    public <T> T valueToObject(Value value) {
+        return (T) JavaSerializableUtils.bytesToObject(value.get());
     }
 }

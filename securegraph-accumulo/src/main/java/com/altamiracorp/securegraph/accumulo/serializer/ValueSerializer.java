@@ -5,5 +5,5 @@ import org.apache.accumulo.core.data.Value;
 public interface ValueSerializer {
     Value objectToValue(Object value);
 
-    Object valueToObject(Value value);
+    <T> T valueToObject(Value value);
 }
