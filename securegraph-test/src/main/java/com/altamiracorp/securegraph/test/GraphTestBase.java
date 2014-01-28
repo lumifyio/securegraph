@@ -837,4 +837,21 @@ public abstract class GraphTestBase {
         assertEquals("v1", v.getId());
         assertEquals(VISIBILITY_EMPTY, v.getVisibility());
     }
+
+    @Test
+    public void testElementMutationDoesntChangeObjectUntilSave() {
+        Vertex v = graph.addVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
+        v.setProperty("prop1", "value1", VISIBILITY_A);
+
+        ElementMutation<Vertex> m = v.prepareMutation()
+                .setProperty("prop1", "value2", VISIBILITY_A)
+                .setProperty("prop2", "value2", VISIBILITY_A);
+        assertEquals(1, count(v.getProperties()));
+        assertEquals("value1", v.getPropertyValue("prop1"));
+
+        m.save();
+        assertEquals(2, count(v.getProperties()));
+        assertEquals("value2", v.getPropertyValue("prop1"));
+        assertEquals("value2", v.getPropertyValue("prop2"));
+    }
 }
