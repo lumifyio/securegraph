@@ -744,19 +744,38 @@ public abstract class GraphTestBase {
     @Test
     public void testVertexQuery() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        v1.setProperty("prop1", "value1", VISIBILITY_A);
+
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge("e1", v1, v2, "edgeA", VISIBILITY_A, AUTHORIZATIONS_A);
+        v2.setProperty("prop1", "value2", VISIBILITY_A);
+
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        v3.setProperty("prop1", "value3", VISIBILITY_A);
+
+        Edge ev1v2 = graph.addEdge("e v1->v2", v1, v2, "edgeA", VISIBILITY_A, AUTHORIZATIONS_A);
+        Edge ev1v3 = graph.addEdge("e v1->v3", v1, v3, "edgeA", VISIBILITY_A, AUTHORIZATIONS_A);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         Iterable<Vertex> vertices = v1.query(AUTHORIZATIONS_A).vertices();
+        assertEquals(2, count(vertices));
+        assertContains(v2, vertices);
+        assertContains(v3, vertices);
+
+        vertices = v1.query(AUTHORIZATIONS_A)
+                .has("prop1", "value2")
+                .vertices();
         assertEquals(1, count(vertices));
-        assertEquals("v2", vertices.iterator().next().getId());
+        assertContains(v2, vertices);
 
         Iterable<Edge> edges = v1.query(AUTHORIZATIONS_A).edges();
-        assertEquals(1, count(edges));
+        assertEquals(2, count(edges));
+        assertContains(ev1v2, edges);
+        assertContains(ev1v3, edges);
 
         edges = v1.query(AUTHORIZATIONS_A).edges(Direction.OUT);
-        assertEquals(1, count(edges));
+        assertEquals(2, count(edges));
+        assertContains(ev1v2, edges);
+        assertContains(ev1v3, edges);
     }
 
     @Test
