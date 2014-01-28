@@ -1,7 +1,6 @@
 package com.altamiracorp.securegraph.query;
 
 import com.altamiracorp.securegraph.*;
-import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
 public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
@@ -13,14 +12,7 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
     }
 
     @Override
-    public Iterable<Vertex> vertices() {
-        return new ConvertingIterable<Edge, Vertex>(edges()) {
-            @Override
-            protected Vertex convert(Edge edge) {
-                return edge.getOtherVertex(sourceVertex.getId(), getParameters().getAuthorizations());
-            }
-        };
-    }
+    public abstract Iterable<Vertex> vertices();
 
     @Override
     public abstract Iterable<Edge> edges();
