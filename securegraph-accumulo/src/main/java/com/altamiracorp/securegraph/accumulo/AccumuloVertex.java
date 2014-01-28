@@ -5,9 +5,11 @@ import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 import com.altamiracorp.securegraph.util.JoinIterable;
+import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class AccumuloVertex extends AccumuloElement implements Vertex {
@@ -93,6 +95,42 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
                 return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
             }
         };
+    }
+
+    public Iterable<Object> getEdgeIds(final Object otherVertexId, Direction direction, Authorizations authorizations) {
+        final Iterable<Map.Entry<Object, EdgeInfo>> edgeInfos = getEdgeInfos(direction, authorizations);
+        return new LookAheadIterable<Map.Entry<Object, EdgeInfo>, Object>() {
+            @Override
+            protected boolean isIncluded(Map.Entry<Object, EdgeInfo> src, Object o) {
+                return o != null;
+            }
+
+            @Override
+            protected Object convert(Map.Entry<Object, EdgeInfo> next) {
+                if (next.getValue().getVertexId().equals(otherVertexId)) {
+                    return next.getKey();
+                }
+                return null;
+            }
+
+            @Override
+            protected Iterator<Map.Entry<Object, EdgeInfo>> createIterator() {
+                return edgeInfos.iterator();
+            }
+        };
+    }
+
+    private Iterable<Map.Entry<Object, EdgeInfo>> getEdgeInfos(Direction direction, Authorizations authorizations) {
+        switch (direction) {
+            case IN:
+                return this.inEdges.entrySet();
+            case OUT:
+                return this.outEdges.entrySet();
+            case BOTH:
+                return new JoinIterable<Map.Entry<Object, EdgeInfo>>(getEdgeInfos(Direction.IN, authorizations), getEdgeInfos(Direction.OUT, authorizations));
+            default:
+                throw new SecureGraphException("Unexpected direction: " + direction);
+        }
     }
 
     @Override
