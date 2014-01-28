@@ -20,8 +20,10 @@ public class TestHelpers {
     public static void before() throws AccumuloSecurityException, AccumuloException {
         ensureAccumuloIsStarted();
         Connector connector = TestAccumuloCluster.getConfig().createConnector();
-        ensureTableExists(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
-        dropGraph(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
+        ensureTableExists(connector, AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX);
+        dropGraph(connector, AccumuloGraph.getDataTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
+        dropGraph(connector, AccumuloGraph.getVerticesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
+        dropGraph(connector, AccumuloGraph.getEdgesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
         connector.securityOperations().changeUserAuthorizations(AccumuloGraphConfiguration.DEFAULT_ACCUMULO_USERNAME, new Authorizations("a", "b", "c"));
     }
 

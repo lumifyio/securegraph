@@ -12,7 +12,7 @@ public class AccumuloSecureGraphBlueprintsGraph extends SecureGraphBlueprintsGra
 
     @Override
     public String toString() {
-        return getClass().getSimpleName().toLowerCase() + ":" + getSecureGraph().getConfiguration().getTableName();
+        return getClass().getSimpleName().toLowerCase() + ":" + getSecureGraph().getConfiguration().getTableNamePrefix();
     }
 
     @Override

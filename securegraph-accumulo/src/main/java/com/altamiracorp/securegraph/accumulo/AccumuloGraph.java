@@ -41,7 +41,9 @@ public class AccumuloGraph extends GraphBase {
     public static final String EDGE_AFTER_ROW_KEY_PREFIX = "F";
     private final Connector connector;
     private final ValueSerializer valueSerializer;
-    private BatchWriter writer;
+    private BatchWriter verticesWriter;
+    private BatchWriter edgesWriter;
+    private BatchWriter dataWriter;
     private final Object writerLock = new Object();
     private long maxStreamingPropertyValueTableDataSize;
     private final FileSystem fileSystem;
@@ -65,8 +67,12 @@ public class AccumuloGraph extends GraphBase {
         ValueSerializer valueSerializer = config.createValueSerializer();
         SearchIndex searchIndex = config.createSearchIndex();
         IdGenerator idGenerator = config.createIdGenerator();
-        ensureTableExists(connector, config.getTableName());
-        ensureRowDeletingIteratorIsAttached(connector, config.getTableName());
+        ensureTableExists(connector, getVerticesTableName(config.getTableNamePrefix()));
+        ensureTableExists(connector, getEdgesTableName(config.getTableNamePrefix()));
+        ensureTableExists(connector, getDataTableName(config.getTableNamePrefix()));
+        ensureRowDeletingIteratorIsAttached(connector, getVerticesTableName(config.getTableNamePrefix()));
+        ensureRowDeletingIteratorIsAttached(connector, getEdgesTableName(config.getTableNamePrefix()));
+        ensureRowDeletingIteratorIsAttached(connector, getDataTableName(config.getTableNamePrefix()));
         return new AccumuloGraph(config, idGenerator, searchIndex, connector, fs, valueSerializer);
     }
 
@@ -117,7 +123,7 @@ public class AccumuloGraph extends GraphBase {
                 for (Property property : vertex.getProperties()) {
                     addPropertyToMutation(m, vertexRowKey, property);
                 }
-                addMutations(m);
+                addMutations(getVerticesWriter(), m);
 
                 getSearchIndex().addElement(AccumuloGraph.this, vertex);
 
@@ -134,7 +140,7 @@ public class AccumuloGraph extends GraphBase {
         for (Property property : properties) {
             addPropertyToMutation(m, elementRowKey, property);
         }
-        addMutations(m);
+        addMutations(getWriterFromElementType(element), m);
 
         getSearchIndex().addElement(this, element);
     }
@@ -144,7 +150,7 @@ public class AccumuloGraph extends GraphBase {
 
         Mutation m = new Mutation(rowPrefix + element.getId());
         addPropertyRemoveToMutation(m, property);
-        addMutations(m);
+        addMutations(getWriterFromElementType(element), m);
 
         getSearchIndex().addElement(this, element);
     }
@@ -213,7 +219,7 @@ public class AccumuloGraph extends GraphBase {
         String dataRowKey = createTableDataRowKey(rowKey, property);
         Mutation dataMutation = new Mutation(dataRowKey);
         dataMutation.put(EMPTY_TEXT, EMPTY_TEXT, new Value(data));
-        addMutations(dataMutation);
+        addMutations(getDataWriter(), dataMutation);
         return new StreamingPropertyValueTableRef(dataRowKey, propertyValue, data);
     }
 
@@ -228,13 +234,8 @@ public class AccumuloGraph extends GraphBase {
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
     }
 
-    private void addMutations(Collection<Mutation> mutations) {
-        addMutations(mutations.toArray(new Mutation[mutations.size()]));
-    }
-
-    private void addMutations(Mutation... mutations) {
+    private void addMutations(BatchWriter writer, Mutation... mutations) {
         try {
-            BatchWriter writer = getWriter();
             synchronized (this.writerLock) {
                 for (Mutation m : mutations) {
                     writer.addMutation(m);
@@ -248,14 +249,50 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
-    protected synchronized BatchWriter getWriter() {
+    protected synchronized BatchWriter getVerticesWriter() {
         try {
-            if (this.writer != null) {
-                return this.writer;
+            if (this.verticesWriter != null) {
+                return this.verticesWriter;
             }
             BatchWriterConfig writerConfig = new BatchWriterConfig();
-            this.writer = this.connector.createBatchWriter(getConfiguration().getTableName(), writerConfig);
-            return this.writer;
+            this.verticesWriter = this.connector.createBatchWriter(getVerticesTableName(), writerConfig);
+            return this.verticesWriter;
+        } catch (TableNotFoundException ex) {
+            throw new RuntimeException("Could not create batch writer", ex);
+        }
+    }
+
+    protected synchronized BatchWriter getEdgesWriter() {
+        try {
+            if (this.edgesWriter != null) {
+                return this.edgesWriter;
+            }
+            BatchWriterConfig writerConfig = new BatchWriterConfig();
+            this.edgesWriter = this.connector.createBatchWriter(getEdgesTableName(), writerConfig);
+            return this.edgesWriter;
+        } catch (TableNotFoundException ex) {
+            throw new RuntimeException("Could not create batch writer", ex);
+        }
+    }
+
+    protected BatchWriter getWriterFromElementType(Element element) {
+        if (element instanceof Vertex) {
+            return getVerticesWriter();
+        } else if (element instanceof Edge) {
+            return getEdgesWriter();
+        } else {
+            throw new SecureGraphException("Unexpected element type: " + element.getClass().getName());
+        }
+    }
+
+    protected synchronized BatchWriter getDataWriter() {
+        try {
+            if (this.dataWriter != null) {
+                return this.dataWriter;
+            }
+            BatchWriterConfig writerConfig = new BatchWriterConfig();
+            this.dataWriter = this.connector.createBatchWriter(getDataTableName(), writerConfig);
+            return this.dataWriter;
         } catch (TableNotFoundException ex) {
             throw new RuntimeException("Could not create batch writer", ex);
         }
@@ -272,18 +309,14 @@ public class AccumuloGraph extends GraphBase {
             throw new IllegalArgumentException("vertex cannot be null");
         }
 
-        List<Mutation> mutations = new ArrayList<Mutation>();
-
         getSearchIndex().removeElement(this, vertex);
 
         // Remove all edges that this vertex participates.
         for (Edge edge : vertex.getEdges(Direction.BOTH, authorizations)) {
-            removeEdge(mutations, edge, authorizations);
+            removeEdge(edge, authorizations);
         }
 
-        addDeleteRowToMutations(mutations, AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId(), authorizations);
-
-        addMutations(mutations);
+        addMutations(getVerticesWriter(), getDeleteRowMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId()));
     }
 
     @Override
@@ -325,7 +358,8 @@ public class AccumuloGraph extends GraphBase {
                 addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), edgeColumnVisibility, edgeLabelValue);
                 addEdgeToInMutation.put(AccumuloVertex.CF_IN_VERTEX, new Text(getOutVertex().getId().toString()), edgeColumnVisibility, edgeLabelValue);
 
-                addMutations(addEdgeMutation, addEdgeToOutMutation, addEdgeToInMutation);
+                addMutations(getEdgesWriter(), addEdgeMutation);
+                addMutations(getVerticesWriter(), addEdgeToOutMutation, addEdgeToInMutation);
 
                 if (getOutVertex() instanceof AccumuloVertex) {
                     ((AccumuloVertex) getOutVertex()).addOutEdge(edge);
@@ -353,33 +387,6 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public void removeEdge(Edge edge, Authorizations authorizations) {
-        List<Mutation> mutations = new ArrayList<Mutation>();
-        removeEdge(mutations, edge, authorizations);
-        addMutations(mutations);
-    }
-
-    @Override
-    public void flush() {
-        if (this.writer != null) {
-            try {
-                this.writer.flush();
-            } catch (MutationsRejectedException e) {
-                throw new SecureGraphException("Could not flush", e);
-            }
-        }
-        getSearchIndex().flush();
-    }
-
-    @Override
-    public void shutdown() {
-        try {
-            flush();
-        } catch (Exception ex) {
-            throw new SecureGraphException(ex);
-        }
-    }
-
-    private void removeEdge(List<Mutation> mutations, Edge edge, Authorizations authorizations) {
         checkNotNull(edge);
 
         getSearchIndex().removeElement(this, edge);
@@ -394,16 +401,15 @@ public class AccumuloGraph extends GraphBase {
         Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + out.getId());
         outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), visibility);
         outMutation.putDelete(AccumuloVertex.CF_OUT_VERTEX, new Text(in.getId().toString()), visibility);
-        mutations.add(outMutation);
 
         Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + in.getId());
         inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), visibility);
         inMutation.putDelete(AccumuloVertex.CF_IN_VERTEX, new Text(out.getId().toString()), visibility);
-        mutations.add(inMutation);
+
+        addMutations(getVerticesWriter(), outMutation, inMutation);
 
         // Remove everything else related to edge.
-        addDeleteRowToMutations(mutations, AccumuloConstants.EDGE_ROW_KEY_PREFIX + edge.getId(), authorizations);
-        addMutations(mutations);
+        addMutations(getEdgesWriter(), getDeleteRowMutation(AccumuloConstants.EDGE_ROW_KEY_PREFIX + edge.getId()));
 
         if (out instanceof AccumuloVertex) {
             ((AccumuloVertex) out).removeOutEdge(edge);
@@ -413,10 +419,46 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
-    private void addDeleteRowToMutations(List<Mutation> mutations, String rowKey, Authorizations authorizations) {
+    @Override
+    public void flush() {
+        flushWriter(this.dataWriter);
+        flushWriter(this.verticesWriter);
+        flushWriter(this.edgesWriter);
+        getSearchIndex().flush();
+    }
+
+    private static void flushWriter(BatchWriter writer) {
+        if (writer != null) {
+            try {
+                writer.flush();
+            } catch (MutationsRejectedException e) {
+                throw new SecureGraphException("Could not flush", e);
+            }
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            flush();
+            if (this.dataWriter != null) {
+                this.dataWriter.close();
+            }
+            if (this.verticesWriter != null) {
+                this.verticesWriter.close();
+            }
+            if (this.edgesWriter != null) {
+                this.edgesWriter.close();
+            }
+        } catch (Exception ex) {
+            throw new SecureGraphException(ex);
+        }
+    }
+
+    private Mutation getDeleteRowMutation(String rowKey) {
         Mutation m = new Mutation(rowKey);
         m.put(DELETE_ROW_COLUMN_FAMILY, DELETE_ROW_COLUMN_QUALIFIER, RowDeletingIterator.DELETE_ROW_VALUE);
-        mutations.add(m);
+        return m;
     }
 
     public ValueSerializer getValueSerializer() {
@@ -533,22 +575,24 @@ public class AccumuloGraph extends GraphBase {
     }
 
     Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
-        return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES);
+        return createElementVisibilityScanner(authorizations, ElementType.VERTEX);
     }
 
     Scanner createEdgeScanner(Authorizations authorizations) throws SecureGraphException {
-        return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_EDGES);
+        return createElementVisibilityScanner(authorizations, ElementType.EDGE);
     }
 
-    private Scanner createElementVisibilityScanner(Authorizations authorizations, String elementMode) throws SecureGraphException {
+    private Scanner createElementVisibilityScanner(Authorizations authorizations, ElementType elementType) throws SecureGraphException {
         try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
+            String tableName = getTableNameFromElementType(elementType);
+            Scanner scanner = connector.createScanner(tableName, toAccumuloAuthorizations(authorizations));
             if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
                 IteratorSetting iteratorSetting = new IteratorSetting(
                         100,
                         ElementVisibilityRowFilter.class.getSimpleName(),
                         ElementVisibilityRowFilter.class
                 );
+                String elementMode = getElementModeFromElementType(elementType);
                 iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
                 scanner.addScanIterator(iteratorSetting);
             }
@@ -559,16 +603,17 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private BatchScanner createVertexBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityBatchScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES, numQueryThreads);
+        return createElementVisibilityBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
     }
 
     private BatchScanner createEdgeBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityBatchScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_EDGES, numQueryThreads);
+        return createElementVisibilityBatchScanner(authorizations, ElementType.EDGE, numQueryThreads);
     }
 
-    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, String elementMode, int numQueryThreads) throws SecureGraphException {
+    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
         try {
-            BatchScanner scanner = connector.createBatchScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations), numQueryThreads);
+            String tableName = getTableNameFromElementType(elementType);
+            BatchScanner scanner = connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
             IteratorSetting iteratorSetting;
             if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
                 iteratorSetting = new IteratorSetting(
@@ -576,6 +621,7 @@ public class AccumuloGraph extends GraphBase {
                         ElementVisibilityRowFilter.class.getSimpleName(),
                         ElementVisibilityRowFilter.class
                 );
+                String elementMode = getElementModeFromElementType(elementType);
                 iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
                 scanner.addScanIterator(iteratorSetting);
             }
@@ -591,6 +637,36 @@ public class AccumuloGraph extends GraphBase {
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
         }
+    }
+
+    private String getTableNameFromElementType(ElementType elementType) {
+        String tableName;
+        switch (elementType) {
+            case VERTEX:
+                tableName = getVerticesTableName();
+                break;
+            case EDGE:
+                tableName = getEdgesTableName();
+                break;
+            default:
+                throw new SecureGraphException("Unexpected element type: " + elementType);
+        }
+        return tableName;
+    }
+
+    private String getElementModeFromElementType(ElementType elementType) {
+        String elementMode;
+        switch (elementType) {
+            case VERTEX:
+                elementMode = ElementVisibilityRowFilter.OPT_FILTER_VERTICES;
+                break;
+            case EDGE:
+                elementMode = ElementVisibilityRowFilter.OPT_FILTER_EDGES;
+                break;
+            default:
+                throw new SecureGraphException("Unexpected element type: " + elementType);
+        }
+        return elementMode;
     }
 
     private org.apache.accumulo.core.security.Authorizations toAccumuloAuthorizations(Authorizations authorizations) {
@@ -705,25 +781,30 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private void printTable(Authorizations authorizations) {
+        String[] tables = new String[]{getEdgesTableName(), getVerticesTableName(), getDataTableName()};
         System.out.println("---------------------------------------------- BEGIN printTable ----------------------------------------------");
         try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), toAccumuloAuthorizations(authorizations));
-            RowIterator it = new RowIterator(scanner.iterator());
-            while (it.hasNext()) {
-                boolean first = true;
-                Text lastColumnFamily = null;
-                Iterator<Map.Entry<Key, Value>> row = it.next();
-                while (row.hasNext()) {
-                    Map.Entry<Key, Value> col = row.next();
-                    if (first) {
-                        System.out.println("\"" + col.getKey().getRow() + "\"");
-                        first = false;
+            for (String tableName : tables) {
+                System.out.println("TABLE: " + tableName);
+                System.out.println("");
+                Scanner scanner = connector.createScanner(tableName, toAccumuloAuthorizations(authorizations));
+                RowIterator it = new RowIterator(scanner.iterator());
+                while (it.hasNext()) {
+                    boolean first = true;
+                    Text lastColumnFamily = null;
+                    Iterator<Map.Entry<Key, Value>> row = it.next();
+                    while (row.hasNext()) {
+                        Map.Entry<Key, Value> col = row.next();
+                        if (first) {
+                            System.out.println("\"" + col.getKey().getRow() + "\"");
+                            first = false;
+                        }
+                        if (!col.getKey().getColumnFamily().equals(lastColumnFamily)) {
+                            System.out.println("  \"" + col.getKey().getColumnFamily() + "\"");
+                            lastColumnFamily = col.getKey().getColumnFamily();
+                        }
+                        System.out.println("    \"" + col.getKey().getColumnQualifier() + "\"(" + col.getKey().getColumnVisibility() + ")=\"" + col.getValue() + "\"");
                     }
-                    if (!col.getKey().getColumnFamily().equals(lastColumnFamily)) {
-                        System.out.println("  \"" + col.getKey().getColumnFamily() + "\"");
-                        lastColumnFamily = col.getKey().getColumnFamily();
-                    }
-                    System.out.println("    \"" + col.getKey().getColumnQualifier() + "\"(" + col.getKey().getColumnVisibility() + ")=\"" + col.getValue() + "\"");
                 }
             }
             System.out.flush();
@@ -735,7 +816,7 @@ public class AccumuloGraph extends GraphBase {
 
     public byte[] streamingPropertyValueTableData(String dataRowKey) {
         try {
-            Scanner scanner = connector.createScanner(getConfiguration().getTableName(), new org.apache.accumulo.core.security.Authorizations());
+            Scanner scanner = connector.createScanner(getDataTableName(), new org.apache.accumulo.core.security.Authorizations());
             scanner.setRange(new Range(dataRowKey));
             Iterator<Map.Entry<Key, Value>> it = scanner.iterator();
             if (it.hasNext()) {
@@ -754,5 +835,29 @@ public class AccumuloGraph extends GraphBase {
 
     private ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
         return new ColumnVisibility(visibility.getVisibilityString());
+    }
+
+    public static String getVerticesTableName(String tableNamePrefix) {
+        return tableNamePrefix + "_v";
+    }
+
+    public static String getEdgesTableName(String tableNamePrefix) {
+        return tableNamePrefix + "_e";
+    }
+
+    public static String getDataTableName(String tableNamePrefix) {
+        return tableNamePrefix + "_d";
+    }
+
+    private String getVerticesTableName() {
+        return getVerticesTableName(getConfiguration().getTableNamePrefix());
+    }
+
+    private String getEdgesTableName() {
+        return getEdgesTableName(getConfiguration().getTableNamePrefix());
+    }
+
+    private String getDataTableName() {
+        return getDataTableName(getConfiguration().getTableNamePrefix());
     }
 }

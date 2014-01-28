@@ -30,7 +30,7 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     public AccumuloBlueprintsGraphTestHelper() {
         try {
             this.ensureAccumuloIsStarted();
-            AccumuloGraphConfiguration config = this.getGraphConfig(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
+            AccumuloGraphConfiguration config = this.getGraphConfig(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX);
             this.defaultGraph = new AccumuloSecureGraphBlueprintsGraph(AccumuloGraph.create(config), visibilityProvider, authorizationsProvider);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -58,7 +58,7 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     }
 
     public void setUp() {
-        dropGraph(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME);
+        dropGraph(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
 
     private AccumuloGraphConfiguration getGraphConfig(String tableName) {
         AccumuloGraphConfiguration config = TestAccumuloCluster.getConfig();
-        config.set(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME, tableName);
+        config.set(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX, tableName);
         return config;
     }
 }
