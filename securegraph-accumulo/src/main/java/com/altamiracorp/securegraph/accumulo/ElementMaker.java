@@ -106,7 +106,12 @@ public abstract class ElementMaker<T> {
     }
 
     private void extractPropertyMetadata(Text columnQualifier, Value value) {
-        Object o = valueToObject(value);
+        Object o;
+        if (value.getSize() == 0) {
+            o = new HashMap<String, Object>();
+        } else {
+            o = valueToObject(value);
+        }
         if (o == null) {
             throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found null.");
         } else if (o instanceof Map) {

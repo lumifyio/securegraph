@@ -170,9 +170,11 @@ public class AccumuloGraph extends GraphBase {
         }
         Value value = new Value(getValueSerializer().objectToValue(propertyValue));
         m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);
-        if (property.getMetadata() != null) {
+        if (property.getMetadata() != null && property.getMetadata().size() > 0) {
             Value metadataValue = new Value(getValueSerializer().objectToValue(property.getMetadata()));
             m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
+        } else {
+            m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, EMPTY_VALUE);
         }
     }
 
@@ -530,11 +532,11 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
+    Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
         return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_VERTICES);
     }
 
-    private Scanner createEdgeScanner(Authorizations authorizations) throws SecureGraphException {
+    Scanner createEdgeScanner(Authorizations authorizations) throws SecureGraphException {
         return createElementVisibilityScanner(authorizations, ElementVisibilityRowFilter.OPT_FILTER_EDGES);
     }
 
