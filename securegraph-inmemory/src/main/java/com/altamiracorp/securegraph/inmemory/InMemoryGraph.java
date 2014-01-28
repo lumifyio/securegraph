@@ -169,6 +169,9 @@ public class InMemoryGraph extends GraphBase {
 
     private boolean hasAccess(Visibility visibility, Authorizations authorizations) {
         // TODO handle more complex accessibility. borrow code from Accumulo?
+        if (visibility.getVisibilityString().length() == 0) {
+            return true;
+        }
         for (String a : ((InMemoryAuthorizations) authorizations).getAuthorizations()) {
             if (visibility.getVisibilityString().equals(a)) {
                 return true;

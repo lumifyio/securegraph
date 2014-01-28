@@ -30,10 +30,12 @@ import static org.junit.Assert.*;
 public abstract class GraphTestBase {
     public static final Visibility VISIBILITY_A = new Visibility("a");
     public static final Visibility VISIBILITY_B = new Visibility("b");
+    public static final Visibility VISIBILITY_EMPTY = new Visibility("");
     public final Authorizations AUTHORIZATIONS_A;
     public final Authorizations AUTHORIZATIONS_B;
     public final Authorizations AUTHORIZATIONS_C;
     public final Authorizations AUTHORIZATIONS_A_AND_B;
+    public final Authorizations AUTHORIZATIONS_EMPTY;
     public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
 
     protected Graph graph;
@@ -49,6 +51,7 @@ public abstract class GraphTestBase {
         AUTHORIZATIONS_B = createAuthorizations("b");
         AUTHORIZATIONS_C = createAuthorizations("c");
         AUTHORIZATIONS_A_AND_B = createAuthorizations("a", "b");
+        AUTHORIZATIONS_EMPTY = createAuthorizations();
     }
 
     protected abstract Authorizations createAuthorizations(String... auths);
@@ -811,5 +814,17 @@ public abstract class GraphTestBase {
         assertEquals(1, count(v4.getVertices(Direction.BOTH, AUTHORIZATIONS_A)));
         assertEquals(0, count(v4.getVertices(Direction.OUT, AUTHORIZATIONS_A)));
         assertEquals(1, count(v4.getVertices(Direction.IN, AUTHORIZATIONS_A)));
+    }
+
+    @Test
+    public void testBlankVisibilityString() {
+        Vertex v = graph.addVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
+        assertNotNull(v);
+        assertEquals("v1", v.getId());
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_EMPTY);
+        assertNotNull(v);
+        assertEquals("v1", v.getId());
+        assertEquals(VISIBILITY_EMPTY, v.getVisibility());
     }
 }
