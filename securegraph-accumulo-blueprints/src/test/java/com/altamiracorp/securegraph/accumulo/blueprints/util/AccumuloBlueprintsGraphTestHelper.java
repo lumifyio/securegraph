@@ -65,10 +65,18 @@ public class AccumuloBlueprintsGraphTestHelper extends GraphTest {
     public void dropGraph(String graphDirectoryName) {
         try {
             Connector connector = getConnector(graphDirectoryName);
-            if (connector.tableOperations().exists(graphDirectoryName)) {
-                connector.tableOperations().delete(graphDirectoryName);
+            if (connector.tableOperations().exists(graphDirectoryName + "_d")) {
+                connector.tableOperations().delete(graphDirectoryName + "_d");
             }
-            connector.tableOperations().create(graphDirectoryName);
+            if (connector.tableOperations().exists(graphDirectoryName + "_v")) {
+                connector.tableOperations().delete(graphDirectoryName + "_v");
+            }
+            if (connector.tableOperations().exists(graphDirectoryName + "_e")) {
+                connector.tableOperations().delete(graphDirectoryName + "_e");
+            }
+            connector.tableOperations().create(graphDirectoryName + "_d");
+            connector.tableOperations().create(graphDirectoryName + "_v");
+            connector.tableOperations().create(graphDirectoryName + "_e");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

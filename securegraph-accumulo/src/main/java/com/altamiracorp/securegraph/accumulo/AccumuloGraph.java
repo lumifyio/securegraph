@@ -464,12 +464,15 @@ public class AccumuloGraph extends GraphBase {
             flush();
             if (this.dataWriter != null) {
                 this.dataWriter.close();
+                this.dataWriter = null;
             }
             if (this.verticesWriter != null) {
                 this.verticesWriter.close();
+                this.verticesWriter = null;
             }
             if (this.edgesWriter != null) {
                 this.edgesWriter.close();
+                this.edgesWriter = null;
             }
         } catch (Exception ex) {
             throw new SecureGraphException(ex);
