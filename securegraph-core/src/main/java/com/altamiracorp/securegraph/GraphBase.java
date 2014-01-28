@@ -9,8 +9,9 @@ import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 
 public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
@@ -143,6 +144,30 @@ public abstract class GraphBase implements Graph {
     @Override
     public Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
         return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, authorizations);
+    }
+
+    @Override
+    public Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations) {
+        Set<Object> results = new HashSet<Object>();
+        List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
+
+        // since we are checking bi-directional edges we should only have to check v1->v2 and not v2->v1
+        Map<String, String> checkedCombinations = new HashMap<String, String>();
+
+        for (Vertex sourceVertex : vertices) {
+            for (Vertex destVertex : vertices) {
+                if (checkedCombinations.containsKey(sourceVertex.getId().toString() + destVertex.getId().toString())) {
+                    continue;
+                }
+                Iterable<Edge> edges = sourceVertex.getEdges(destVertex, Direction.BOTH, authorizations);
+                for (Edge edge : edges) {
+                    results.add(edge.getId());
+                }
+                checkedCombinations.put(sourceVertex.getId().toString() + destVertex.getId().toString(), "");
+                checkedCombinations.put(destVertex.getId().toString() + sourceVertex.getId().toString(), "");
+            }
+        }
+        return results;
     }
 
     @Override

@@ -166,6 +166,15 @@ public interface Graph {
     Iterable<Edge> getEdges(Iterable<Object> ids, Authorizations authorizations);
 
     /**
+     * Given a list of vertex ids, find all the edge ids that connect them.
+     *
+     * @param vertexIds      The list of vertex ids.
+     * @param authorizations The authorizations required to load the edges.
+     * @return An iterable of all the edge ids between any two vertices.
+     */
+    Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations);
+
+    /**
      * Removes an edge from the graph.
      *
      * @param edge           The edge to remove.
