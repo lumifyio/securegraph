@@ -38,6 +38,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
 
     @Override
     public Iterable<Vertex> vertices() {
+        long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndex.ELEMENT_TYPE_VERTEX);
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
@@ -46,12 +47,16 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 return searchHit.getId();
             }
         });
-        LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits());
+        long endTime = System.nanoTime();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + ((endTime - startTime) / 1000 / 1000) + "ms)");
+        }
         return getGraph().getVertices(ids, getParameters().getAuthorizations());
     }
 
     @Override
     public Iterable<Edge> edges() {
+        long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndex.ELEMENT_TYPE_EDGE);
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
@@ -60,7 +65,10 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 return searchHit.getId();
             }
         });
-        LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits());
+        long endTime = System.nanoTime();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + ((endTime - startTime) / 1000 / 1000) + "ms)");
+        }
         return getGraph().getEdges(ids, getParameters().getAuthorizations());
     }
 
