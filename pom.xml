@@ -22,9 +22,13 @@
 
     <distributionManagement>
         <repository>
-            <id>bits.lumify.io</id>
-            <url>file:///var/www/maven/</url>
+            <id>bits.lumify.io.releases</id>
+            <url>file:///var/www/maven/releases/</url>
         </repository>
+        <snapshotRepository>
+            <id>bits.lumify.io.snapshots</id>
+            <url>file:///var/www/maven/snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <dependencyManagement>
