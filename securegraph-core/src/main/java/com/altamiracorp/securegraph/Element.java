@@ -28,11 +28,20 @@ public interface Element {
 
     /**
      * Gets a property by key and name.
-     * @param key the key of the property.
+     *
+     * @param key  the key of the property.
      * @param name the name of the property.
      * @return The property if found. null, if not found.
      */
     Property getProperty(Object key, String name);
+
+    /**
+     * Gets a property by name. This assumes a single valued property. If multiple property values exists this will only return the first one.
+     *
+     * @param name the name of the property.
+     * @return The property if found. null, if not found.
+     */
+    Property getProperty(String name);
 
     /**
      * an Iterable of all the properties with the given name on this element that you have access to based on the authorizations

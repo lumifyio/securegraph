@@ -42,6 +42,15 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
+    public Property getProperty(String name) {
+        Iterator<Property> propertiesWithName = getProperties(name).iterator();
+        if (propertiesWithName.hasNext()) {
+            return propertiesWithName.next();
+        }
+        return null;
+    }
+
+    @Override
     public Object getPropertyValue(String name) {
         return getPropertyValue(name, 0);
     }
