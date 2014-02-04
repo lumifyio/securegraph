@@ -903,4 +903,21 @@ public abstract class GraphTestBase {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         v1.prepareMutation().save();
     }
+
+    @Test
+    public void testTextIndex() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("both", new Text("Test Value", TextIndex.BOTH), VISIBILITY_A)
+                .setProperty("fullText", new Text("Test Value", TextIndex.FULL_TEXT), VISIBILITY_A)
+                .setProperty("exactMatch", new Text("Test Value", TextIndex.EXACT_MATCH), VISIBILITY_A)
+                .save();
+
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("both", TextPredicate.CONTAINS, "Test").vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("fullText", TextPredicate.CONTAINS, "Test").vertices()));
+        assertEquals("exact match shouldn't match partials", 0, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", TextPredicate.CONTAINS, "Test").vertices()));
+
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("both", "Test Value").vertices()));
+        assertEquals("default has predicate is equals which shouldn't work for full text", 0, count(graph.query(AUTHORIZATIONS_A).has("fullText", "Test Value").vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", "Test Value").vertices()));
+    }
 }

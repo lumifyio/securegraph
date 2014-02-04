@@ -79,12 +79,13 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
             if (has.predicate instanceof Compare) {
                 Compare compare = (Compare) has.predicate;
                 Object value = has.value;
-                if (value instanceof String) {
-                    value = ((String) value).toLowerCase(); // using the standard analyzer all strings are lower-cased.
-                }
                 switch (compare) {
                     case EQUAL:
-                        filters.add(FilterBuilders.termFilter(has.key, value));
+                        String key = has.key;
+                        if (value instanceof String) {
+                            key = key + ElasticSearchSearchIndex.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
+                        }
+                        filters.add(FilterBuilders.termFilter(key, value));
                         break;
                     case GREATER_THAN_EQUAL:
                         filters.add(FilterBuilders.rangeFilter(has.key).gte(value));

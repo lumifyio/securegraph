@@ -26,6 +26,7 @@ import java.util.Map;
 
 public class ElasticSearchSearchIndex implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndex.class);
+    private static final String STORE_SOURCE_DATA = "storeSourceData";
     public static final String ES_LOCATIONS = "locations";
     public static final String INDEX_NAME = "indexName";
     private static final String DEFAULT_INDEX_NAME = "securegraph";
@@ -34,6 +35,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
     public static final int DEFAULT_ES_PORT = 9300;
+    public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     private final TransportClient client;
     private final boolean autoflush;
     private String indexName;
@@ -52,6 +54,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             indexName = DEFAULT_INDEX_NAME;
         }
         LOGGER.info("Using index: " + indexName);
+
+        Object storeSourceDataConfig = config.get(STORE_SOURCE_DATA);
+        boolean storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
+        LOGGER.info("Store source data: " + storeSourceData);
 
         // TODO convert this to use a proper config object
         Object autoFlushObj = config.get(GraphConfiguration.AUTO_FLUSH);
@@ -81,7 +87,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                         .startObject()
                         .startObject(ELEMENT_TYPE)
                         .startObject("_source")
-                        .field("enabled", false)
+                        .field("enabled", storeSourceData)
                         .endObject()
                         .startObject("properties")
                         .startObject(ELEMENT_TYPE_FIELD_NAME)
@@ -136,6 +142,15 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                     } else {
                         throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                     }
+                } else if (propertyValue instanceof Text) {
+                    Text textPropertyValue = (Text) propertyValue;
+                    if (textPropertyValue.getIndexHint().contains(TextIndex.EXACT_MATCH)) {
+                        jsonBuilder.field(property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, textPropertyValue.getText());
+                    }
+                    if (textPropertyValue.getIndexHint().contains(TextIndex.FULL_TEXT)) {
+                        jsonBuilder.field(property.getName(), textPropertyValue.getText());
+                    }
+                    continue;
                 }
                 jsonBuilder.field(property.getName(), propertyValue);
             }
@@ -179,12 +194,6 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             return;
         }
 
-        XContentBuilder mapping = XContentFactory.jsonBuilder()
-                .startObject()
-                .startObject(ELEMENT_TYPE)
-                .startObject("properties")
-                .startObject(propertyName);
-
         Class dataType;
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
@@ -197,9 +206,33 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             dataType = propertyValue.getClass();
         }
 
+        if (propertyValue instanceof Text) {
+            Text textPropertyValue = (Text) propertyValue;
+            dataType = String.class;
+            if (textPropertyValue.getIndexHint().contains(TextIndex.EXACT_MATCH)) {
+                addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
+            }
+            if (textPropertyValue.getIndexHint().contains(TextIndex.FULL_TEXT)) {
+                addPropertyToIndex(propertyName, dataType, true);
+            }
+        } else {
+            addPropertyToIndex(propertyName, dataType, true);
+        }
+    }
+
+    private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed) throws IOException {
+        XContentBuilder mapping = XContentFactory.jsonBuilder()
+                .startObject()
+                .startObject(ELEMENT_TYPE)
+                .startObject("properties")
+                .startObject(propertyName);
+
         if (dataType == String.class) {
             LOGGER.debug("Registering string type for {}", propertyName);
             mapping.field("type", "string");
+            if (!analyzed) {
+                mapping.field("index", "not_analyzed");
+            }
         } else if (dataType == Float.class) {
             LOGGER.debug("Registering float type for {}", propertyName);
             mapping.field("type", "float");
@@ -230,8 +263,6 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } else {
             throw new SecureGraphException("Unexpected value type for property \"" + propertyName + "\": " + dataType.getName());
         }
-
-        mapping.field("store", "no");
 
         mapping
                 .endObject()
