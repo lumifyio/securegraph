@@ -1,6 +1,20 @@
 package com.altamiracorp.securegraph.test;
 
-import com.altamiracorp.securegraph.*;
+import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
+import static com.altamiracorp.securegraph.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
+import static org.junit.Assert.*;
+
+import com.altamiracorp.securegraph.Authorizations;
+import com.altamiracorp.securegraph.Direction;
+import com.altamiracorp.securegraph.Edge;
+import com.altamiracorp.securegraph.ElementMutation;
+import com.altamiracorp.securegraph.Graph;
+import com.altamiracorp.securegraph.Property;
+import com.altamiracorp.securegraph.Text;
+import com.altamiracorp.securegraph.TextIndex;
+import com.altamiracorp.securegraph.Vertex;
+import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
@@ -10,21 +24,21 @@ import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.type.GeoPoint;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.*;
-
-import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
-import static com.altamiracorp.securegraph.util.IterableUtils.count;
-import static com.altamiracorp.securegraph.util.IterableUtils.toList;
-import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
@@ -907,7 +921,7 @@ public abstract class GraphTestBase {
     @Test
     public void testTextIndex() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
-                .setProperty("both", new Text("Test Value", TextIndex.BOTH), VISIBILITY_A)
+                .setProperty("both", new Text("Test Value", TextIndex.ALL), VISIBILITY_A)
                 .setProperty("fullText", new Text("Test Value", TextIndex.FULL_TEXT), VISIBILITY_A)
                 .setProperty("exactMatch", new Text("Test Value", TextIndex.EXACT_MATCH), VISIBILITY_A)
                 .save();

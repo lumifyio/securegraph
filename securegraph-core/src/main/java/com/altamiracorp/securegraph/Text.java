@@ -1,31 +1,35 @@
 package com.altamiracorp.securegraph;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 
 public class Text implements Serializable {
     private final String text;
-    private final EnumSet<TextIndex> indexHint;
+    private final Set<TextIndex> indexHint;
 
     public Text(String text) {
-        this(text, TextIndex.BOTH);
+        this(text, TextIndex.ALL);
     }
 
-    public Text(String text, TextIndex indexHint) {
-        this(text, EnumSet.of(indexHint));
+    public Text(String text, TextIndex... indexHints) {
+        this(text, EnumSet.copyOf(Arrays.asList(indexHints)));
     }
 
-    public Text(String text, EnumSet<TextIndex> indexHint) {
+    public Text(String text, Collection<TextIndex> indexHints) {
         this.text = text;
-        this.indexHint = indexHint;
+        this.indexHint = EnumSet.copyOf(indexHints);
     }
 
     public String getText() {
         return text;
     }
 
-    public EnumSet<TextIndex> getIndexHint() {
-        return indexHint;
+    public Set<TextIndex> getIndexHint() {
+        return Collections.unmodifiableSet(indexHint);
     }
 
     @Override
