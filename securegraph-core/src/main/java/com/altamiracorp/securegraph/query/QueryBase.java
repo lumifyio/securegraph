@@ -75,7 +75,7 @@ public abstract class QueryBase implements Query {
         }
 
         public boolean isMatch(Element elem) {
-            return this.predicate.evaluate(elem.getPropertyValues(this.key), this.value);
+            return this.predicate.evaluate(elem.getProperties(this.key), this.value);
         }
     }
 

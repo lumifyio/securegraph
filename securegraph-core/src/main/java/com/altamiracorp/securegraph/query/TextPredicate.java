@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph.query;
 
+import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.SecureGraphException;
 import com.altamiracorp.securegraph.Text;
 import com.altamiracorp.securegraph.TextIndex;
@@ -8,16 +9,17 @@ public enum TextPredicate implements Predicate {
     CONTAINS;
 
     @Override
-    public boolean evaluate(final Iterable<Object> propertyValues, final Object second) {
-        for (Object propertyValue : propertyValues) {
-            if (evaluate(propertyValue, second)) {
+    public boolean evaluate(final Iterable<Property> properties, final Object second) {
+        for (Property property : properties) {
+            if (evaluate(property, second)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean evaluate(Object first, Object second) {
+    private boolean evaluate(Property property, Object second) {
+        Object first = property.getValue();
         if (!(first instanceof String || first instanceof Text) || !(second instanceof String || second instanceof Text)) {
             throw new SecureGraphException("Text predicates are only valid for string fields");
         }

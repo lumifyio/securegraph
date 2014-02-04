@@ -912,6 +912,11 @@ public abstract class GraphTestBase {
                 .setProperty("exactMatch", new Text("Test Value", TextIndex.EXACT_MATCH), VISIBILITY_A)
                 .save();
 
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("Test Value", v1.getPropertyValue("both"));
+        assertEquals("Test Value", v1.getPropertyValue("fullText"));
+        assertEquals("Test Value", v1.getPropertyValue("exactMatch"));
+
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("both", TextPredicate.CONTAINS, "Test").vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("fullText", TextPredicate.CONTAINS, "Test").vertices()));
         assertEquals("exact match shouldn't match partials", 0, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", TextPredicate.CONTAINS, "Test").vertices()));

@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph.query;
 
+import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.Text;
 import com.altamiracorp.securegraph.TextIndex;
 
@@ -7,16 +8,17 @@ public enum Compare implements Predicate {
     EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, IN;
 
     @Override
-    public boolean evaluate(final Iterable<Object> propertyValues, final Object second) {
-        for (Object propertyValue : propertyValues) {
-            if (evaluate(propertyValue, second)) {
+    public boolean evaluate(final Iterable<Property> properties, final Object second) {
+        for (Property property : properties) {
+            if (evaluate(property, second)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean evaluate(Object first, Object second) {
+    private boolean evaluate(Property property, Object second) {
+        Object first = property.getValue();
         switch (this) {
             case EQUAL:
                 if (null == first) {

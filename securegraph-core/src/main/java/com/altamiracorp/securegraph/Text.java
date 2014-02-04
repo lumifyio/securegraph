@@ -1,8 +1,9 @@
 package com.altamiracorp.securegraph;
 
+import java.io.Serializable;
 import java.util.EnumSet;
 
-public class Text {
+public class Text implements Serializable {
     private final String text;
     private final EnumSet<TextIndex> indexHint;
 
