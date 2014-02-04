@@ -221,6 +221,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     }
 
     private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed) throws IOException {
+        if (existingProperties.get(propertyName) != null) {
+            return;
+        }
+
         XContentBuilder mapping = XContentFactory.jsonBuilder()
                 .startObject()
                 .startObject(ELEMENT_TYPE)
