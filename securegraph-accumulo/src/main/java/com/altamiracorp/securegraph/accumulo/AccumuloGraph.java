@@ -145,9 +145,8 @@ public class AccumuloGraph extends GraphBase {
         }
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
-
-            getSearchIndex().addElement(this, element);
         }
+        getSearchIndex().addElement(this, element);
     }
 
     void removeProperty(AccumuloElement element, Property property) {
