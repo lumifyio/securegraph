@@ -897,4 +897,10 @@ public abstract class GraphTestBase {
         assertContains(ev2v3.getId(), edges);
         assertContains(ev3v1.getId(), edges);
     }
+
+    @Test
+    public void testEmptyPropertyMutation() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        v1.prepareMutation().save();
+    }
 }

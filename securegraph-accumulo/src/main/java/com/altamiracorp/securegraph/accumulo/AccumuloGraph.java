@@ -138,12 +138,16 @@ public class AccumuloGraph extends GraphBase {
 
         String elementRowKey = rowPrefix + element.getId();
         Mutation m = new Mutation(elementRowKey);
+        boolean hasProperty = false;
         for (Property property : properties) {
+            hasProperty = true;
             addPropertyToMutation(m, elementRowKey, property);
         }
-        addMutations(getWriterFromElementType(element), m);
+        if (hasProperty) {
+            addMutations(getWriterFromElementType(element), m);
 
-        getSearchIndex().addElement(this, element);
+            getSearchIndex().addElement(this, element);
+        }
     }
 
     void removeProperty(AccumuloElement element, Property property) {
