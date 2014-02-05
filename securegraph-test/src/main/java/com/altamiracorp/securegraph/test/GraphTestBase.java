@@ -1,20 +1,6 @@
 package com.altamiracorp.securegraph.test;
 
-import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
-import static com.altamiracorp.securegraph.util.IterableUtils.count;
-import static com.altamiracorp.securegraph.util.IterableUtils.toList;
-import static org.junit.Assert.*;
-
-import com.altamiracorp.securegraph.Authorizations;
-import com.altamiracorp.securegraph.Direction;
-import com.altamiracorp.securegraph.Edge;
-import com.altamiracorp.securegraph.ElementMutation;
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.Property;
-import com.altamiracorp.securegraph.Text;
-import com.altamiracorp.securegraph.TextIndex;
-import com.altamiracorp.securegraph.Vertex;
-import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
@@ -24,21 +10,21 @@ import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.type.GeoPoint;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
+
+import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
+import static com.altamiracorp.securegraph.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
+import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
@@ -798,30 +784,69 @@ public abstract class GraphTestBase {
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v4 = graph.addVertex("v4", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge(v1, v2, "knows", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge(v2, v4, "knows", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge(v1, v3, "knows", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge(v3, v4, "knows", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge(v1, v2, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v1 -> v2
+        graph.addEdge(v2, v4, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v2 -> v4
+        graph.addEdge(v1, v3, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v1 -> v3
+        graph.addEdge(v3, v4, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v3 -> v4
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
-        Iterable<List<Object>> paths = graph.findPaths(v1, v4, 2, AUTHORIZATIONS_A);
-        assertEquals(2, count(paths));
-        Iterator<List<Object>> it = paths.iterator();
+        v4 = graph.getVertex("v4", AUTHORIZATIONS_A);
+        List<Path> paths = toList(graph.findPaths(v1, v4, 2, AUTHORIZATIONS_A));
+        // v1 -> v2 -> v4
+        // v1 -> v3 -> v4
+        assertEquals(2, paths.size());
         boolean found2 = false;
         boolean found3 = false;
-        while (it.hasNext()) {
-            List<Object> path = it.next();
-            assertEquals(3, path.size());
-            assertEquals(path.get(0), v1.getId());
-            if (v2.getId().equals(path.get(1))) {
-                found2 = true;
-            } else if (v3.getId().equals(path.get(1))) {
-                found3 = true;
-            } else {
-                fail("center of path is neither v2 or v3 but found " + path.get(1));
+        for (Path path : paths) {
+            assertEquals(3, path.length());
+            int i = 0;
+            for (Object id : path) {
+                if (i == 0) {
+                    assertEquals(id, v1.getId());
+                } else if (i == 1) {
+                    if (v2.getId().equals(id)) {
+                        found2 = true;
+                    } else if (v3.getId().equals(id)) {
+                        found3 = true;
+                    } else {
+                        fail("center of path is neither v2 or v3 but found " + id);
+                    }
+                } else if (i == 2) {
+                    assertEquals(id, v4.getId());
+                }
+                i++;
             }
-            assertEquals(path.get(2), v4.getId());
+        }
+        assertTrue("v2 not found in path", found2);
+        assertTrue("v3 not found in path", found3);
+
+        v4 = graph.getVertex("v4", AUTHORIZATIONS_A);
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        paths = toList(graph.findPaths(v4, v1, 2, AUTHORIZATIONS_A));
+        // v4 -> v2 -> v1
+        // v4 -> v3 -> v1
+        assertEquals(2, paths.size());
+        found2 = false;
+        found3 = false;
+        for (Path path : paths) {
+            assertEquals(3, path.length());
+            int i = 0;
+            for (Object id : path) {
+                if (i == 0) {
+                    assertEquals(id, v4.getId());
+                } else if (i == 1) {
+                    if (v2.getId().equals(id)) {
+                        found2 = true;
+                    } else if (v3.getId().equals(id)) {
+                        found3 = true;
+                    } else {
+                        fail("center of path is neither v2 or v3 but found " + id);
+                    }
+                } else if (i == 2) {
+                    assertEquals(id, v1.getId());
+                }
+                i++;
+            }
         }
         assertTrue("v2 not found in path", found2);
         assertTrue("v3 not found in path", found3);
