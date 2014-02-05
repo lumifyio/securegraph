@@ -144,10 +144,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                     }
                 } else if (propertyValue instanceof Text) {
                     Text textPropertyValue = (Text) propertyValue;
-                    if (textPropertyValue.getIndexHint().contains(TextIndex.EXACT_MATCH)) {
+                    if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
                         jsonBuilder.field(property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, textPropertyValue.getText());
                     }
-                    if (textPropertyValue.getIndexHint().contains(TextIndex.FULL_TEXT)) {
+                    if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
                         jsonBuilder.field(property.getName(), textPropertyValue.getText());
                     }
                     continue;
@@ -209,10 +209,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         if (propertyValue instanceof Text) {
             Text textPropertyValue = (Text) propertyValue;
             dataType = String.class;
-            if (textPropertyValue.getIndexHint().contains(TextIndex.EXACT_MATCH)) {
+            if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
                 addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
             }
-            if (textPropertyValue.getIndexHint().contains(TextIndex.FULL_TEXT)) {
+            if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
                 addPropertyToIndex(propertyName, dataType, true);
             }
         } else {

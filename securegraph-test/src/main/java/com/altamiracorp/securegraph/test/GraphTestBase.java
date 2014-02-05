@@ -12,7 +12,7 @@ import com.altamiracorp.securegraph.ElementMutation;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.Text;
-import com.altamiracorp.securegraph.TextIndex;
+import com.altamiracorp.securegraph.TextIndexHint;
 import com.altamiracorp.securegraph.Vertex;
 import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.property.PropertyValue;
@@ -921,12 +921,14 @@ public abstract class GraphTestBase {
     @Test
     public void testTextIndex() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
-                .setProperty("both", new Text("Test Value", TextIndex.ALL), VISIBILITY_A)
-                .setProperty("fullText", new Text("Test Value", TextIndex.FULL_TEXT), VISIBILITY_A)
-                .setProperty("exactMatch", new Text("Test Value", TextIndex.EXACT_MATCH), VISIBILITY_A)
+                .setProperty("none", new Text("Test Value", TextIndexHint.NONE), VISIBILITY_A)
+                .setProperty("both", new Text("Test Value", TextIndexHint.ALL), VISIBILITY_A)
+                .setProperty("fullText", new Text("Test Value", TextIndexHint.FULL_TEXT), VISIBILITY_A)
+                .setProperty("exactMatch", new Text("Test Value", TextIndexHint.EXACT_MATCH), VISIBILITY_A)
                 .save();
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("Text Value", v1.getPropertyValue("none"));
         assertEquals("Test Value", v1.getPropertyValue("both"));
         assertEquals("Test Value", v1.getPropertyValue("fullText"));
         assertEquals("Test Value", v1.getPropertyValue("exactMatch"));
@@ -934,9 +936,11 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("both", TextPredicate.CONTAINS, "Test").vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("fullText", TextPredicate.CONTAINS, "Test").vertices()));
         assertEquals("exact match shouldn't match partials", 0, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", TextPredicate.CONTAINS, "Test").vertices()));
+        assertEquals("unindexed property shouldn't match partials", 0, count(graph.query(AUTHORIZATIONS_A).has("none", TextPredicate.CONTAINS, "Test").vertices()));
 
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("both", "Test Value").vertices()));
         assertEquals("default has predicate is equals which shouldn't work for full text", 0, count(graph.query(AUTHORIZATIONS_A).has("fullText", "Test Value").vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", "Test Value").vertices()));
+        assertEquals("default has predicate is equals which shouldn't work for unindexed", 0, count(graph.query(AUTHORIZATIONS_A).has("none", "Test Value").vertices()));
     }
 }

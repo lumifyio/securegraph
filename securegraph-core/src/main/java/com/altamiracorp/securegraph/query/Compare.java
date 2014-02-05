@@ -2,7 +2,7 @@ package com.altamiracorp.securegraph.query;
 
 import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.Text;
-import com.altamiracorp.securegraph.TextIndex;
+import com.altamiracorp.securegraph.TextIndexHint;
 
 public enum Compare implements Predicate {
     EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, IN;
@@ -26,14 +26,14 @@ public enum Compare implements Predicate {
                 }
                 if (first instanceof Text) {
                     Text firstText = (Text) first;
-                    if (!firstText.getIndexHint().contains(TextIndex.EXACT_MATCH)) {
+                    if (!firstText.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
                         return false;
                     }
                     first = firstText.getText();
                 }
                 if (second instanceof Text) {
                     Text secondText = (Text) second;
-                    if (!secondText.getIndexHint().contains(TextIndex.EXACT_MATCH)) {
+                    if (!secondText.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
                         return false;
                     }
                     second = secondText.getText();

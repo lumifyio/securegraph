@@ -9,17 +9,17 @@ import java.util.Set;
 
 public class Text implements Serializable {
     private final String text;
-    private final Set<TextIndex> indexHint;
+    private final Set<TextIndexHint> indexHint;
 
     public Text(String text) {
-        this(text, TextIndex.ALL);
+        this(text, TextIndexHint.ALL);
     }
 
-    public Text(String text, TextIndex... indexHints) {
+    public Text(String text, TextIndexHint... indexHints) {
         this(text, EnumSet.copyOf(Arrays.asList(indexHints)));
     }
 
-    public Text(String text, Collection<TextIndex> indexHints) {
+    public Text(String text, Collection<TextIndexHint> indexHints) {
         this.text = text;
         this.indexHint = EnumSet.copyOf(indexHints);
     }
@@ -28,7 +28,7 @@ public class Text implements Serializable {
         return text;
     }
 
-    public Set<TextIndex> getIndexHint() {
+    public Set<TextIndexHint> getIndexHint() {
         return Collections.unmodifiableSet(indexHint);
     }
 
