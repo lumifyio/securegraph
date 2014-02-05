@@ -210,12 +210,18 @@ public class AccumuloGraph extends GraphBase {
 
     private StreamingPropertyValueRef saveStreamingPropertyValueLarge(String rowKey, Property property, HdfsLargeDataStore largeDataStore, StreamingPropertyValue propertyValue) throws IOException {
         Path dir = new Path(dataDir, rowKey);
-        fileSystem.mkdirs(dir);
-        Path path = new Path(dir, property.getName() + "_" + property.getKey());
+        if (!fileSystem.mkdirs(dir)) {
+            throw new IOException("Could not create directory " + dir);
+        }
+        String fileName = property.getName() + "_" + property.getKey();
+        fileName = fileName.replace("/", "_");
+        Path path = new Path(dir, fileName);
         if (fileSystem.exists(path)) {
             fileSystem.delete(path, true);
         }
-        fileSystem.rename(largeDataStore.getFileName(), path);
+        if (!fileSystem.rename(largeDataStore.getFileName(), path)) {
+            throw new IOException("Could not rename " + largeDataStore.getFileName() + " to " + path);
+        }
         return new StreamingPropertyValueHdfsRef(path, propertyValue);
     }
 
