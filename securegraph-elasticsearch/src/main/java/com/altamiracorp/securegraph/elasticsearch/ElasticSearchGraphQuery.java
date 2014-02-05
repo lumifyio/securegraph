@@ -79,31 +79,31 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
             if (has.predicate instanceof Compare) {
                 Compare compare = (Compare) has.predicate;
                 Object value = has.value;
+                String key = has.key;
+                if (value instanceof String || value instanceof String[]) {
+                    key = key + ElasticSearchSearchIndex.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
+                }
                 switch (compare) {
                     case EQUAL:
-                        String key = has.key;
-                        if (value instanceof String) {
-                            key = key + ElasticSearchSearchIndex.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
-                        }
                         filters.add(FilterBuilders.termFilter(key, value));
                         break;
                     case GREATER_THAN_EQUAL:
-                        filters.add(FilterBuilders.rangeFilter(has.key).gte(value));
+                        filters.add(FilterBuilders.rangeFilter(key).gte(value));
                         break;
                     case GREATER_THAN:
-                        filters.add(FilterBuilders.rangeFilter(has.key).gt(value));
+                        filters.add(FilterBuilders.rangeFilter(key).gt(value));
                         break;
                     case LESS_THAN_EQUAL:
-                        filters.add(FilterBuilders.rangeFilter(has.key).lte(value));
+                        filters.add(FilterBuilders.rangeFilter(key).lte(value));
                         break;
                     case LESS_THAN:
-                        filters.add(FilterBuilders.rangeFilter(has.key).lt(value));
+                        filters.add(FilterBuilders.rangeFilter(key).lt(value));
                         break;
                     case NOT_EQUAL:
-                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(has.key, value)));
+                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(key, value)));
                         break;
                     case IN:
-                        filters.add(FilterBuilders.inFilter(has.key, (Object[]) has.value));
+                        filters.add(FilterBuilders.inFilter(key, (Object[]) has.value));
                         break;
                     default:
                         throw new SecureGraphException("Unexpected Compare predicate " + has.predicate);

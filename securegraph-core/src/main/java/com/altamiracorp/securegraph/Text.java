@@ -1,11 +1,7 @@
 package com.altamiracorp.securegraph;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.*;
 
 public class Text implements Serializable {
     private final String text;
@@ -34,6 +30,6 @@ public class Text implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s (indexHint: %s)", getText(), getIndexHint());
+        return getText();
     }
 }

@@ -224,7 +224,7 @@ public interface Graph {
      * @param destVertex     The destination vertex to get to.
      * @param maxHops        The maximum number of hops to make before giving up.
      * @param authorizations The authorizations required to load all edges and vertices.
-     * @return An Iterable of lists of paths. Each list contains the vertex ids of the connecting path including the source and destination vertices.
+     * @return An Iterable of lists of paths.
      */
-    Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);
+    Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);
 }

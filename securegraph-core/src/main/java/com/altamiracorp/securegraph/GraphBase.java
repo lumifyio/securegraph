@@ -142,7 +142,7 @@ public abstract class GraphBase implements Graph {
     public abstract void removeEdge(Edge edge, Authorizations authorizations);
 
     @Override
-    public Iterable<List<Object>> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
+    public Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
         return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, authorizations);
     }
 
