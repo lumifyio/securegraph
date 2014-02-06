@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 public class AccumuloAuthorizations implements Authorizations, Serializable {
+    private static final long serialVersionUID = 1L;
     private final String[] authorizations;
 
     public AccumuloAuthorizations(String... authorizations) {
