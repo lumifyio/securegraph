@@ -4,7 +4,7 @@ import com.altamiracorp.securegraph.SecureGraphException;
 import java.io.Serializable;
 
 public class GeoCircle implements Serializable, GeoShape {
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private final double latitude;
     private final double longitude;
     private final double radius;

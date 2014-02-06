@@ -1,10 +1,9 @@
 package com.altamiracorp.securegraph.accumulo;
 
-import org.apache.accumulo.core.data.Value;
-
 import java.io.Serializable;
 
 public class EdgeInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String label;
     private Object vertexId;
 

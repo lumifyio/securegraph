@@ -4,8 +4,8 @@ import com.altamiracorp.securegraph.SecureGraphException;
 import java.io.Serializable;
 
 public class GeoPoint implements Serializable, GeoShape {
+    private static final long serialVersionUID = 1L;
     private static double EARTH_RADIUS = 6371; // km
-    static final long serialVersionUID = 1L;
     private final double latitude;
     private final double longitude;
     private final Double altitude;
