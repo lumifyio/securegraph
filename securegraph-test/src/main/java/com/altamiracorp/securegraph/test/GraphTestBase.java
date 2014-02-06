@@ -968,7 +968,7 @@ public abstract class GraphTestBase {
                 .save();
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        assertEquals("Text Value", v1.getPropertyValue("none"));
+        assertEquals("Test Value", v1.getPropertyValue("none"));
         assertEquals("Test Value", v1.getPropertyValue("both"));
         assertEquals("Test Value", v1.getPropertyValue("fullText"));
         assertEquals("Test Value", v1.getPropertyValue("exactMatch"));
