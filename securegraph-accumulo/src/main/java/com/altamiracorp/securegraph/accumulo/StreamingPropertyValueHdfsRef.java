@@ -6,9 +6,9 @@ import org.apache.hadoop.fs.Path;
 class StreamingPropertyValueHdfsRef extends StreamingPropertyValueRef {
     private final String path;
 
-    public StreamingPropertyValueHdfsRef(Path path, StreamingPropertyValue propertyValue) {
+    public StreamingPropertyValueHdfsRef(String path, StreamingPropertyValue propertyValue) {
         super(propertyValue);
-        this.path = path.toString();
+        this.path = path;
     }
 
     public String getPath() {
@@ -17,6 +17,6 @@ class StreamingPropertyValueHdfsRef extends StreamingPropertyValueRef {
 
     @Override
     public StreamingPropertyValue toStreamingPropertyValue(AccumuloGraph graph) {
-        return new StreamingPropertyValueHdfs(graph.getFileSystem(), new Path(getPath()), this);
+        return new StreamingPropertyValueHdfs(graph.getFileSystem(), new Path(graph.getDataDir(), getPath()), this);
     }
 }

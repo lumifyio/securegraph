@@ -1,22 +1,7 @@
 package com.altamiracorp.securegraph.test;
 
 
-import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
-import static com.altamiracorp.securegraph.util.IterableUtils.count;
-import static com.altamiracorp.securegraph.util.IterableUtils.toList;
-import static org.junit.Assert.*;
-
-import com.altamiracorp.securegraph.Authorizations;
-import com.altamiracorp.securegraph.Direction;
-import com.altamiracorp.securegraph.Edge;
-import com.altamiracorp.securegraph.ElementMutation;
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.Path;
-import com.altamiracorp.securegraph.Property;
-import com.altamiracorp.securegraph.Text;
-import com.altamiracorp.securegraph.TextIndexHint;
-import com.altamiracorp.securegraph.Vertex;
-import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
@@ -26,20 +11,21 @@ import com.altamiracorp.securegraph.query.TextPredicate;
 import com.altamiracorp.securegraph.test.util.LargeStringInputStream;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.type.GeoPoint;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
+
+import static com.altamiracorp.securegraph.test.util.IterableUtils.assertContains;
+import static com.altamiracorp.securegraph.util.IterableUtils.count;
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
+import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
@@ -110,9 +96,10 @@ public abstract class GraphTestBase {
         String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(LARGE_PROPERTY_VALUE_SIZE));
         PropertyValue propSmall = new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), String.class);
         PropertyValue propLarge = new StreamingPropertyValue(new ByteArrayInputStream(expectedLargeValue.getBytes()), String.class);
+        String largePropertyName = "propLarge/\\*!@#$%^&*()[]{}|";
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("propSmall", propSmall, VISIBILITY_A)
-                .setProperty("propLarge", propLarge, VISIBILITY_A)
+                .setProperty(largePropertyName, propLarge, VISIBILITY_A)
                 .save();
 
         Iterable<Object> propSmallValues = v1.getPropertyValues("propSmall");
@@ -124,10 +111,10 @@ public abstract class GraphTestBase {
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
 
-        Iterable<Object> propLargeValues = v1.getPropertyValues("propLarge");
+        Iterable<Object> propLargeValues = v1.getPropertyValues(largePropertyName);
         assertEquals(1, count(propLargeValues));
         Object propLargeValue = propLargeValues.iterator().next();
-        assertTrue("propLargeValue was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
+        assertTrue(largePropertyName + " was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propLargeValue;
         assertEquals(String.class, value.getValueType());
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
@@ -143,10 +130,10 @@ public abstract class GraphTestBase {
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
 
-        propLargeValues = v1.getPropertyValues("propLarge");
+        propLargeValues = v1.getPropertyValues(largePropertyName);
         assertEquals(1, count(propLargeValues));
         propLargeValue = propLargeValues.iterator().next();
-        assertTrue("propLargeValue was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
+        assertTrue(largePropertyName + " was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propLargeValue;
         assertEquals(String.class, value.getValueType());
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));

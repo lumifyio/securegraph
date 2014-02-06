@@ -20,8 +20,9 @@ import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
 import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -31,6 +32,7 @@ import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
     private static final Text EMPTY_TEXT = new Text("");
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
     public static final String VALUE_SEPARATOR = "\u001f";
@@ -188,9 +190,9 @@ public class AccumuloGraph extends GraphBase {
         }
     }
 
-    private StreamingPropertyValueRef saveStreamingPropertyValue(String rowKey, Property property, StreamingPropertyValue propertyValue) {
+    private StreamingPropertyValueRef saveStreamingPropertyValue(final String rowKey, final Property property, StreamingPropertyValue propertyValue) {
         try {
-            HdfsLargeDataStore largeDataStore = new HdfsLargeDataStore(this.fileSystem);
+            HdfsLargeDataStore largeDataStore = new HdfsLargeDataStore(this.fileSystem, this.dataDir, rowKey, property);
             LimitOutputStream out = new LimitOutputStream(largeDataStore, maxStreamingPropertyValueTableDataSize);
             try {
                 StreamUtils.copy(propertyValue.getInputStream(), out);
@@ -199,30 +201,14 @@ public class AccumuloGraph extends GraphBase {
             }
 
             if (out.hasExceededSizeLimit()) {
-                return saveStreamingPropertyValueLarge(rowKey, property, largeDataStore, propertyValue);
+                LOGGER.debug(String.format("saved large file to \"%s\" (length: %d)", largeDataStore.getFullHdfsPath(), out.getLength()));
+                return new StreamingPropertyValueHdfsRef(largeDataStore.getRelativeFileName(), propertyValue);
             } else {
                 return saveStreamingPropertyValueSmall(rowKey, property, out.getSmall(), propertyValue);
             }
         } catch (IOException ex) {
             throw new SecureGraphException(ex);
         }
-    }
-
-    private StreamingPropertyValueRef saveStreamingPropertyValueLarge(String rowKey, Property property, HdfsLargeDataStore largeDataStore, StreamingPropertyValue propertyValue) throws IOException {
-        Path dir = new Path(dataDir, rowKey);
-        if (!fileSystem.mkdirs(dir)) {
-            throw new IOException("Could not create directory " + dir);
-        }
-        String fileName = property.getName() + "_" + property.getKey();
-        fileName = fileName.replace("/", "_");
-        Path path = new Path(dir, fileName);
-        if (fileSystem.exists(path)) {
-            fileSystem.delete(path, true);
-        }
-        if (!fileSystem.rename(largeDataStore.getFileName(), path)) {
-            throw new IOException("Could not rename " + largeDataStore.getFileName() + " to " + path);
-        }
-        return new StreamingPropertyValueHdfsRef(path, propertyValue);
     }
 
     private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, StreamingPropertyValue propertyValue) {
@@ -892,5 +878,9 @@ public class AccumuloGraph extends GraphBase {
 
     private String getDataTableName() {
         return getDataTableName(getConfiguration().getTableNamePrefix());
+    }
+
+    public String getDataDir() {
+        return this.dataDir;
     }
 }
