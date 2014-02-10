@@ -3,7 +3,10 @@ package com.altamiracorp.securegraph.accumulo;
 import com.altamiracorp.securegraph.*;
 import org.apache.hadoop.io.Text;
 
-public abstract class AccumuloElement extends ElementBase {
+import java.io.Serializable;
+
+public abstract class AccumuloElement extends ElementBase implements Serializable {
+    private static final long serialVersionUID = 1L;
     public static final Text CF_PROPERTY = new Text("PROP");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
 

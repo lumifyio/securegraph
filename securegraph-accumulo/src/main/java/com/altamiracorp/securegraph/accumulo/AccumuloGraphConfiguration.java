@@ -12,6 +12,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class AccumuloGraphConfiguration extends GraphConfiguration {
@@ -54,6 +56,22 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
         super(config);
     }
 
+    public AccumuloGraphConfiguration(Configuration configuration, String prefix) {
+        super(toMap(configuration, prefix));
+    }
+
+    private static Map toMap(Configuration configuration, String prefix) {
+        Map map = new HashMap();
+        for (Map.Entry<String, String> entry : configuration) {
+            String key = entry.getKey();
+            if (key.startsWith(prefix)) {
+                key = key.substring(prefix.length());
+            }
+            map.put(key, entry.getValue());
+        }
+        return map;
+    }
+
     public Connector createConnector() throws AccumuloSecurityException, AccumuloException {
         LOGGER.info("Connecting to accumulo instance [{}] zookeeper servers [{}]", this.getAccumuloInstanceName(), this.getZookeeperServers());
         ZooKeeperInstance instance = new ZooKeeperInstance(this.getAccumuloInstanceName(), this.getZookeeperServers());
@@ -81,12 +99,12 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
         return configuration;
     }
 
-    private AuthenticationToken getAuthenticationToken() {
+    public AuthenticationToken getAuthenticationToken() {
         String password = getConfigString(ACCUMULO_PASSWORD, DEFAULT_ACCUMULO_PASSWORD);
         return new PasswordToken(password);
     }
 
-    private String getAccumuloUsername() {
+    public String getAccumuloUsername() {
         return getConfigString(ACCUMULO_USERNAME, DEFAULT_ACCUMULO_USERNAME);
     }
 
