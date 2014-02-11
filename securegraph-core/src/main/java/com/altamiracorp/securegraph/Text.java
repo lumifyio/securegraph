@@ -1,12 +1,15 @@
 package com.altamiracorp.securegraph;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 
 public class Text implements Serializable {
     private static final long serialVersionUID = 1L;
     private final String text;
-    private final Set<TextIndexHint> indexHint;
+    private final byte indexHint;
 
     public Text(String text) {
         this(text, TextIndexHint.ALL);
@@ -18,7 +21,7 @@ public class Text implements Serializable {
 
     public Text(String text, Collection<TextIndexHint> indexHints) {
         this.text = text;
-        this.indexHint = EnumSet.copyOf(indexHints);
+        this.indexHint = TextIndexHint.toBits(indexHints);
     }
 
     public String getText() {
@@ -26,7 +29,7 @@ public class Text implements Serializable {
     }
 
     public Set<TextIndexHint> getIndexHint() {
-        return Collections.unmodifiableSet(indexHint);
+        return TextIndexHint.toSet(this.indexHint);
     }
 
     @Override
