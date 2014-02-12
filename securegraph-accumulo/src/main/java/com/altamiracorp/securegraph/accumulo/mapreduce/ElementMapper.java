@@ -39,7 +39,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN> extends Mapper<KEYIN, VALUEI
             @Override
             protected void saveVertexMutation(Mutation m) {
                 try {
-                    context.write(verticesTableName, m);
+                    ElementMapper.this.saveVertexMutation(context, verticesTableName, m);
                 } catch (Exception e) {
                     throw new RuntimeException("Could not save vertex", e);
                 }
@@ -48,7 +48,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN> extends Mapper<KEYIN, VALUEI
             @Override
             protected void saveEdgeMutation(Mutation m) {
                 try {
-                    context.write(edgesTableName, m);
+                    ElementMapper.this.saveEdgeMutation(context, edgesTableName, m);
                 } catch (Exception e) {
                     throw new RuntimeException("Could not save edge", e);
                 }
@@ -57,12 +57,24 @@ public abstract class ElementMapper<KEYIN, VALUEIN> extends Mapper<KEYIN, VALUEI
             @Override
             protected void saveDataMutation(Mutation m) {
                 try {
-                    context.write(dataTableName, m);
+                    ElementMapper.this.saveDataMutation(context, dataTableName, m);
                 } catch (Exception e) {
                     throw new RuntimeException("Could not save data", e);
                 }
             }
         };
+    }
+
+    protected void saveDataMutation(Context context, Text dataTableName, Mutation m) throws IOException, InterruptedException {
+        context.write(dataTableName, m);
+    }
+
+    protected void saveEdgeMutation(Context context, Text edgesTableName, Mutation m) throws IOException, InterruptedException {
+        context.write(edgesTableName, m);
+    }
+
+    protected void saveVertexMutation(Context context, Text verticesTableName, Mutation m) throws IOException, InterruptedException {
+        context.write(verticesTableName, m);
     }
 
     public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
