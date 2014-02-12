@@ -810,4 +810,8 @@ public class AccumuloGraph extends GraphBase {
     public String getDataDir() {
         return dataDir;
     }
+
+    public Connector getConnector() {
+        return connector;
+    }
 }
