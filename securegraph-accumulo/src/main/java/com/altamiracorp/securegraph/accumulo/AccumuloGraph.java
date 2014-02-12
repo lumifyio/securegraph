@@ -791,15 +791,15 @@ public class AccumuloGraph extends GraphBase {
         return tableNamePrefix + "_d";
     }
 
-    private String getVerticesTableName() {
+    public String getVerticesTableName() {
         return getVerticesTableName(getConfiguration().getTableNamePrefix());
     }
 
-    private String getEdgesTableName() {
+    public String getEdgesTableName() {
         return getEdgesTableName(getConfiguration().getTableNamePrefix());
     }
 
-    private String getDataTableName() {
+    public String getDataTableName() {
         return getDataTableName(getConfiguration().getTableNamePrefix());
     }
 
