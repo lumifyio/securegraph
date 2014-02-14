@@ -125,7 +125,9 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
             for (Property property : element.getProperties()) {
                 Object propertyValue = property.getValue();
-                if (propertyValue instanceof GeoPoint) {
+                if (propertyValue != null && shouldIgnoreType(propertyValue.getClass())) {
+                    continue;
+                } else if (propertyValue instanceof GeoPoint) {
                     GeoPoint geoPoint = (GeoPoint) propertyValue;
                     Map<String, Object> propertyValueMap = new HashMap<String, Object>();
                     propertyValueMap.put("lat", geoPoint.getLatitude());
@@ -225,6 +227,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             return;
         }
 
+        if (shouldIgnoreType(dataType)) {
+            return;
+        }
+
         XContentBuilder mapping = XContentFactory.jsonBuilder()
                 .startObject()
                 .startObject(ELEMENT_TYPE)
@@ -286,6 +292,13 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         LOGGER.debug(response.toString());
 
         existingProperties.put(propertyName, true);
+    }
+
+    protected boolean shouldIgnoreType(Class dataType) {
+        if (dataType == byte[].class) {
+            return true;
+        }
+        return false;
     }
 
     @Override
