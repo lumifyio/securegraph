@@ -1,8 +1,7 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.query.GraphQuery;
-
-import java.util.List;
 
 public interface Graph {
     /**
@@ -227,4 +226,11 @@ public interface Graph {
      * @return An Iterable of lists of paths.
      */
     Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);
+
+    /**
+     * Gets the id generator used by this graph to create ids.
+     *
+     * @return the id generator.
+     */
+    IdGenerator getIdGenerator();
 }
