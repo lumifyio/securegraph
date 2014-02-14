@@ -79,14 +79,6 @@ public interface Graph {
     void removeVertex(Vertex vertex, Authorizations authorizations);
 
     /**
-     * Removes a vertex from the graph.
-     *
-     * @param vertexId       The vertex id of the vertex to remove from the graph.
-     * @param authorizations The authorizations required to remove the vertex.
-     */
-    void removeVertex(String vertexId, Authorizations authorizations);
-
-    /**
      * Adds an edge between two vertices. The id of the new vertex will be generated using an com.altamiracorp.securegraph.id.IdGenerator.
      *
      * @param outVertex      The source vertex. The "out" side of the edge.

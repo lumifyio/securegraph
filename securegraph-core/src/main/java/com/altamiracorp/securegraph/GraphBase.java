@@ -80,15 +80,6 @@ public abstract class GraphBase implements Graph {
     public abstract void removeVertex(Vertex vertex, Authorizations authorizations);
 
     @Override
-    public void removeVertex(String vertexId, Authorizations authorizations) {
-        Vertex vertex = getVertex(vertexId, authorizations);
-        if (vertex == null) {
-            throw new IllegalArgumentException("Could not find vertex with id: " + vertexId);
-        }
-        removeVertex(vertex, authorizations);
-    }
-
-    @Override
     public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
         return prepareEdge(outVertex, inVertex, label, visibility, authorizations).save();
     }

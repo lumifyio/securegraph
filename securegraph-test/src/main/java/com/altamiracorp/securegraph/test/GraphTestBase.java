@@ -371,37 +371,23 @@ public abstract class GraphTestBase {
 
     @Test
     public void testRemoveVertex() {
-        graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
 
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
-        try {
-            graph.removeVertex("v1", AUTHORIZATIONS_B);
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
-        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
-
-        graph.removeVertex("v1", AUTHORIZATIONS_A);
+        graph.removeVertex(v1, AUTHORIZATIONS_A);
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_A)));
     }
 
     @Test
     public void testRemoveVertexWithProperties() {
-        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("prop1", "value1", VISIBILITY_B)
                 .save();
 
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
 
-        try {
-            graph.removeVertex("v1", AUTHORIZATIONS_B);
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
-        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
-
-        graph.removeVertex("v1", AUTHORIZATIONS_A);
+        graph.removeVertex(v1, AUTHORIZATIONS_A);
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
     }
 
