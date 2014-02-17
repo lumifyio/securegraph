@@ -77,6 +77,35 @@ Vertex v = graph.prepareVertex("v1", visA, authA)
                 .save();
 ```
 
+### add an edge
+
+```java
+Authorizations authA = new AccumuloAuthorizations("a");
+Visibility visA = new Visibility("a");
+
+Vertex v1 = graph.addVertex(visA, authA);
+Vertex v2 = graph.addVertex(visA, authA);
+Edge e = graph.addEdge(v1, v2, "label1", visA, authA);
+```
+
+### get all vertex edges
+
+```java
+import com.altamiracorp.securegraph.Direction;
+import com.altamiracorp.securegraph.Edge;
+
+Authorizations authA = new AccumuloAuthorizations("a");
+Vertex v1 = graph.getVertex("v1", authA);
+Iterable<Edge> edges = v1.getEdges(Direction.BOTH, authA);
+```
+
+### full-text vertex search
+
+```java
+Authorizations authA = new AccumuloAuthorizations("a");
+Iterable<Vertex> vertices = graph.query("vertex", authA).vertices();
+```
+
 Configuration
 -------------
 
