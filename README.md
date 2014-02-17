@@ -27,7 +27,7 @@ for setting up a cluster.
 API Usage Examples
 ------------------
 
-=== create and configure an AccumuloGraph instance
+### create and configure an AccumuloGraph instance
 
 ```java
 import java.util.Map;
@@ -48,7 +48,7 @@ AccumuloGraphConfiguration graphConfig = new AccumuloGraphConfiguration(mapConfi
 Graph graph = AccumuloGraph.create(graphConfig);
 ```
 
-=== add a vertex
+### add a vertex
 
 ```java
 import com.altamiracorp.securegraph.Authorizations;
@@ -64,7 +64,7 @@ Authorizations authA = new AccumuloAuthorizations("a");
 Vertex v = graph.addVertex(visA, authA);
 ```
 
-=== add a vertex with properties
+### add a vertex with properties
 
 ```java
 Authorizations authA = new AccumuloAuthorizations("a");
