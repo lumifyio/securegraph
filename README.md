@@ -7,7 +7,8 @@ Secure graph also supports multivalued properties as well as property metadata.
 
 The Secure Graph API was designed to be generic, allowing for multiple implementations.
 The only implementation provided currently is built on top of
-[Apache Accumulo](https://accumulo.apache.org/).
+[Apache Accumulo](https://accumulo.apache.org/) for data storage and
+[Elastic Search](http://www.elasticsearch.org/) for indexing.
 
 Accumulo Implementation
 =======================
@@ -20,9 +21,10 @@ back to the application to be sorted out.
 Requirements
 ------------
 
-You'll need a running Accumulo cluster to try out the Accumulo implementation
+You'll need a running Accumulo and Elastic Search cluster to try out the Accumulo implementation
 of Secure Graph. Please see the [Accumulo installation docs](https://accumulo.apache.org/1.5/accumulo_user_manual.html#_installation)
-for setting up a cluster.
+and [Elastic Search setup](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup.html)
+guide for setting up the respective clusters.
 
 API Usage Examples
 ------------------
