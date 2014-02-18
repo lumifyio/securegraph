@@ -8,6 +8,8 @@ public interface Query {
 
     Iterable<Edge> edges();
 
+    Iterable<Edge> edges(String label);
+
     /**
      * Queries for properties in the given range.
      *

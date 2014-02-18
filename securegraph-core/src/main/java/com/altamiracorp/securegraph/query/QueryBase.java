@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.query;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.util.FilterIterable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,16 @@ public abstract class QueryBase implements Query {
 
     @Override
     public abstract Iterable<Edge> edges();
+
+    @Override
+    public Iterable<Edge> edges(final String label) {
+        return new FilterIterable<Edge>(edges()) {
+            @Override
+            protected boolean isIncluded(Edge o) {
+                return label.equals(o.getLabel());
+            }
+        };
+    }
 
     @Override
     public <T> Query range(String propertyName, T startValue, T endValue) {

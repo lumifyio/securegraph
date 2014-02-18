@@ -36,6 +36,16 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
         };
     }
 
+    @Override
+    public Iterable<Edge> edges(Direction direction, final String label) {
+        return new FilterIterable<Edge>(edges(direction)) {
+            @Override
+            protected boolean isIncluded(Edge o) {
+                return label.equals(o.getLabel());
+            }
+        };
+    }
+
     public Vertex getSourceVertex() {
         return sourceVertex;
     }
