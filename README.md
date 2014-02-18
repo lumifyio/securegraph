@@ -113,7 +113,7 @@ Configuration
 
 The Accumulo implementation has quite a few configuration properties, all with
 defaults. Please see the `public static final String` fields in
-`com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration` for a full
+[com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration](securegraph-accumulo/src/main/java/com/altamiracorp/securegraph/accumulo/AccumuloGraphConfiguration.java?source=c#L29) for a full
 listing.
 
 Iterators
@@ -142,7 +142,7 @@ to better understand how you can pitch in.
 License
 =======
 
-Copyright 2013 Altamira Technologies Corporation
+Copyright 2014 Altamira Technologies Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
