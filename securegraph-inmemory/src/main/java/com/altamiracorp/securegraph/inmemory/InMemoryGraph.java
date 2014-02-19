@@ -3,6 +3,9 @@ package com.altamiracorp.securegraph.inmemory;
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.id.UUIDIdGenerator;
+import com.altamiracorp.securegraph.inmemory.security.ColumnVisibility;
+import com.altamiracorp.securegraph.inmemory.security.VisibilityEvaluator;
+import com.altamiracorp.securegraph.inmemory.security.VisibilityParseException;
 import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
@@ -168,16 +171,20 @@ public class InMemoryGraph extends GraphBase {
     }
 
     private boolean hasAccess(Visibility visibility, Authorizations authorizations) {
-        // TODO handle more complex accessibility. borrow code from Accumulo?
+        // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
         if (visibility.getVisibilityString().length() == 0) {
             return true;
         }
-        for (String a : ((InMemoryAuthorizations) authorizations).getAuthorizations()) {
-            if (visibility.getVisibilityString().equals(a)) {
-                return true;
-            }
+
+        InMemoryAuthorizations inMemoryAuthorizations = (InMemoryAuthorizations) authorizations;
+
+        VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(new com.altamiracorp.securegraph.inmemory.security.Authorizations(inMemoryAuthorizations.getAuthorizations()));
+        ColumnVisibility columnVisibility = new ColumnVisibility(visibility.getVisibilityString());
+        try {
+            return visibilityEvaluator.evaluate(columnVisibility);
+        } catch (VisibilityParseException e) {
+            throw new SecureGraphException("could not evaluate visibility " + visibility.getVisibilityString(), e);
         }
-        return false;
     }
 
     public void saveProperties(Element element, Iterable<Property> properties) {
