@@ -74,6 +74,21 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public List<Vertex> getVerticesInOrder(Iterable<Object> ids, Authorizations authorizations) {
+        final List<Object> vertexIds = toList(ids);
+        List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
+        Collections.sort(vertices, new Comparator<Vertex>() {
+            @Override
+            public int compare(Vertex v1, Vertex v2) {
+                Integer i1 = vertexIds.indexOf(v1.getId());
+                Integer i2 = vertexIds.indexOf(v2.getId());
+                return i1.compareTo(i2);
+            }
+        });
+        return vertices;
+    }
+
+    @Override
     public abstract Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException;
 
     @Override

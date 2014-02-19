@@ -3,6 +3,8 @@ package com.altamiracorp.securegraph;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.query.GraphQuery;
 
+import java.util.List;
+
 public interface Graph {
     /**
      * Adds a vertex to the graph. The id of the new vertex will be generated using an com.altamiracorp.securegraph.id.IdGenerator.
@@ -62,13 +64,27 @@ public interface Graph {
     Iterable<Vertex> getVertices(Authorizations authorizations);
 
     /**
-     * Gets all vertices matching the given ids on the graph.
+     * Gets all vertices matching the given ids on the graph. The order of
+     * the returned vertices is not guaranteed {@link com.altamiracorp.securegraph.Graph#getVerticesInOrder(Iterable, Authorizations)}.
+     * Vertices are not kept in memory during the iteration.
      *
      * @param ids            The ids of the vertices to get.
      * @param authorizations The authorizations required to load the vertex.
      * @return An iterable of all the vertices.
      */
     Iterable<Vertex> getVertices(Iterable<Object> ids, Authorizations authorizations);
+
+    /**
+     * Gets all vertices matching the given ids on the graph. This method is similar to
+     * {@link com.altamiracorp.securegraph.Graph#getVertices(Iterable, Authorizations)}
+     * but returns the vertices in the order that you passed in the ids. This requires loading
+     * all the vertices in memory to sort them.
+     *
+     * @param ids            The ids of the vertices to get.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return An iterable of all the vertices.
+     */
+    List<Vertex> getVerticesInOrder(Iterable<Object> ids, Authorizations authorizations);
 
     /**
      * Removes a vertex from the graph.

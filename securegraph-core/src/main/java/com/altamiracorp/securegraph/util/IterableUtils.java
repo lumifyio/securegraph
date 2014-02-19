@@ -5,6 +5,9 @@ import java.util.List;
 
 public class IterableUtils {
     public static <T> List<T> toList(Iterable<T> iterable) {
+        if (iterable instanceof List) {
+            return (List<T>) iterable;
+        }
         List<T> results = new ArrayList<T>();
         for (T o : iterable) {
             results.add(o);

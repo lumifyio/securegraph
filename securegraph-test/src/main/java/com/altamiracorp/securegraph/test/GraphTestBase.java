@@ -312,8 +312,9 @@ public abstract class GraphTestBase {
                 .save();
 
         List<Object> ids = new ArrayList<Object>();
-        ids.add("v1");
         ids.add("v2");
+        ids.add("v1");
+
         Iterable<Vertex> vertices = graph.getVertices(ids, AUTHORIZATIONS_A);
         boolean foundV1 = false, foundV2 = false;
         for (Vertex v : vertices) {
@@ -329,6 +330,11 @@ public abstract class GraphTestBase {
         }
         assertTrue("v1 not found", foundV1);
         assertTrue("v2 not found", foundV2);
+
+        List<Vertex> verticesInOrder = graph.getVerticesInOrder(ids, AUTHORIZATIONS_A);
+        assertEquals(2, verticesInOrder.size());
+        assertEquals("v2", verticesInOrder.get(0).getId());
+        assertEquals("v1", verticesInOrder.get(1).getId());
     }
 
     @Test
