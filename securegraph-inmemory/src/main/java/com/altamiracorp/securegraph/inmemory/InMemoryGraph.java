@@ -239,4 +239,12 @@ public class InMemoryGraph extends GraphBase {
         }
         return filteredProperties;
     }
+
+    public Map<Object, InMemoryVertex> getAllVertices() {
+        return this.vertices;
+    }
+
+    public Map<Object, InMemoryEdge> getAllEdges() {
+        return this.edges;
+    }
 }
