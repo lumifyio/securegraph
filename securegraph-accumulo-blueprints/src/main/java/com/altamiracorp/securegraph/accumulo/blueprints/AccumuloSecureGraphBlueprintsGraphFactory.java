@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class AccumuloSecureGraphBlueprintsGraphFactory extends SecureGraphBlueprintsFactory {
     @Override
-    protected SecureGraphBlueprintsGraph createGraph(Map config) {
+    public SecureGraphBlueprintsGraph createGraph(Map config) {
         AccumuloGraph graph = createAccumuloGraph(config);
         VisibilityProvider visibilityProvider = createVisibilityProvider(config);
         AuthorizationsProvider authorizationProvider = createAuthorizationsProvider(config);
