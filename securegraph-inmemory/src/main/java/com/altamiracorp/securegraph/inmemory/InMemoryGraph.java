@@ -12,6 +12,8 @@ import com.altamiracorp.securegraph.util.LookAheadIterable;
 
 import java.util.*;
 
+import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
+
 public class InMemoryGraph extends GraphBase {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<Object, InMemoryVertex> vertices;
@@ -152,7 +154,12 @@ public class InMemoryGraph extends GraphBase {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {
-                if (!src.getVertexId(Direction.IN).equals(vertexId) && !src.getVertexId(Direction.OUT).equals(vertexId)) {
+                Object inVertexId = src.getVertexId(Direction.IN);
+                checkNotNull(inVertexId, "inVertexId was null");
+                Object outVertexId = src.getVertexId(Direction.OUT);
+                checkNotNull(outVertexId, "outVertexId was null");
+
+                if (!inVertexId.equals(vertexId) && !outVertexId.equals(vertexId)) {
                     return false;
                 }
                 return hasAccess(src.getVisibility(), authorizations);
@@ -171,11 +178,14 @@ public class InMemoryGraph extends GraphBase {
     }
 
     private boolean hasAccess(Visibility visibility, Authorizations authorizations) {
+        checkNotNull(visibility, "visibility is required");
+
         // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
         if (visibility.getVisibilityString().length() == 0) {
             return true;
         }
 
+        checkNotNull(authorizations, "authorizations is required");
         InMemoryAuthorizations inMemoryAuthorizations = (InMemoryAuthorizations) authorizations;
 
         VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(new com.altamiracorp.securegraph.inmemory.security.Authorizations(inMemoryAuthorizations.getAuthorizations()));
