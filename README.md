@@ -13,47 +13,53 @@ The only implementation provided currently is built on top of
 Maven
 =====
 
-        <properties>
-            <securegraph.version>1.0-SNAPSHOT</securegraph.version>
-        </properties>
+```
+<repositories>
+    <repository>
+        <id>lumify-releases</id>
+        <url>http://bits.lumify.io/m2/releases/</url>
+    </repository>
+    <repository>
+        <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+        </snapshots>
+        <id>lumify-snapshots</id>
+        <url>http://bits.lumify.io/m2/snapshots/</url>
+    </repository>
+</repositories>
+```
 
-        <repositories>
-            <repository>
-                <id>lumify-releases</id>
-                <url>http://bits.lumify.io/m2/releases/</url>
-            </repository>
-            <repository>
-                <snapshots>
-                    <enabled>true</enabled>
-                    <updatePolicy>always</updatePolicy>
-                </snapshots>
-                <id>lumify-snapshots</id>
-                <url>http://bits.lumify.io/m2/snapshots/</url>
-            </repository>
-        </repositories>
+```
+<properties>
+    <securegraph.version>1.0-SNAPSHOT</securegraph.version>
+</properties>
+```
 
-        <dependencies>
-            <dependency>
-                <groupId>com.altamiracorp.securegraph</groupId>
-                <artifactId>securegraph-core</artifactId>
-                <version>${securegraph.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.altamiracorp.securegraph</groupId>
-                <artifactId>securegraph-inmemory</artifactId>
-                <version>${securegraph.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.altamiracorp.securegraph</groupId>
-                <artifactId>securegraph-elasticsearch</artifactId>
-                <version>${securegraph.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.altamiracorp.securegraph</groupId>
-                <artifactId>securegraph-accumulo</artifactId>
-                <version>${securegraph.version}</version>
-            </dependency>
-        </dependencies>
+```
+<dependencies>
+    <dependency>
+        <groupId>com.altamiracorp.securegraph</groupId>
+        <artifactId>securegraph-core</artifactId>
+        <version>${securegraph.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.altamiracorp.securegraph</groupId>
+        <artifactId>securegraph-inmemory</artifactId>
+        <version>${securegraph.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.altamiracorp.securegraph</groupId>
+        <artifactId>securegraph-elasticsearch</artifactId>
+        <version>${securegraph.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.altamiracorp.securegraph</groupId>
+        <artifactId>securegraph-accumulo</artifactId>
+        <version>${securegraph.version}</version>
+    </dependency>
+</dependencies>
+```
 
 Accumulo Implementation
 =======================
