@@ -12,6 +12,7 @@ import com.altamiracorp.securegraph.util.LookAheadIterable;
 
 import java.util.*;
 
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
 
 public class InMemoryGraph extends GraphBase {
@@ -88,6 +89,12 @@ public class InMemoryGraph extends GraphBase {
         if (!hasAccess(vertex.getVisibility(), authorizations)) {
             return;
         }
+
+        List<Edge> edgesToRemove = toList(vertex.getEdges(Direction.BOTH, authorizations));
+        for (Edge edgeToRemove : edgesToRemove) {
+            removeEdge(edgeToRemove, authorizations);
+        }
+
         this.vertices.remove(vertex.getId());
         getSearchIndex().removeElement(this, vertex);
     }
