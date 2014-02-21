@@ -847,6 +847,52 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testFindPaths2 () {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v4 = graph.addVertex("v4", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        graph.addEdge(v1, v4, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v1 -> v4
+        graph.addEdge(v1, v3, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v1 -> v3
+        graph.addEdge(v3, v4, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v3 -> v4
+        graph.addEdge(v2, v3, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v2 -> v3
+        graph.addEdge(v4, v2, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v4 -> v2
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v2= graph.getVertex("v2", AUTHORIZATIONS_A);
+
+        List<Path> paths = toList(graph.findPaths(v1, v2, 2, AUTHORIZATIONS_A));
+        // v1 -> v4, v2 -> v4
+        // v1 -> v3, v2 -> v4
+        assertEquals(2, paths.size());
+        boolean found3 = false;
+        boolean found4 = false;
+        for (Path path : paths) {
+            assertEquals(3, path.length());
+            int i = 0;
+            for (Object id : path) {
+                if (i == 0) {
+                    assertEquals(id, v1.getId());
+                } else if (i == 1) {
+                    if (v3.getId().equals(id)) {
+                        found3 = true;
+                    } else if (v4.getId().equals(id)) {
+                        found4 = true;
+                    } else {
+                        fail("center of path is neither v2 or v3 but found " + id);
+                    }
+                } else if (i == 2) {
+                    assertEquals(id, v2.getId());
+                }
+                i++;
+            }
+        }
+        assertTrue("v3 not found in path", found3);
+        assertTrue("v4 not found in path", found4);
+    }
+
+    @Test
     public void testGetVerticesFromVertex() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);

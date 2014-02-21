@@ -22,20 +22,16 @@ public class RecursivePathFindingAlgorithm implements PathFindingAlgorithm {
     }
 
     private static void findPaths(List<Path> foundPaths, final Vertex sourceVertex, Vertex destVertex, int hops, final Authorizations authorizations, Set<Object> seenVertices, Path currentPath) {
-        for (Vertex child : sourceVertex.getVertices(Direction.BOTH, authorizations)) {
-            if (seenVertices.contains(child.getId())) {
-                continue;
-            }
-
-            if (child.getId().equals(destVertex.getId())) {
-                foundPaths.add(new Path(currentPath, child.getId()));
-                continue;
-            }
-
-            seenVertices.add(child.getId());
-            if (hops > 0) {
-                findPaths(foundPaths, child, destVertex, hops - 1, authorizations, seenVertices, new Path(currentPath, child.getId()));
+        seenVertices.add(sourceVertex.getId());
+        if (sourceVertex.getId().equals(destVertex.getId())) {
+            foundPaths.add(currentPath);
+        } else {
+            for (Vertex child : sourceVertex.getVertices(Direction.BOTH, authorizations)) {
+                if (!seenVertices.contains(child.getId()) && hops > 0) {
+                    findPaths(foundPaths, child, destVertex, hops - 1, authorizations, seenVertices, new Path(currentPath, child.getId()));
+                }
             }
         }
+        seenVertices.remove(sourceVertex.getId());
     }
 }
