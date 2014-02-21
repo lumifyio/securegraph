@@ -19,7 +19,7 @@
         <dependency>
             <groupId>com.altamiracorp.securegraph</groupId>
             <artifactId>securegraph-blueprints</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.tinkerpop.blueprints</groupId>
