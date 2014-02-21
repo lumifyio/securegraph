@@ -32,7 +32,7 @@ Maven
 
 ```
 <properties>
-    <securegraph.version>1.0-SNAPSHOT</securegraph.version>
+    <securegraph.version>0.1.0</securegraph.version>
 </properties>
 ```
 
