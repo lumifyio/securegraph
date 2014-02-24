@@ -154,6 +154,11 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                     }
                     continue;
                 }
+
+                if (propertyValue instanceof DateOnly) {
+                    propertyValue = ((DateOnly) propertyValue).getDate();
+                }
+
                 jsonBuilder.field(property.getName(), propertyValue);
             }
 
@@ -258,7 +263,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } else if (dataType == Integer.class) {
             LOGGER.debug("Registering integer type for {}", propertyName);
             mapping.field("type", "integer");
-        } else if (dataType == Date.class) {
+        } else if (dataType == Date.class || dataType == DateOnly.class) {
             LOGGER.debug("Registering date type for {}", propertyName);
             mapping.field("type", "date");
         } else if (dataType == Long.class) {

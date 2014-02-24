@@ -85,7 +85,12 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 }
                 switch (compare) {
                     case EQUAL:
-                        filters.add(FilterBuilders.termFilter(key, value));
+                        if (value instanceof DateOnly) {
+                            DateOnly dateOnlyValue = ((DateOnly) value);
+                            filters.add(FilterBuilders.rangeFilter(key).from(dateOnlyValue.toString()).to(dateOnlyValue.toString()));
+                        } else {
+                            filters.add(FilterBuilders.termFilter(key, value));
+                        }
                         break;
                     case GREATER_THAN_EQUAL:
                         filters.add(FilterBuilders.rangeFilter(key).gte(value));

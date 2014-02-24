@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph.accumulo;
 
+import com.altamiracorp.securegraph.DateOnly;
 import com.altamiracorp.securegraph.Direction;
 import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.SecureGraphException;
@@ -91,6 +92,9 @@ public abstract class ElementMutationBuilder {
         if (propertyValue instanceof StreamingPropertyValue) {
             StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue);
             propertyValue = streamingPropertyValueRef;
+        }
+        if (propertyValue instanceof DateOnly) {
+            propertyValue = ((DateOnly) propertyValue).getDate();
         }
         Value value = new Value(valueSerializer.objectToValue(propertyValue));
         m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);

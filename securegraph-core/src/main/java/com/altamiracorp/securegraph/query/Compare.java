@@ -1,8 +1,11 @@
 package com.altamiracorp.securegraph.query;
 
+import com.altamiracorp.securegraph.DateOnly;
 import com.altamiracorp.securegraph.Property;
 import com.altamiracorp.securegraph.Text;
 import com.altamiracorp.securegraph.TextIndexHint;
+
+import java.util.Date;
 
 public enum Compare implements Predicate {
     EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, IN;
@@ -19,6 +22,20 @@ public enum Compare implements Predicate {
 
     private boolean evaluate(Property property, Object second) {
         Object first = property.getValue();
+
+        if (first instanceof DateOnly) {
+            first = ((DateOnly) first).getDate();
+            if (second instanceof Date) {
+                second = new DateOnly((Date) second).getDate();
+            }
+        }
+        if (second instanceof DateOnly) {
+            second = ((DateOnly) second).getDate();
+            if (first instanceof Date) {
+                first = new DateOnly((Date) first).getDate();
+            }
+        }
+
         switch (this) {
             case EQUAL:
                 if (null == first) {

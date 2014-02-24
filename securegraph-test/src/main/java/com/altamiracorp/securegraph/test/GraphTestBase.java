@@ -559,20 +559,21 @@ public abstract class GraphTestBase {
         vertices = graph.query("dog", AUTHORIZATIONS_A).vertices();
         assertEquals(1, count(vertices));
 
-        // TODO elastic search can't filter based on authorizations
-//        vertices = graph.query("dog", AUTHORIZATIONS_B).vertices();
-//        assertEquals(0, count(vertices));
+        vertices = graph.query("dog", AUTHORIZATIONS_B).vertices();
+        assertEquals(0, count(vertices));
     }
 
     @Test
     public void testGraphQueryHas() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("age", 25, VISIBILITY_A)
-                .setProperty("birthDate", createDate(1989, 1, 5), VISIBILITY_A)
+                .setProperty("birthDate", new DateOnly(1989, 1, 5), VISIBILITY_A)
+                .setProperty("lastAccessed", createDate(2014, 2, 24, 13, 0, 5), VISIBILITY_A)
                 .save();
         graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("age", 30, VISIBILITY_A)
-                .setProperty("birthDate", createDate(1984, 1, 5), VISIBILITY_A)
+                .setProperty("birthDate", new DateOnly(1984, 1, 5), VISIBILITY_A)
+                .setProperty("lastAccessed", createDate(2014, 2, 25, 13, 0, 5), VISIBILITY_A)
                 .save();
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
@@ -582,6 +583,11 @@ public abstract class GraphTestBase {
 
         vertices = graph.query(AUTHORIZATIONS_A)
                 .has("birthDate", Compare.EQUAL, createDate(1989, 1, 5))
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("lastAccessed", Compare.EQUAL, createDate(2014, 2, 24, 13, 0, 5))
                 .vertices();
         assertEquals(1, count(vertices));
 
@@ -622,6 +628,11 @@ public abstract class GraphTestBase {
 
         vertices = graph.query(AUTHORIZATIONS_A)
                 .has("age", Compare.NOT_EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("lastAccessed", Compare.EQUAL, new DateOnly(2014, 2, 24))
                 .vertices();
         assertEquals(1, count(vertices));
     }
@@ -708,6 +719,10 @@ public abstract class GraphTestBase {
 
     private Date createDate(int year, int month, int day) {
         return new GregorianCalendar(year, month, day).getTime();
+    }
+
+    private Date createDate(int year, int month, int day, int hour, int min, int sec) {
+        return new GregorianCalendar(year, month, day, hour, min, sec).getTime();
     }
 
     @Test
@@ -847,7 +862,7 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testFindPaths2 () {
+    public void testFindPaths2() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
@@ -860,7 +875,7 @@ public abstract class GraphTestBase {
         graph.addEdge(v4, v2, "knows", VISIBILITY_A, AUTHORIZATIONS_A); // v4 -> v2
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        v2= graph.getVertex("v2", AUTHORIZATIONS_A);
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
 
         List<Path> paths = toList(graph.findPaths(v1, v2, 2, AUTHORIZATIONS_A));
         // v1 -> v4, v2 -> v4
