@@ -4,9 +4,9 @@ import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
 
-public class SearchAndRetrievePerformanceTest extends PerformanceTestBase {
+public class SearchAndRetrievePerformance extends PerformanceTestBase {
     public static void main(String[] args) throws InterruptedException {
-        new SearchAndRetrievePerformanceTest().testSearch();
+        new SearchAndRetrievePerformance().testSearch();
     }
 
     public void testSearch() {

@@ -5,11 +5,11 @@ import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.Vertex;
 import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
 
-public class FindPathPerformanceTest extends PerformanceTestBase {
+public class FindPathPerformance extends PerformanceTestBase {
     public static final int NUMBER_OF_VERTICES_TO_CREATE = 3000;
 
     public static void main(String[] args) throws InterruptedException {
-        new FindPathPerformanceTest().testSearch();
+        new FindPathPerformance().testSearch();
     }
 
     public void testSearch() {
