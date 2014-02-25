@@ -153,24 +153,25 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
         };
     }
 
+    @Override
+    public Iterable<Object> getVertexIds(Direction direction, String label, Authorizations authorizations) {
+        return getVertexIds(direction, new String[]{label}, authorizations);
+    }
+
+    @Override
     public Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations) {
+        return getVertexIds(direction, (String[]) null, authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getVertexIds(Direction direction, String[] labels, Authorizations authorizations) {
         switch (direction) {
             case BOTH:
-                return new JoinIterable<Object>(getVertexIds(Direction.IN, authorizations), getVertexIds(Direction.OUT, authorizations));
+                return new JoinIterable<Object>(getVertexIds(Direction.IN, labels, authorizations), getVertexIds(Direction.OUT, labels, authorizations));
             case IN:
-                return new ConvertingIterable<EdgeInfo, Object>(this.inEdges.values()) {
-                    @Override
-                    protected Object convert(EdgeInfo o) {
-                        return o.getVertexId();
-                    }
-                };
+                return new GetVertexIdsIterable(this.inEdges.values(), labels);
             case OUT:
-                return new ConvertingIterable<EdgeInfo, Object>(this.outEdges.values()) {
-                    @Override
-                    protected Object convert(EdgeInfo o) {
-                        return o.getVertexId();
-                    }
-                };
+                return new GetVertexIdsIterable(this.outEdges.values(), labels);
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }

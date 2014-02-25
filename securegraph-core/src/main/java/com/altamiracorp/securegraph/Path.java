@@ -8,8 +8,8 @@ import java.util.Iterator;
 public class Path implements Iterable<Object> {
     private final Object[] vertexIds;
 
-    public Path(Object vertexId) {
-        this.vertexIds = new Object[]{vertexId};
+    public Path(Object... vertexIds) {
+        this.vertexIds = vertexIds;
     }
 
     public Path(Path path, Object vertexId) {
@@ -27,6 +27,11 @@ public class Path implements Iterable<Object> {
 
     @Override
     public Iterator<Object> iterator() {
-        return new ArrayIterable(this.vertexIds).iterator();
+        return new ArrayIterable<Object>(this.vertexIds).iterator();
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(vertexIds);
     }
 }

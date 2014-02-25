@@ -1,21 +1,14 @@
-package com.altamiracorp.securegraph.test.performance;
+package com.altamiracorp.securegraph.performancetest;
 
 import com.altamiracorp.securegraph.Authorizations;
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
-@Category(PerformanceTest.class)
 public class SearchAndRetrievePerformanceTest extends PerformanceTestBase {
     public static void main(String[] args) throws InterruptedException {
         new SearchAndRetrievePerformanceTest().testSearch();
     }
 
-    @Test
     public void testSearch() {
         time("total", new Runnable() {
             @Override
@@ -29,12 +22,6 @@ public class SearchAndRetrievePerformanceTest extends PerformanceTestBase {
                     }
                 });
 
-
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 time("query", new Runnable() {
                     @Override
                     public void run() {

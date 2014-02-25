@@ -1,15 +1,15 @@
-package com.altamiracorp.securegraph.test.performance;
+package com.altamiracorp.securegraph.performancetest;
 
-import com.altamiracorp.securegraph.Authorizations;
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.GraphFactory;
-import com.altamiracorp.securegraph.Visibility;
+import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.util.MapUtils;
 
 import java.io.*;
 import java.util.Properties;
 
 public abstract class PerformanceTestBase {
+    public static final String CATEGORY_ID_PREFIX = "CATEGORY_";
+    public static final Object MOVIE_ID_PREFIX = "MOVIE_";
+
     protected Graph createGraph() {
         try {
             Properties config = new Properties();
@@ -37,9 +37,26 @@ public abstract class PerformanceTestBase {
                 }
                 String[] parts = line.split("\t");
                 String title = parts[0];
-                graph.prepareVertex(visibility, authorizations)
+                int year = Integer.parseInt(parts[1]);
+                double rating = Double.parseDouble(parts[2]);
+                String[] categoriesArray;
+                if (parts.length < 5) {
+                    categoriesArray = new String[0];
+                } else {
+                    categoriesArray = parts[4].split(",");
+                }
+
+                Vertex movieVertex = graph.prepareVertex(MOVIE_ID_PREFIX + title, visibility, authorizations)
                         .setProperty("title", title, visibility)
+                        .setProperty("year", year, visibility)
+                        .setProperty("rating", rating, visibility)
                         .save();
+                for (String category : categoriesArray) {
+                    Vertex categoryVertex = graph.prepareVertex(CATEGORY_ID_PREFIX + category, visibility, authorizations)
+                            .setProperty("title", category, visibility)
+                            .save();
+                    graph.addEdge(categoryVertex.getId() + "->" + movieVertex.getId(), categoryVertex, movieVertex, "hasMovie", visibility, authorizations);
+                }
             }
             graph.flush();
         } catch (Exception e) {

@@ -94,6 +94,35 @@ public interface Vertex extends Element {
     Iterable<Vertex> getVertices(Direction direction, String[] labels, Authorizations authorizations);
 
     /**
+     * Gets vertex ids of connected vertices.
+     *
+     * @param direction      The direction relative to this vertex.
+     * @param label          The label of edges to traverse to find the vertices.
+     * @param authorizations The authorizations used to find the vertices.
+     * @return An Iterable of vertex ids.
+     */
+    Iterable<Object> getVertexIds(Direction direction, String label, Authorizations authorizations);
+
+    /**
+     * Gets vertex ids of connected vertices.
+     *
+     * @param direction      The direction relative to this vertex.
+     * @param labels         The labels of edges to traverse to find the vertices.
+     * @param authorizations The authorizations used to find the vertices.
+     * @return An Iterable of vertex ids.
+     */
+    Iterable<Object> getVertexIds(Direction direction, String[] labels, Authorizations authorizations);
+
+    /**
+     * Gets vertex ids of connected vertices.
+     *
+     * @param direction      The direction relative to this vertex.
+     * @param authorizations The authorizations used to find the vertices.
+     * @return An Iterable of vertex ids.
+     */
+    Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations);
+
+    /**
      * Creates a query to query the edges and vertices attached to this vertex.
      *
      * @param authorizations The authorizations used to find the edges and vertices.
