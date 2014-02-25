@@ -2,7 +2,6 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.VertexQuery;
-import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 import com.altamiracorp.securegraph.util.JoinIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
@@ -145,12 +144,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, String[] labels, final Authorizations authorizations) {
-        return new ConvertingIterable<Edge, Vertex>(getEdges(direction, labels, authorizations)) {
-            @Override
-            protected Vertex convert(Edge edge) {
-                return edge.getOtherVertex(getId(), authorizations);
-            }
-        };
+        return getGraph().getVertices(getVertexIds(direction, labels, authorizations), authorizations);
     }
 
     @Override
