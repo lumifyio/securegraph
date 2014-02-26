@@ -8,7 +8,10 @@ import org.apache.hadoop.io.Text;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+
+import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 
 public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
@@ -39,7 +42,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations) {
-        return getEdges(direction, new String[]{label}, authorizations);
+        return getGraph().getEdges(getEdgeIds(direction, new String[]{label}, authorizations), authorizations);
     }
 
     @Override
@@ -96,7 +99,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
                         return false;
                     }
                 }
-                if (labels == null) {
+                if (labels == null || labels.length == 0) {
                     return true;
                 }
 
@@ -127,7 +130,7 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
             case OUT:
                 return this.outEdges.entrySet();
             case BOTH:
-                return new JoinIterable<Map.Entry<Object, EdgeInfo>>(getEdgeInfos(Direction.IN, authorizations), getEdgeInfos(Direction.OUT, authorizations));
+                return new JoinIterable<Map.Entry<Object, EdgeInfo>>(this.inEdges.entrySet(), this.outEdges.entrySet());
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }

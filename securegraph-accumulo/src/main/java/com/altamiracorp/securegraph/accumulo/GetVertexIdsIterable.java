@@ -16,7 +16,7 @@ class GetVertexIdsIterable extends LookAheadIterable<EdgeInfo, Object> {
 
     @Override
     protected boolean isIncluded(EdgeInfo edgeInfo, Object vertexId) {
-        if (labels == null) {
+        if (labels == null || labels.length == 0) {
             return true;
         }
         for (String label : labels) {
