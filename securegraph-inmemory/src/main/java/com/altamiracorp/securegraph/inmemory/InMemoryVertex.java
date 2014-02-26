@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.inmemory.util.EdgeToEdgeIdIterable;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
@@ -28,8 +29,18 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     }
 
     @Override
+    public Iterable<Object> getEdgeIds(Direction direction, Authorizations authorizations) {
+        return new EdgeToEdgeIdIterable(getEdges(direction, authorizations));
+    }
+
+    @Override
     public Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations) {
         return getEdges(direction, new String[]{label}, authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(Direction direction, String label, Authorizations authorizations) {
+        return new EdgeToEdgeIdIterable(getEdges(direction, label, authorizations));
     }
 
     @Override
@@ -48,6 +59,11 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     }
 
     @Override
+    public Iterable<Object> getEdgeIds(Direction direction, String[] labels, Authorizations authorizations) {
+        return new EdgeToEdgeIdIterable(getEdges(direction, labels, authorizations));
+    }
+
+    @Override
     public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
             @Override
@@ -55,6 +71,11 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
                 return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
             }
         };
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return new EdgeToEdgeIdIterable(getEdges(otherVertex, direction, authorizations));
     }
 
     @Override
@@ -68,6 +89,11 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     }
 
     @Override
+    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return new EdgeToEdgeIdIterable(getEdges(otherVertex, direction, label, authorizations));
+    }
+
+    @Override
     public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, labels, authorizations)) {
             @Override
@@ -75,6 +101,11 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
                 return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
             }
         };
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return new EdgeToEdgeIdIterable(getEdges(otherVertex, direction, labels, authorizations));
     }
 
     @Override

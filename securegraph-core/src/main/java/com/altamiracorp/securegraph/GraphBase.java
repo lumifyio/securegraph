@@ -165,9 +165,9 @@ public abstract class GraphBase implements Graph {
                 if (checkedCombinations.containsKey(sourceVertex.getId().toString() + destVertex.getId().toString())) {
                     continue;
                 }
-                Iterable<Edge> edges = sourceVertex.getEdges(destVertex, Direction.BOTH, authorizations);
-                for (Edge edge : edges) {
-                    results.add(edge.getId());
+                Iterable<Object> edgeIds = sourceVertex.getEdgeIds(destVertex, Direction.BOTH, authorizations);
+                for (Object edgeId : edgeIds) {
+                    results.add(edgeId);
                 }
                 checkedCombinations.put(sourceVertex.getId().toString() + destVertex.getId().toString(), "");
                 checkedCombinations.put(destVertex.getId().toString() + sourceVertex.getId().toString(), "");

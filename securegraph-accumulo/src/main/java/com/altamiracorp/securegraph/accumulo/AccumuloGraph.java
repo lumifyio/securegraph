@@ -307,30 +307,6 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations) {
-        Set<Object> results = new HashSet<Object>();
-        List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
-
-        // since we are checking bi-directional edges we should only have to check v1->v2 and not v2->v1
-        Map<String, String> checkedCombinations = new HashMap<String, String>();
-
-        for (Vertex sourceVertex : vertices) {
-            for (Vertex destVertex : vertices) {
-                if (checkedCombinations.containsKey(sourceVertex.getId().toString() + destVertex.getId().toString())) {
-                    continue;
-                }
-                Iterable<Object> edgeIds = ((AccumuloVertex) sourceVertex).getEdgeIds(destVertex.getId(), Direction.BOTH, authorizations);
-                for (Object edgeId : edgeIds) {
-                    results.add(edgeId);
-                }
-                checkedCombinations.put(sourceVertex.getId().toString() + destVertex.getId().toString(), "");
-                checkedCombinations.put(destVertex.getId().toString() + sourceVertex.getId().toString(), "");
-            }
-        }
-        return results;
-    }
-
-    @Override
     public void removeEdge(Edge edge, Authorizations authorizations) {
         checkNotNull(edge);
 

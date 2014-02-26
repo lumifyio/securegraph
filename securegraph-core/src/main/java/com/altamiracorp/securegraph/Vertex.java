@@ -12,6 +12,8 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Direction direction, Authorizations authorizations);
 
+    Iterable<Object> getEdgeIds(Direction direction, Authorizations authorizations);
+
     /**
      * Gets all edges with the given label attached to this vertex.
      *
@@ -21,6 +23,8 @@ public interface Vertex extends Element {
      * @return An Iterable of edges.
      */
     Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations);
+
+    Iterable<Object> getEdgeIds(Direction direction, String label, Authorizations authorizations);
 
     /**
      * Gets all edges with any of the given labels attached to this vertex.
@@ -32,6 +36,8 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Direction direction, String[] labels, Authorizations authorizations);
 
+    Iterable<Object> getEdgeIds(Direction direction, String[] labels, Authorizations authorizations);
+
     /**
      * Gets all edges between this vertex and another vertex.
      *
@@ -41,6 +47,8 @@ public interface Vertex extends Element {
      * @return An Iterable of edges.
      */
     Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, Authorizations authorizations);
+
+    Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations);
 
     /**
      * Gets all edges between this vertex and another vertex matching the given label.
@@ -53,6 +61,8 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String label, Authorizations authorizations);
 
+    Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations);
+
     /**
      * Gets all edges between this vertex and another vertex matching any of the given labels.
      *
@@ -63,6 +73,8 @@ public interface Vertex extends Element {
      * @return An Iterable of edges.
      */
     Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations);
+
+    Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations);
 
     /**
      * Similar to getEdges but gets the vertices on the other side of the edges attached to this vertex.

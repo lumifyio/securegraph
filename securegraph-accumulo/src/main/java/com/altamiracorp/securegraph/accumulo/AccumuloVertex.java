@@ -2,7 +2,6 @@ package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.VertexQuery;
-import com.altamiracorp.securegraph.util.FilterIterable;
 import com.altamiracorp.securegraph.util.JoinIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.hadoop.io.Text;
@@ -30,20 +29,12 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, Authorizations authorizations) {
-        switch (direction) {
-            case BOTH:
-                // TODO: Can't we concat the two id lists together and do a single scan, skipping the JoinIterable?
-                return new JoinIterable<Edge>(
-                        getGraph().getEdges(inEdges.keySet(), authorizations),
-                        getGraph().getEdges(outEdges.keySet(), authorizations)
-                );
-            case IN:
-                return getGraph().getEdges(inEdges.keySet(), authorizations);
-            case OUT:
-                return getGraph().getEdges(outEdges.keySet(), authorizations);
-            default:
-                throw new SecureGraphException("Unexpected direction: " + direction);
-        }
+        return getGraph().getEdges(getEdgeIds(direction, authorizations), authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(Direction direction, Authorizations authorizations) {
+        return getEdgeIdsWithOtherVertexId(null, direction, null, authorizations);
     }
 
     @Override
@@ -52,69 +43,79 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
     }
 
     @Override
+    public Iterable<Object> getEdgeIds(Direction direction, String label, Authorizations authorizations) {
+        return getEdgeIdsWithOtherVertexId(null, direction, new String[]{label}, authorizations);
+    }
+
+    @Override
     public Iterable<Edge> getEdges(Direction direction, final String[] labels, Authorizations authorizations) {
-        return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(null, direction, labels, authorizations), authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(final Direction direction, final String[] labels, final Authorizations authorizations) {
+        return getEdgeIdsWithOtherVertexId(null, direction, labels, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, null, authorizations), authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, null, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, new String[]{label}, authorizations), authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, new String[]{label}, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labels, authorizations), authorizations);
+    }
+
+    @Override
+    public Iterable<Object> getEdgeIds(final Vertex otherVertex, final Direction direction, final String[] labels, final Authorizations authorizations) {
+        return getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labels, authorizations);
+    }
+
+    public Iterable<Object> getEdgeIdsWithOtherVertexId(final Object otherVertexId, final Direction direction, final String[] labels, final Authorizations authorizations) {
+        return new LookAheadIterable<Map.Entry<Object, EdgeInfo>, Object>() {
             @Override
-            protected boolean isIncluded(Edge edge) {
+            protected boolean isIncluded(Map.Entry<Object, EdgeInfo> edgeInfo, Object edgeId) {
+                if (otherVertexId != null) {
+                    if (!otherVertexId.equals(edgeInfo.getValue().getVertexId())) {
+                        return false;
+                    }
+                }
+                if (labels == null) {
+                    return true;
+                }
+
                 for (String label : labels) {
-                    if (label.equals(edge.getLabel())) {
+                    if (label.equals(edgeInfo.getValue().getLabel())) {
                         return true;
                     }
                 }
                 return false;
             }
-        };
-    }
-
-    @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
-        return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
-            @Override
-            protected boolean isIncluded(Edge edge) {
-                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
-            }
-        };
-    }
-
-    @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
-        return new FilterIterable<Edge>(getEdges(direction, label, authorizations)) {
-            @Override
-            protected boolean isIncluded(Edge edge) {
-                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
-            }
-        };
-    }
-
-    @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
-        return new FilterIterable<Edge>(getEdges(direction, labels, authorizations)) {
-            @Override
-            protected boolean isIncluded(Edge edge) {
-                return edge.getOtherVertexId(getId()).equals(otherVertex.getId());
-            }
-        };
-    }
-
-    public Iterable<Object> getEdgeIds(final Object otherVertexId, Direction direction, Authorizations authorizations) {
-        final Iterable<Map.Entry<Object, EdgeInfo>> edgeInfos = getEdgeInfos(direction, authorizations);
-        return new LookAheadIterable<Map.Entry<Object, EdgeInfo>, Object>() {
-            @Override
-            protected boolean isIncluded(Map.Entry<Object, EdgeInfo> src, Object o) {
-                return o != null;
-            }
 
             @Override
-            protected Object convert(Map.Entry<Object, EdgeInfo> next) {
-                if (next.getValue().getVertexId().equals(otherVertexId)) {
-                    return next.getKey();
-                }
-                return null;
+            protected Object convert(Map.Entry<Object, EdgeInfo> edgeInfo) {
+                return edgeInfo.getKey();
             }
 
             @Override
             protected Iterator<Map.Entry<Object, EdgeInfo>> createIterator() {
-                return edgeInfos.iterator();
+                return getEdgeInfos(direction, authorizations).iterator();
             }
         };
     }
