@@ -241,4 +241,10 @@ public interface Graph {
      * @return the id generator.
      */
     IdGenerator getIdGenerator();
+
+    /**
+     * Reindex all vertices and edges.
+     * @param authorizations
+     */
+    void reindex(Authorizations authorizations);
 }

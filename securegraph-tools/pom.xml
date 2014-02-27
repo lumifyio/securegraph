@@ -24,6 +24,11 @@
         </dependency>
         <dependency>
             <groupId>com.altamiracorp.securegraph</groupId>
+            <artifactId>securegraph-elasticsearch</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.altamiracorp.securegraph</groupId>
             <artifactId>securegraph-inmemory</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

@@ -6,6 +6,7 @@ import com.altamiracorp.securegraph.path.RecursivePathFindingAlgorithm;
 import com.altamiracorp.securegraph.query.GraphQuery;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
+import com.altamiracorp.securegraph.util.ToElementIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,5 +206,19 @@ public abstract class GraphBase implements Graph {
 
     public SearchIndex getSearchIndex() {
         return searchIndex;
+    }
+
+    @Override
+    public void reindex(Authorizations authorizations) {
+        reindexVertices(authorizations);
+        reindexEdges(authorizations);
+    }
+
+    protected void reindexVertices(Authorizations authorizations) {
+        this.searchIndex.addElements(this, new ToElementIterable<Vertex>(getVertices(authorizations)));
+    }
+
+    private void reindexEdges(Authorizations authorizations) {
+        this.searchIndex.addElements(this, new ToElementIterable<Edge>(getEdges(authorizations)));
     }
 }

@@ -47,7 +47,11 @@ public abstract class GraphToolBase {
 
     protected Authorizations getAuthorizations() {
         // TODO change this to be configurable
-        return new AccumuloAuthorizations(authString.split(","));
+        String[] split = authString.split(",");
+        if (split.length == 1 && split[0].length() == 0) {
+            split = new String[0];
+        }
+        return new AccumuloAuthorizations(split);
     }
 
     protected Graph getGraph() {

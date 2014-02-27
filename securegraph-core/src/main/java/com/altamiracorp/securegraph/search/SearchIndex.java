@@ -12,6 +12,8 @@ public interface SearchIndex {
 
     void removeElement(Graph graph, Element element);
 
+    void addElements(Graph graph, Iterable<Element> elements);
+
     GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations);
 
     VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations);

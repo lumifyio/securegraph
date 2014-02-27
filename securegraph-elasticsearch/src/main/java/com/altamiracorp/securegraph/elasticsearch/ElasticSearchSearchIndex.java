@@ -308,7 +308,21 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
     @Override
     public void removeElement(Graph graph, Element element) {
+        // TODO write me
+    }
 
+    @Override
+    public void addElements(Graph graph, Iterable<Element> elements) {
+        // TODO change this to use elastic search bulk import
+        int count = 0;
+        for (Element element : elements) {
+            if (count % 1000 == 0) {
+                LOGGER.debug("adding elements... " + count);
+            }
+            addElement(graph, element);
+            count++;
+        }
+        LOGGER.debug("added " + count + " elements");
     }
 
     @Override

@@ -27,6 +27,13 @@ public class DefaultSearchIndex implements SearchIndex {
     }
 
     @Override
+    public void addElements(Graph graph, Iterable<Element> elements) {
+        for (Element element : elements) {
+            addElement(graph, element);
+        }
+    }
+
+    @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
         return new DefaultGraphQuery(graph, queryString, authorizations);
     }
