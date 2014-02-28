@@ -37,7 +37,7 @@ public abstract class ElementMaker<T> {
 
             Text columnFamily = col.getKey().getColumnFamily();
             Text columnQualifier = col.getKey().getColumnQualifier();
-            ColumnVisibility columnVisibility = new ColumnVisibility(col.getKey().getColumnVisibility().toString());
+            ColumnVisibility columnVisibility = getGraph().visibilityToAccumuloVisibility(col.getKey().getColumnVisibility().toString());
             Value value = col.getValue();
 
             if (columnFamily.equals(AccumuloGraph.DELETE_ROW_COLUMN_FAMILY)

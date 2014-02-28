@@ -46,15 +46,15 @@ public abstract class ElementMutationBuilder {
     private Mutation createMutationForVertex(AccumuloVertex vertex) {
         String vertexRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId();
         Mutation m = new Mutation(vertexRowKey);
-        m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, new ColumnVisibility(vertex.getVisibility().getVisibilityString()), EMPTY_VALUE);
+        m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, vertex.getGraph().visibilityToAccumuloVisibility(vertex.getVisibility()), EMPTY_VALUE);
         for (Property property : vertex.getProperties()) {
-            addPropertyToMutation(m, vertexRowKey, property);
+            addPropertyToMutation(vertex.getGraph(), m, vertexRowKey, property);
         }
         return m;
     }
 
     public void saveEdge(AccumuloEdge edge) {
-        ColumnVisibility edgeColumnVisibility = new ColumnVisibility(edge.getVisibility().getVisibilityString());
+        ColumnVisibility edgeColumnVisibility = edge.getGraph().visibilityToAccumuloVisibility(edge.getVisibility());
         Mutation m = createMutationForEdge(edge, edgeColumnVisibility);
         saveEdgeMutation(m);
 
@@ -80,14 +80,14 @@ public abstract class ElementMutationBuilder {
         addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(edge.getVertexId(Direction.OUT).toString()), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
         addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(edge.getVertexId(Direction.IN).toString()), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
         for (Property property : edge.getProperties()) {
-            addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
+            addPropertyToMutation(edge.getGraph(), addEdgeMutation, edgeRowKey, property);
         }
         return addEdgeMutation;
     }
 
-    public void addPropertyToMutation(Mutation m, String rowKey, Property property) {
+    public void addPropertyToMutation(AccumuloGraph graph, Mutation m, String rowKey, Property property) {
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
-        ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
+        ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
             StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue);
@@ -127,9 +127,9 @@ public abstract class ElementMutationBuilder {
         }
     }
 
-    public void addPropertyRemoveToMutation(Mutation m, Property property) {
+    public void addPropertyRemoveToMutation(AccumuloGraph graph, Mutation m, Property property) {
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
-        ColumnVisibility columnVisibility = new ColumnVisibility(property.getVisibility().getVisibilityString());
+        ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
     }

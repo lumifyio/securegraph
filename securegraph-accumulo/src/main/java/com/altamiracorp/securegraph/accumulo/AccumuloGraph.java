@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
-import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBase {
@@ -152,7 +151,7 @@ public class AccumuloGraph extends GraphBase {
         boolean hasProperty = false;
         for (Property property : properties) {
             hasProperty = true;
-            elementMutationBuilder.addPropertyToMutation(m, elementRowKey, property);
+            elementMutationBuilder.addPropertyToMutation(this, m, elementRowKey, property);
         }
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
@@ -164,7 +163,7 @@ public class AccumuloGraph extends GraphBase {
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());
-        elementMutationBuilder.addPropertyRemoveToMutation(m, property);
+        elementMutationBuilder.addPropertyRemoveToMutation(this, m, property);
         addMutations(getWriterFromElementType(element), m);
 
         getSearchIndex().addElement(this, element);
@@ -751,8 +750,12 @@ public class AccumuloGraph extends GraphBase {
         throw new SecureGraphException("Unexpected end of row: " + dataRowKey);
     }
 
-    private ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
+    ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
         return new ColumnVisibility(visibility.getVisibilityString());
+    }
+
+    ColumnVisibility visibilityToAccumuloVisibility(String visibilityString) {
+        return new ColumnVisibility(visibilityString);
     }
 
     public static String getVerticesTableName(String tableNamePrefix) {
