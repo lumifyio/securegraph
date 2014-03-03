@@ -50,4 +50,15 @@ public class InMemoryEdge extends InMemoryElement implements Edge {
     public Vertex getOtherVertex(Object myVertexId, Authorizations authorizations) {
         return getGraph().getVertex(getOtherVertexId(myVertexId), authorizations);
     }
+
+    @Override
+    public ExistingElementMutation<Edge> prepareMutation() {
+        return new ExistingElementMutationImpl<Edge>(this) {
+            @Override
+            public Edge save() {
+                saveExistingElementMutation(this);
+                return getElement();
+            }
+        };
+    }
 }

@@ -14,4 +14,9 @@ public class MutableProperty extends Property {
     public void setValue(Object value) {
         super.setValue(value);
     }
+
+    @Override
+    public void setVisibility(Visibility visibility) {
+        super.setVisibility(visibility);
+    }
 }

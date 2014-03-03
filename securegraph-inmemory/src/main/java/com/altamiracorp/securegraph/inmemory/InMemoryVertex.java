@@ -182,4 +182,15 @@ public class InMemoryVertex extends InMemoryElement implements Vertex {
     public VertexQuery query(String queryString, Authorizations authorizations) {
         return getGraph().getSearchIndex().queryVertex(getGraph(), this, queryString, authorizations);
     }
+
+    @Override
+    public ExistingElementMutation<Vertex> prepareMutation() {
+        return new ExistingElementMutationImpl<Vertex>(this) {
+            @Override
+            public Vertex save() {
+                saveExistingElementMutation(this);
+                return getElement();
+            }
+        };
+    }
 }

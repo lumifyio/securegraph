@@ -213,10 +213,10 @@ public class InMemoryGraph extends GraphBase {
     public void saveProperties(Element element, Iterable<Property> properties) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
-            vertex.setPropertiesInternal(properties);
+            vertex.updatePropertiesInternal(properties);
         } else if (element instanceof Edge) {
             InMemoryEdge edge = edges.get(element.getId());
-            edge.setPropertiesInternal(properties);
+            edge.updatePropertiesInternal(properties);
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
@@ -269,5 +269,32 @@ public class InMemoryGraph extends GraphBase {
 
     public Map<Object, InMemoryEdge> getAllEdges() {
         return this.edges;
+    }
+
+    void alterEdgeVisibility(Object edgeId, Visibility newEdgeVisibility) {
+        this.edges.get(edgeId).setVisibilityInternal(newEdgeVisibility);
+    }
+
+    void alterVertexVisibility(Object vertexId, Visibility newVertexVisibility) {
+        this.vertices.get(vertexId).setVisibilityInternal(newVertexVisibility);
+    }
+
+    void alterEdgePropertyVisibilities(Object edgeId, List<AlterPropertyVisibility> alterPropertyVisibilities) {
+        alterElementPropertyVisibilities(this.edges.get(edgeId), alterPropertyVisibilities);
+    }
+
+    void alterVertexPropertyVisibilities(Object vertexId, List<AlterPropertyVisibility> alterPropertyVisibilities) {
+        alterElementPropertyVisibilities(this.vertices.get(vertexId), alterPropertyVisibilities);
+    }
+
+    void alterElementPropertyVisibilities(InMemoryElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
+        for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
+            Property property = element.getProperty(apv.getKey(), apv.getName());
+            Object value = property.getValue();
+            Map<String, Object> metadata = property.getMetadata();
+
+            element.removeProperty(apv.getKey(), apv.getName());
+            element.addPropertyValue(apv.getKey(), apv.getName(), value, metadata, apv.getVisibility());
+        }
     }
 }

@@ -8,10 +8,7 @@ import org.apache.hadoop.io.Text;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-
-import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 
 public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
@@ -199,5 +196,16 @@ public class AccumuloVertex extends AccumuloElement implements Vertex {
 
     void removeInEdge(Edge edge) {
         this.inEdges.remove(edge.getId());
+    }
+
+    @Override
+    public ExistingElementMutation<Vertex> prepareMutation() {
+        return new ExistingElementMutationImpl<Vertex>(this) {
+            @Override
+            public Vertex save() {
+                saveExistingElementMutation(this);
+                return getElement();
+            }
+        };
     }
 }

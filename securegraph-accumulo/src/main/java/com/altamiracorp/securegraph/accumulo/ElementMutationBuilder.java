@@ -1,9 +1,6 @@
 package com.altamiracorp.securegraph.accumulo;
 
-import com.altamiracorp.securegraph.DateOnly;
-import com.altamiracorp.securegraph.Direction;
-import com.altamiracorp.securegraph.Property;
-import com.altamiracorp.securegraph.SecureGraphException;
+import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.util.LimitOutputStream;
@@ -83,6 +80,21 @@ public abstract class ElementMutationBuilder {
             addPropertyToMutation(edge.getGraph(), addEdgeMutation, edgeRowKey, property);
         }
         return addEdgeMutation;
+    }
+
+    public void alterElementVisibility(AccumuloGraph graph, Mutation m, AccumuloElement element, Visibility newVisibility) {
+        ColumnVisibility currentColumnVisibility = graph.visibilityToAccumuloVisibility(element.getVisibility());
+        ColumnVisibility newColumnVisibility = graph.visibilityToAccumuloVisibility(newVisibility);
+        if (element instanceof AccumuloEdge) {
+            AccumuloEdge edge = (AccumuloEdge) element;
+            m.putDelete(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), currentColumnVisibility);
+            m.put(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), newColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+        } else if (element instanceof AccumuloVertex) {
+            m.putDelete(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, currentColumnVisibility);
+            m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, newColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+        } else {
+            throw new IllegalArgumentException("Invalid element type: " + element);
+        }
     }
 
     public void addPropertyToMutation(AccumuloGraph graph, Mutation m, String rowKey, Property property) {

@@ -158,5 +158,5 @@ public interface Vertex extends Element {
      *
      * @return The mutation builder.
      */
-    ElementMutation<Vertex> prepareMutation();
+    ExistingElementMutation<Vertex> prepareMutation();
 }

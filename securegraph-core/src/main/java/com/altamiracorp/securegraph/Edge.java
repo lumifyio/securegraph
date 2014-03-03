@@ -39,5 +39,5 @@ public interface Edge extends Element {
      *
      * @return The mutation builder.
      */
-    ElementMutation<Edge> prepareMutation();
+    ExistingElementMutation<Edge> prepareMutation();
 }

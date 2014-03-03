@@ -6,7 +6,7 @@ public abstract class Property implements Comparable<Property> {
     private final String key;
     private final String name;
     private Object value;
-    private final Visibility visibility;
+    private Visibility visibility;
     private final Map<String, Object> metadata;
 
     protected Property(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
@@ -35,6 +35,10 @@ public abstract class Property implements Comparable<Property> {
 
     public Visibility getVisibility() {
         return visibility;
+    }
+
+    protected void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
 
     public Map<String, Object> getMetadata() {

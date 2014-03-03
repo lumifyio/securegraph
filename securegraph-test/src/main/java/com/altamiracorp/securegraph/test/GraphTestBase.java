@@ -1096,4 +1096,85 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", "Test Value").vertices()));
         assertEquals("default has predicate is equals which shouldn't work for unindexed", 0, count(graph.query(AUTHORIZATIONS_A).has("none", "Test Value").vertices()));
     }
+
+    @Test
+    public void testChangeVisibilityVertex() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .save();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v1.prepareMutation()
+                .alterElementVisibility(VISIBILITY_B)
+                .save();
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertNull(v1);
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
+        assertNotNull(v1);
+    }
+
+    @Test
+    public void testChangeVisibilityVertexProperties() {
+        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
+        prop1Metadata.put("prop1_key1", "value1");
+
+        Map<String, Object> prop2Metadata = new HashMap<String, Object>();
+        prop2Metadata.put("prop2_key1", "value1");
+
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
+                .setProperty("prop2", "value2", prop2Metadata, VISIBILITY_EMPTY)
+                .save();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v1.prepareMutation()
+                .alterPropertyVisibility("prop1", VISIBILITY_B)
+                .save();
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertNull(v1.getProperty("prop1"));
+        assertNotNull(v1.getProperty("prop2"));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        assertNotNull(v1.getProperty("prop1"));
+        assertNotNull(v1.getProperty("prop2"));
+    }
+
+    @Test
+    public void testChangeVisibilityEdge() {
+        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
+        prop1Metadata.put("prop1_key1", "value1");
+
+        Map<String, Object> prop2Metadata = new HashMap<String, Object>();
+        prop2Metadata.put("prop2_key1", "value1");
+
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
+                .setProperty("prop2", "value2", prop2Metadata, VISIBILITY_EMPTY)
+                .save();
+
+        Vertex v2 = graph.prepareVertex("v2", VISIBILITY_EMPTY, AUTHORIZATIONS_A)
+                .save();
+
+        graph.prepareEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .save();
+
+        // test that we can see the edge with A and not B
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(0, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_B)));
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+
+        // change the edge
+        Edge e1 = graph.getEdge("e1", AUTHORIZATIONS_A);
+        e1.prepareMutation()
+                .alterElementVisibility(VISIBILITY_B)
+                .save();
+
+        // test that we can see the edge with B and not A
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_B)));
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(0, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+    }
 }

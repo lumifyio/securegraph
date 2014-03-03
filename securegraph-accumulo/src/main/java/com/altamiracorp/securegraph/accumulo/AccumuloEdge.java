@@ -54,4 +54,15 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
     public Vertex getVertex(Direction direction, Authorizations authorizations) {
         return getGraph().getVertex(getVertexId(direction), authorizations);
     }
+
+    @Override
+    public ExistingElementMutation<Edge> prepareMutation() {
+        return new ExistingElementMutationImpl<Edge>(this) {
+            @Override
+            public Edge save() {
+                saveExistingElementMutation(this);
+                return getElement();
+            }
+        };
+    }
 }

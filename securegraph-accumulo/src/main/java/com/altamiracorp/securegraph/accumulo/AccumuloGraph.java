@@ -793,4 +793,33 @@ public class AccumuloGraph extends GraphBase {
     public Connector getConnector() {
         return connector;
     }
+
+    public void alterElementVisibility(AccumuloElement element, Visibility newVisibility) {
+        BatchWriter writer = getWriterFromElementType(element);
+        String rowPrefix = getRowPrefixForElement(element);
+        String elementRowKey = rowPrefix + element.getId();
+
+        Mutation m = new Mutation(elementRowKey);
+        elementMutationBuilder.alterElementVisibility(this, m, element, newVisibility);
+        addMutations(writer, m);
+    }
+
+    public void alterElementPropertyVisibilities(AccumuloElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
+        if (alterPropertyVisibilities.size() == 0) {
+            return;
+        }
+
+        BatchWriter writer = getWriterFromElementType(element);
+        String rowPrefix = getRowPrefixForElement(element);
+        String elementRowKey = rowPrefix + element.getId();
+
+        Mutation m = new Mutation(elementRowKey);
+        for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
+            MutableProperty property = (MutableProperty) element.getProperty(apv.getKey(), apv.getName());
+            elementMutationBuilder.addPropertyRemoveToMutation(this, m, property);
+            property.setVisibility(apv.getVisibility());
+            elementMutationBuilder.addPropertyToMutation(this, m, elementRowKey, property);
+        }
+        addMutations(writer, m);
+    }
 }

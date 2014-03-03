@@ -9,7 +9,7 @@ import java.util.*;
 public abstract class ElementBase implements Element {
     private final Graph graph;
     private final Object id;
-    private final Visibility visibility;
+    private Visibility visibility;
 
     private final TreeSet<Property> properties;
 
@@ -18,7 +18,7 @@ public abstract class ElementBase implements Element {
         this.id = id;
         this.visibility = visibility;
         this.properties = new TreeSet<Property>();
-        setPropertiesInternal(properties);
+        updatePropertiesInternal(properties);
     }
 
     @Override
@@ -85,6 +85,10 @@ public abstract class ElementBase implements Element {
         return this.visibility;
     }
 
+    protected void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
+    }
+
     @Override
     public Iterable<Property> getProperties() {
         return this.properties;
@@ -101,7 +105,7 @@ public abstract class ElementBase implements Element {
     }
 
     // this method differs setProperties in that it only updates the in memory representation of the properties
-    protected void setPropertiesInternal(Iterable<Property> properties) {
+    protected void updatePropertiesInternal(Iterable<Property> properties) {
         for (Property property : properties) {
             if (property.getKey() == null) {
                 throw new IllegalArgumentException("key is required for property");
