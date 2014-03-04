@@ -1195,4 +1195,31 @@ public abstract class GraphTestBase {
             assertNotNull(ex);
         }
     }
+
+    @Test
+    public void testChangeVisibilityOnStreamingProperty() throws IOException {
+        String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(LARGE_PROPERTY_VALUE_SIZE));
+        PropertyValue propSmall = new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), String.class);
+        PropertyValue propLarge = new StreamingPropertyValue(new ByteArrayInputStream(expectedLargeValue.getBytes()), String.class);
+        String largePropertyName = "propLarge/\\*!@#$%^&*()[]{}|";
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("propSmall", propSmall, VISIBILITY_A)
+                .setProperty(largePropertyName, propLarge, VISIBILITY_A)
+                .save();
+        assertEquals(2, count(graph.getVertex("v1", AUTHORIZATIONS_A).getProperties()));
+
+        graph.getVertex("v1", AUTHORIZATIONS_A)
+                .prepareMutation()
+                .alterPropertyVisibility("propSmall", VISIBILITY_B)
+                .save();
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getProperties()));
+
+        graph.getVertex("v1", AUTHORIZATIONS_A)
+                .prepareMutation()
+                .alterPropertyVisibility(largePropertyName, VISIBILITY_B)
+                .save();
+        assertEquals(0, count(graph.getVertex("v1", AUTHORIZATIONS_A).getProperties()));
+
+        assertEquals(2, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties()));
+    }
 }
