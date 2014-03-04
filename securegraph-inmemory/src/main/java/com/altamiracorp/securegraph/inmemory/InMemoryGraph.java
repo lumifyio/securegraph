@@ -3,9 +3,6 @@ package com.altamiracorp.securegraph.inmemory;
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.id.UUIDIdGenerator;
-import com.altamiracorp.securegraph.inmemory.security.ColumnVisibility;
-import com.altamiracorp.securegraph.inmemory.security.VisibilityEvaluator;
-import com.altamiracorp.securegraph.inmemory.security.VisibilityParseException;
 import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
@@ -69,7 +66,7 @@ public class InMemoryGraph extends GraphBase {
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
             protected boolean isIncluded(InMemoryVertex src, Vertex edge) {
-                return hasAccess(src.getVisibility(), authorizations);
+                return canRead(src.getVisibility(), authorizations);
             }
 
             @Override
@@ -86,7 +83,7 @@ public class InMemoryGraph extends GraphBase {
 
     @Override
     public void removeVertex(Vertex vertex, Authorizations authorizations) {
-        if (!hasAccess(vertex.getVisibility(), authorizations)) {
+        if (!canRead(vertex.getVisibility(), authorizations)) {
             return;
         }
 
@@ -123,7 +120,7 @@ public class InMemoryGraph extends GraphBase {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {
-                return hasAccess(src.getVisibility(), authorizations);
+                return canRead(src.getVisibility(), authorizations);
             }
 
             @Override
@@ -140,7 +137,7 @@ public class InMemoryGraph extends GraphBase {
 
     @Override
     public void removeEdge(Edge edge, Authorizations authorizations) {
-        if (!hasAccess(edge.getVisibility(), authorizations)) {
+        if (!canRead(edge.getVisibility(), authorizations)) {
             return;
         }
 
@@ -175,7 +172,7 @@ public class InMemoryGraph extends GraphBase {
                 if (!inVertexId.equals(vertexId) && !outVertexId.equals(vertexId)) {
                     return false;
                 }
-                return hasAccess(src.getVisibility(), authorizations);
+                return canRead(src.getVisibility(), authorizations);
             }
 
             @Override
@@ -190,24 +187,13 @@ public class InMemoryGraph extends GraphBase {
         };
     }
 
-    private boolean hasAccess(Visibility visibility, Authorizations authorizations) {
-        checkNotNull(visibility, "visibility is required");
-
+    private boolean canRead(Visibility visibility, Authorizations authorizations) {
         // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
         if (visibility.getVisibilityString().length() == 0) {
             return true;
         }
 
-        checkNotNull(authorizations, "authorizations is required");
-        InMemoryAuthorizations inMemoryAuthorizations = (InMemoryAuthorizations) authorizations;
-
-        VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(new com.altamiracorp.securegraph.inmemory.security.Authorizations(inMemoryAuthorizations.getAuthorizations()));
-        ColumnVisibility columnVisibility = new ColumnVisibility(visibility.getVisibilityString());
-        try {
-            return visibilityEvaluator.evaluate(columnVisibility);
-        } catch (VisibilityParseException e) {
-            throw new SecureGraphException("could not evaluate visibility " + visibility.getVisibilityString(), e);
-        }
+        return authorizations.canRead(visibility);
     }
 
     public void saveProperties(Element element, Iterable<Property> properties) {
@@ -256,7 +242,7 @@ public class InMemoryGraph extends GraphBase {
     private List<Property> filterProperties(Iterable<Property> properties, Authorizations authorizations) {
         List<Property> filteredProperties = new ArrayList<Property>();
         for (Property p : properties) {
-            if (hasAccess(p.getVisibility(), authorizations)) {
+            if (canRead(p.getVisibility(), authorizations)) {
                 filteredProperties.add(p);
             }
         }
