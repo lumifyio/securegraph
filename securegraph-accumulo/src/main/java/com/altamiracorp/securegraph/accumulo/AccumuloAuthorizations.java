@@ -20,6 +20,7 @@ public class AccumuloAuthorizations implements Authorizations, Serializable {
         this.authorizations = authorizations;
     }
 
+    @Override
     public String[] getAuthorizations() {
         return authorizations;
     }
