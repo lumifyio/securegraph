@@ -816,6 +816,9 @@ public class AccumuloGraph extends GraphBase {
         Mutation m = new Mutation(elementRowKey);
         for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
             MutableProperty property = (MutableProperty) element.getProperty(apv.getKey(), apv.getName());
+            if (property == null) {
+                throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
+            }
             elementMutationBuilder.addPropertyRemoveToMutation(this, m, property);
             property.setVisibility(apv.getVisibility());
             elementMutationBuilder.addPropertyToMutation(this, m, elementRowKey, property);

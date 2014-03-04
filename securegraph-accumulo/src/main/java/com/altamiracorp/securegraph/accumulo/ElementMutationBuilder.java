@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
+
 public abstract class ElementMutationBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElementMutationBuilder.class);
     private static final Text EMPTY_TEXT = new Text("");
@@ -140,6 +142,9 @@ public abstract class ElementMutationBuilder {
     }
 
     public void addPropertyRemoveToMutation(AccumuloGraph graph, Mutation m, Property property) {
+        checkNotNull(graph, "graph cannot be null");
+        checkNotNull(m, "mutation cannot be null");
+        checkNotNull(property, "property cannot be null");
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
         ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);

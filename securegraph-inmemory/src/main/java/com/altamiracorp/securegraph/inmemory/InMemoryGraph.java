@@ -276,6 +276,9 @@ public class InMemoryGraph extends GraphBase {
     void alterElementPropertyVisibilities(InMemoryElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
         for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
             Property property = element.getProperty(apv.getKey(), apv.getName());
+            if (property == null) {
+                throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
+            }
             Object value = property.getValue();
             Map<String, Object> metadata = property.getMetadata();
 

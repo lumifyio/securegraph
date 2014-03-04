@@ -1177,4 +1177,22 @@ public abstract class GraphTestBase {
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(0, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
     }
+
+    @Test
+    public void testChangeVisibilityOnBadPropertyName() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "value1", VISIBILITY_EMPTY)
+                .setProperty("prop2", "value2", VISIBILITY_B)
+                .save();
+
+        try {
+            graph.getVertex("v1", AUTHORIZATIONS_A)
+                    .prepareMutation()
+                    .alterPropertyVisibility("propBad", VISIBILITY_B)
+                    .save();
+            fail("show throw");
+        } catch (SecureGraphException ex) {
+            assertNotNull(ex);
+        }
+    }
 }
