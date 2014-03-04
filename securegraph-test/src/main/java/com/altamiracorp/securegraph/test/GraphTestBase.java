@@ -200,6 +200,26 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testAddVertexWithPropertiesWithTwoDifferentVisibilities() {
+        Vertex v = graph.prepareVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B)
+                .setProperty("prop1", "value1a", VISIBILITY_A)
+                .setProperty("prop1", "value1b", VISIBILITY_B)
+                .save();
+        assertEquals(2, count(v.getProperties("prop1")));
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        assertEquals(2, count(v.getProperties("prop1")));
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v.getProperties("prop1")));
+        assertEquals("value1a", v.getPropertyValue("prop1"));
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_B);
+        assertEquals(1, count(v.getProperties("prop1")));
+        assertEquals("value1b", v.getPropertyValue("prop1"));
+    }
+
+    @Test
     public void testMultivaluedProperties() {
         Vertex v = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
 

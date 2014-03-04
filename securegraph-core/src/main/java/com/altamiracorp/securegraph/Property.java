@@ -51,25 +51,31 @@ public abstract class Property implements Comparable<Property> {
         if (i != 0) {
             return i;
         }
-        return getKey().compareTo(o.getKey());
+        i = getKey().compareTo(o.getKey());
+        if (i != 0) {
+            return i;
+        }
+        return getVisibility().compareTo(o.getVisibility());
     }
 
     @Override
     public int hashCode() {
-        return getName().hashCode() ^ getKey().hashCode();
+        return getName().hashCode() ^ getKey().hashCode() ^ getVisibility().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Property) {
             Property other = (Property) obj;
-            return getName().equals(other.getName()) && getKey().equals(other.getKey());
+            return getName().equals(other.getName())
+                    && getKey().equals(other.getKey())
+                    && getVisibility().equals(other.getVisibility());
         }
         return super.equals(obj);
     }
 
     @Override
     public String toString() {
-        return "[" + getName() + ":" + getKey() + "]";
+        return "[" + getName() + ":" + getKey() + ":" + getVisibility() + "]";
     }
 }

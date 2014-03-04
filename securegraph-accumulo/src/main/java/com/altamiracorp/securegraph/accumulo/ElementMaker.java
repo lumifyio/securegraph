@@ -15,6 +15,7 @@ import java.util.*;
 public abstract class ElementMaker<T> {
     private final Iterator<Map.Entry<Key, Value>> row;
     private final Map<String, String> propertyNames = new HashMap<String, String>();
+    private final Map<String, String> propertyColumnQualifier = new HashMap<String, String>();
     private final Map<String, Object> propertyValues = new HashMap<String, Object>();
     private final Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
     private final Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
@@ -52,7 +53,7 @@ public abstract class ElementMaker<T> {
             }
 
             if (AccumuloElement.CF_PROPERTY_METADATA.compareTo(columnFamily) == 0) {
-                extractPropertyMetadata(columnQualifier, value);
+                extractPropertyMetadata(columnQualifier, columnVisibility, value);
                 continue;
             }
 
@@ -94,18 +95,18 @@ public abstract class ElementMaker<T> {
     protected List<Property> getProperties() {
         List<Property> results = new ArrayList<Property>(propertyValues.size());
         for (Map.Entry<String, Object> propertyValueEntry : propertyValues.entrySet()) {
-            String propertyNameAndId = propertyValueEntry.getKey();
-            String propertyId = getPropertyIdFromColumnQualifier(propertyNameAndId);
-            String propertyName = propertyNames.get(propertyNameAndId);
+            String key = propertyValueEntry.getKey();
+            String propertyId = getPropertyIdFromColumnQualifier(propertyColumnQualifier.get(key));
+            String propertyName = propertyNames.get(key);
             Object propertyValue = propertyValueEntry.getValue();
-            Visibility visibility = propertyVisibilities.get(propertyNameAndId);
-            Map<String, Object> metadata = propertyMetadata.get(propertyNameAndId);
+            Visibility visibility = propertyVisibilities.get(key);
+            Map<String, Object> metadata = propertyMetadata.get(key);
             results.add(new MutableProperty(propertyId, propertyName, propertyValue, metadata, visibility));
         }
         return results;
     }
 
-    private void extractPropertyMetadata(Text columnQualifier, Value value) {
+    private void extractPropertyMetadata(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
         Object o;
         if (value.getSize() == 0) {
             o = new HashMap<String, Object>();
@@ -116,7 +117,8 @@ public abstract class ElementMaker<T> {
             throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found null.");
         } else if (o instanceof Map) {
             Map v = (Map) o;
-            propertyMetadata.put(columnQualifier.toString(), v);
+            String key = toKey(columnQualifier, columnVisibility);
+            propertyMetadata.put(key, v);
         } else {
             throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found " + o.getClass().getName() + ".");
         }
@@ -125,9 +127,15 @@ public abstract class ElementMaker<T> {
     private void extractPropertyData(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
         Object v = valueToObject(value);
         String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
-        propertyNames.put(columnQualifier.toString(), propertyName);
-        propertyValues.put(columnQualifier.toString(), v);
-        propertyVisibilities.put(columnQualifier.toString(), accumuloVisibilityToVisibility(columnVisibility));
+        String key = toKey(columnQualifier, columnVisibility);
+        propertyColumnQualifier.put(key, columnQualifier.toString());
+        propertyNames.put(key, propertyName);
+        propertyValues.put(key, v);
+        propertyVisibilities.put(key, accumuloVisibilityToVisibility(columnVisibility));
+    }
+
+    private String toKey(Text columnQualifier, ColumnVisibility columnVisibility) {
+        return columnQualifier.toString() + ":" + columnVisibility.toString();
     }
 
     private String getPropertyNameFromColumnQualifier(String columnQualifier) {

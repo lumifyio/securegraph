@@ -1,6 +1,6 @@
 package com.altamiracorp.securegraph;
 
-public class Visibility {
+public class Visibility implements Comparable<Visibility> {
     private final String visibilityString;
 
     public Visibility(String visibilityString) {
@@ -13,12 +13,12 @@ public class Visibility {
 
     @Override
     public String toString() {
-        return visibilityString;
+        return getVisibilityString();
     }
 
     @Override
     public int hashCode() {
-        return visibilityString.hashCode();
+        return getVisibilityString().hashCode();
     }
 
     @Override
@@ -28,5 +28,10 @@ public class Visibility {
             return getVisibilityString().equals(objVisibility.getVisibilityString());
         }
         return super.equals(obj);
+    }
+
+    @Override
+    public int compareTo(Visibility o) {
+        return getVisibilityString().compareTo(o.getVisibilityString());
     }
 }
