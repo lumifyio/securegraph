@@ -42,7 +42,12 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     @Override
     public ElementMutation<T> alterPropertyVisibility(String name, Visibility visibility) {
-        this.alterPropertyVisibilities.add(new AlterPropertyVisibility(DEFAULT_ID, name, visibility));
+        return alterPropertyVisibility(DEFAULT_ID, name, visibility);
+    }
+
+    @Override
+    public ElementMutation<T> alterPropertyVisibility(String key, String name, Visibility visibility) {
+        this.alterPropertyVisibilities.add(new AlterPropertyVisibility(key, name, visibility));
         return this;
     }
 
