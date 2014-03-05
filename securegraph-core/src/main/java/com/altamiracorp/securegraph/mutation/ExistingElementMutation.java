@@ -1,4 +1,7 @@
-package com.altamiracorp.securegraph;
+package com.altamiracorp.securegraph.mutation;
+
+import com.altamiracorp.securegraph.Element;
+import com.altamiracorp.securegraph.Visibility;
 
 public interface ExistingElementMutation<T extends Element> extends ElementMutation<T> {
     /**
@@ -24,6 +27,25 @@ public interface ExistingElementMutation<T extends Element> extends ElementMutat
      * @param visibility The new visibility.
      */
     ElementMutation<T> alterElementVisibility(Visibility visibility);
+
+    /**
+     * Alters a property metadata value on a property.
+     *
+     * @param propertyKey  The key of a multivalued property.
+     * @param propertyName The name of the property.
+     * @param metadataName The name of the metadata.
+     * @param newValue     The new value.
+     */
+    ElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue);
+
+    /**
+     * Alters a property metadata value on a property.
+     *
+     * @param propertyName The name of the property.
+     * @param metadataName The name of the metadata.
+     * @param newValue     The new value.
+     */
+    ElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue);
 
     /**
      * Gets the element this mutation is affecting.

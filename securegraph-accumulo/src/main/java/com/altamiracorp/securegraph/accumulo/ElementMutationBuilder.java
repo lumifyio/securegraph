@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static com.altamiracorp.securegraph.util.Preconditions.checkNotNull;
 
@@ -112,8 +113,15 @@ public abstract class ElementMutationBuilder {
         }
         Value value = new Value(valueSerializer.objectToValue(propertyValue));
         m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);
-        if (property.getMetadata() != null && property.getMetadata().size() > 0) {
-            Value metadataValue = new Value(valueSerializer.objectToValue(property.getMetadata()));
+        addPropertyMetadataToMutation(graph, m, property);
+    }
+
+    public void addPropertyMetadataToMutation(AccumuloGraph graph, Mutation m, Property property) {
+        Map<String, Object> metadata = property.getMetadata();
+        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
+        ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
+        if (metadata != null && metadata.size() > 0) {
+            Value metadataValue = new Value(valueSerializer.objectToValue(metadata));
             m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
         } else {
             m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, EMPTY_VALUE);

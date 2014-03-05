@@ -4,6 +4,8 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import com.altamiracorp.securegraph.accumulo.serializer.ValueSerializer;
 import com.altamiracorp.securegraph.id.IdGenerator;
+import com.altamiracorp.securegraph.mutation.AlterPropertyMetadata;
+import com.altamiracorp.securegraph.mutation.AlterPropertyVisibility;
 import com.altamiracorp.securegraph.property.MutableProperty;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.search.SearchIndex;
@@ -794,7 +796,7 @@ public class AccumuloGraph extends GraphBase {
         return connector;
     }
 
-    public void alterElementVisibility(AccumuloElement element, Visibility newVisibility) {
+    void alterElementVisibility(AccumuloElement element, Visibility newVisibility) {
         BatchWriter writer = getWriterFromElementType(element);
         String rowPrefix = getRowPrefixForElement(element);
         String elementRowKey = rowPrefix + element.getId();
@@ -804,7 +806,7 @@ public class AccumuloGraph extends GraphBase {
         addMutations(writer, m);
     }
 
-    public void alterElementPropertyVisibilities(AccumuloElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
+    void alterElementPropertyVisibilities(AccumuloElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
         if (alterPropertyVisibilities.size() == 0) {
             return;
         }
@@ -822,6 +824,25 @@ public class AccumuloGraph extends GraphBase {
             elementMutationBuilder.addPropertyRemoveToMutation(this, m, property);
             property.setVisibility(apv.getVisibility());
             elementMutationBuilder.addPropertyToMutation(this, m, elementRowKey, property);
+        }
+        addMutations(writer, m);
+    }
+
+    void alterPropertyMetadatas(AccumuloElement element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+        List<Property> propertiesToSave = new ArrayList<Property>();
+        for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
+            Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName());
+            property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
+            propertiesToSave.add(property);
+        }
+
+        BatchWriter writer = getWriterFromElementType(element);
+        String rowPrefix = getRowPrefixForElement(element);
+        String elementRowKey = rowPrefix + element.getId();
+
+        Mutation m = new Mutation(elementRowKey);
+        for (Property property : propertiesToSave) {
+            elementMutationBuilder.addPropertyMetadataToMutation(this, m, property);
         }
         addMutations(writer, m);
     }

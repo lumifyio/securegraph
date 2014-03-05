@@ -3,6 +3,8 @@ package com.altamiracorp.securegraph.inmemory;
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.id.IdGenerator;
 import com.altamiracorp.securegraph.id.UUIDIdGenerator;
+import com.altamiracorp.securegraph.mutation.AlterPropertyMetadata;
+import com.altamiracorp.securegraph.mutation.AlterPropertyVisibility;
 import com.altamiracorp.securegraph.search.DefaultSearchIndex;
 import com.altamiracorp.securegraph.search.SearchIndex;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
@@ -284,6 +286,25 @@ public class InMemoryGraph extends GraphBase {
 
             element.removeProperty(apv.getKey(), apv.getName());
             element.addPropertyValue(apv.getKey(), apv.getName(), value, metadata, apv.getVisibility());
+        }
+    }
+
+    public void alterEdgePropertyMetadata(Object edgeId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+        alterElementPropertyMetadata(this.edges.get(edgeId), alterPropertyMetadatas);
+    }
+
+    public void alterVertexPropertyMetadata(Object vertexId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+        alterElementPropertyMetadata(this.vertices.get(vertexId), alterPropertyMetadatas);
+    }
+
+    private void alterElementPropertyMetadata(Element element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+        for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
+            Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName());
+            if (property == null) {
+                throw new SecureGraphException("Could not find property " + apm.getPropertyKey() + ":" + apm.getPropertyName());
+            }
+
+            property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
         }
     }
 }

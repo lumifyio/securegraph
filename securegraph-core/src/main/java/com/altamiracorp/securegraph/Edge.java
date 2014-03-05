@@ -1,5 +1,7 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
+
 public interface Edge extends Element {
     /**
      * The edge label.

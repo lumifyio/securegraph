@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
 import com.altamiracorp.securegraph.query.VertexQuery;
 
 public interface Vertex extends Element {

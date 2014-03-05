@@ -2,6 +2,7 @@ package com.altamiracorp.securegraph.test;
 
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.mutation.ElementMutation;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.query.Compare;
@@ -1241,5 +1242,24 @@ public abstract class GraphTestBase {
         assertEquals(0, count(graph.getVertex("v1", AUTHORIZATIONS_A).getProperties()));
 
         assertEquals(2, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties()));
+    }
+
+    @Test
+    public void testChangePropertyMetadata() {
+        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
+        prop1Metadata.put("prop1_key1", "valueOld");
+
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
+                .save();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v1.prepareMutation()
+                .alterPropertyMetadata("prop1", "prop1_key1", "valueNew")
+                .save();
+        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
     }
 }

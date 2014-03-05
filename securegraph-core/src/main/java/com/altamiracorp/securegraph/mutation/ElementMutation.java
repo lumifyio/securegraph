@@ -1,4 +1,8 @@
-package com.altamiracorp.securegraph;
+package com.altamiracorp.securegraph.mutation;
+
+import com.altamiracorp.securegraph.Element;
+import com.altamiracorp.securegraph.Property;
+import com.altamiracorp.securegraph.Visibility;
 
 import java.util.Map;
 

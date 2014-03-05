@@ -1,5 +1,8 @@
-package com.altamiracorp.securegraph;
+package com.altamiracorp.securegraph.mutation;
 
+import com.altamiracorp.securegraph.Element;
+import com.altamiracorp.securegraph.Property;
+import com.altamiracorp.securegraph.Visibility;
 import com.altamiracorp.securegraph.property.MutableProperty;
 
 import java.util.ArrayList;
@@ -11,6 +14,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     private final List<Property> properties = new ArrayList<Property>();
     private Visibility newElementVisibility;
     private final List<AlterPropertyVisibility> alterPropertyVisibilities = new ArrayList<AlterPropertyVisibility>();
+    private final List<AlterPropertyMetadata> alterPropertyMetadatas = new ArrayList<AlterPropertyMetadata>();
     private final T element;
 
     public ExistingElementMutationImpl(T element) {
@@ -58,6 +62,17 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     @Override
+    public ElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue) {
+        return alterPropertyMetadata(DEFAULT_ID, propertyName, metadataName, newValue);
+    }
+
+    @Override
+    public ElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue) {
+        this.alterPropertyMetadatas.add(new AlterPropertyMetadata(propertyKey, propertyName, metadataName, newValue));
+        return this;
+    }
+
+    @Override
     public T getElement() {
         return element;
     }
@@ -68,5 +83,9 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     public List<AlterPropertyVisibility> getAlterPropertyVisibilities() {
         return alterPropertyVisibilities;
+    }
+
+    public List<AlterPropertyMetadata> getAlterPropertyMetadatas() {
+        return alterPropertyMetadatas;
     }
 }

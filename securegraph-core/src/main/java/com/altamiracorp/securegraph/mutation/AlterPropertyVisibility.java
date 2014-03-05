@@ -1,4 +1,6 @@
-package com.altamiracorp.securegraph;
+package com.altamiracorp.securegraph.mutation;
+
+import com.altamiracorp.securegraph.Visibility;
 
 public class AlterPropertyVisibility {
     private final String key;

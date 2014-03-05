@@ -2,6 +2,8 @@ package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.inmemory.util.EdgeToEdgeIdIterable;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;

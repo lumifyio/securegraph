@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.mutation.ElementMutation;
 import com.altamiracorp.securegraph.property.MutableProperty;
 
 import java.util.ArrayList;

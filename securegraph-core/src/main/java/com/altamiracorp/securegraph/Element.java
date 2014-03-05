@@ -1,5 +1,7 @@
 package com.altamiracorp.securegraph;
 
+import com.altamiracorp.securegraph.mutation.ElementMutation;
+
 import java.util.Map;
 
 /**

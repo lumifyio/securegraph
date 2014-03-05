@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 import com.altamiracorp.securegraph.property.MutableProperty;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.util.StreamUtils;
@@ -69,11 +70,13 @@ public abstract class InMemoryElement extends ElementBase {
                 getGraph().alterEdgeVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
             getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities());
+            getGraph().alterEdgePropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
         } else if (mutation.getElement() instanceof Vertex) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterVertexVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
             getGraph().alterVertexPropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities());
+            getGraph().alterVertexPropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
         } else {
             throw new IllegalStateException("Unexpected element type: " + mutation.getElement());
         }

@@ -1,6 +1,8 @@
 package com.altamiracorp.securegraph.inmemory;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 
 public class InMemoryEdge extends InMemoryElement implements Edge {
     private final Object outVertexId;

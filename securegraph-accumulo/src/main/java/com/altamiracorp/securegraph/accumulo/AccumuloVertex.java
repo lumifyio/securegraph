@@ -1,6 +1,8 @@
 package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.JoinIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;

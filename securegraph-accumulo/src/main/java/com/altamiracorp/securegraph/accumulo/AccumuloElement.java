@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.accumulo;
 
 import com.altamiracorp.securegraph.*;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 import org.apache.hadoop.io.Text;
 
 import java.io.Serializable;
@@ -44,5 +45,6 @@ public abstract class AccumuloElement extends ElementBase implements Serializabl
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());
         }
         getGraph().alterElementPropertyVisibilities((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyVisibilities());
+        getGraph().alterPropertyMetadatas((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyMetadatas());
     }
 }
