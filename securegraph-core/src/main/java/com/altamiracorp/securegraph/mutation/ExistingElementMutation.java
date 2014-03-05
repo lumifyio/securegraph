@@ -11,7 +11,7 @@ public interface ExistingElementMutation<T extends Element> extends ElementMutat
      * @param name       The name of the property to alter the visibility of.
      * @param visibility The new visibility.
      */
-    ElementMutation<T> alterPropertyVisibility(String key, String name, Visibility visibility);
+    ExistingElementMutation<T> alterPropertyVisibility(String key, String name, Visibility visibility);
 
     /**
      * Alters the visibility of a single valued property.
@@ -19,14 +19,14 @@ public interface ExistingElementMutation<T extends Element> extends ElementMutat
      * @param name       The name of the property to alter the visibility of.
      * @param visibility The new visibility.
      */
-    ElementMutation<T> alterPropertyVisibility(String name, Visibility visibility);
+    ExistingElementMutation<T> alterPropertyVisibility(String name, Visibility visibility);
 
     /**
      * Alters the visibility of the element (vertex or edge).
      *
      * @param visibility The new visibility.
      */
-    ElementMutation<T> alterElementVisibility(Visibility visibility);
+    ExistingElementMutation<T> alterElementVisibility(Visibility visibility);
 
     /**
      * Alters a property metadata value on a property.
@@ -36,7 +36,7 @@ public interface ExistingElementMutation<T extends Element> extends ElementMutat
      * @param metadataName The name of the metadata.
      * @param newValue     The new value.
      */
-    ElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue);
+    ExistingElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue);
 
     /**
      * Alters a property metadata value on a property.
@@ -45,7 +45,7 @@ public interface ExistingElementMutation<T extends Element> extends ElementMutat
      * @param metadataName The name of the metadata.
      * @param newValue     The new value.
      */
-    ElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue);
+    ExistingElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue);
 
     /**
      * Gets the element this mutation is affecting.

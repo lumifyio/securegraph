@@ -45,29 +45,29 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     @Override
-    public ElementMutation<T> alterPropertyVisibility(String name, Visibility visibility) {
+    public ExistingElementMutation<T> alterPropertyVisibility(String name, Visibility visibility) {
         return alterPropertyVisibility(DEFAULT_ID, name, visibility);
     }
 
     @Override
-    public ElementMutation<T> alterPropertyVisibility(String key, String name, Visibility visibility) {
+    public ExistingElementMutation<T> alterPropertyVisibility(String key, String name, Visibility visibility) {
         this.alterPropertyVisibilities.add(new AlterPropertyVisibility(key, name, visibility));
         return this;
     }
 
     @Override
-    public ElementMutation<T> alterElementVisibility(Visibility visibility) {
+    public ExistingElementMutation<T> alterElementVisibility(Visibility visibility) {
         this.newElementVisibility = visibility;
         return this;
     }
 
     @Override
-    public ElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue) {
+    public ExistingElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue) {
         return alterPropertyMetadata(DEFAULT_ID, propertyName, metadataName, newValue);
     }
 
     @Override
-    public ElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue) {
+    public ExistingElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue) {
         this.alterPropertyMetadatas.add(new AlterPropertyMetadata(propertyKey, propertyName, metadataName, newValue));
         return this;
     }
