@@ -829,6 +829,10 @@ public class AccumuloGraph extends GraphBase {
     }
 
     void alterPropertyMetadatas(AccumuloElement element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+        if (alterPropertyMetadatas.size() == 0) {
+            return;
+        }
+
         List<Property> propertiesToSave = new ArrayList<Property>();
         for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
             Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName());
