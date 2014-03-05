@@ -153,7 +153,7 @@ public class AccumuloGraph extends GraphBase {
         boolean hasProperty = false;
         for (Property property : properties) {
             hasProperty = true;
-            elementMutationBuilder.addPropertyToMutation(this, m, elementRowKey, property);
+            elementMutationBuilder.addPropertyToMutation(m, elementRowKey, property);
         }
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
@@ -165,7 +165,7 @@ public class AccumuloGraph extends GraphBase {
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());
-        elementMutationBuilder.addPropertyRemoveToMutation(this, m, property);
+        elementMutationBuilder.addPropertyRemoveToMutation(m, property);
         addMutations(getWriterFromElementType(element), m);
 
         getSearchIndex().addElement(this, element);
@@ -596,7 +596,7 @@ public class AccumuloGraph extends GraphBase {
         if (authorizations == null) {
             throw new NullPointerException("authorizations is required");
         }
-        return new org.apache.accumulo.core.security.Authorizations(((AccumuloAuthorizations) authorizations).getAuthorizations());
+        return new org.apache.accumulo.core.security.Authorizations(authorizations.getAuthorizations());
     }
 
     @Override
@@ -802,7 +802,7 @@ public class AccumuloGraph extends GraphBase {
         String elementRowKey = rowPrefix + element.getId();
 
         Mutation m = new Mutation(elementRowKey);
-        elementMutationBuilder.alterElementVisibility(this, m, element, newVisibility);
+        elementMutationBuilder.alterElementVisibility(m, element, newVisibility);
         addMutations(writer, m);
     }
 
@@ -821,9 +821,9 @@ public class AccumuloGraph extends GraphBase {
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
             }
-            elementMutationBuilder.addPropertyRemoveToMutation(this, m, property);
+            elementMutationBuilder.addPropertyRemoveToMutation(m, property);
             property.setVisibility(apv.getVisibility());
-            elementMutationBuilder.addPropertyToMutation(this, m, elementRowKey, property);
+            elementMutationBuilder.addPropertyToMutation(m, elementRowKey, property);
         }
         addMutations(writer, m);
     }
@@ -846,7 +846,7 @@ public class AccumuloGraph extends GraphBase {
 
         Mutation m = new Mutation(elementRowKey);
         for (Property property : propertiesToSave) {
-            elementMutationBuilder.addPropertyMetadataToMutation(this, m, property);
+            elementMutationBuilder.addPropertyMetadataToMutation(m, property);
         }
         addMutations(writer, m);
     }

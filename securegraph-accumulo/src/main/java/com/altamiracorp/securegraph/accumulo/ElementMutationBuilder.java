@@ -46,15 +46,15 @@ public abstract class ElementMutationBuilder {
     private Mutation createMutationForVertex(AccumuloVertex vertex) {
         String vertexRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId();
         Mutation m = new Mutation(vertexRowKey);
-        m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, vertex.getGraph().visibilityToAccumuloVisibility(vertex.getVisibility()), EMPTY_VALUE);
+        m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, visibilityToAccumuloVisibility(vertex.getVisibility()), EMPTY_VALUE);
         for (Property property : vertex.getProperties()) {
-            addPropertyToMutation(vertex.getGraph(), m, vertexRowKey, property);
+            addPropertyToMutation(m, vertexRowKey, property);
         }
         return m;
     }
 
     public void saveEdge(AccumuloEdge edge) {
-        ColumnVisibility edgeColumnVisibility = edge.getGraph().visibilityToAccumuloVisibility(edge.getVisibility());
+        ColumnVisibility edgeColumnVisibility = visibilityToAccumuloVisibility(edge.getVisibility());
         Mutation m = createMutationForEdge(edge, edgeColumnVisibility);
         saveEdgeMutation(m);
 
@@ -71,6 +71,10 @@ public abstract class ElementMutationBuilder {
         saveVertexMutation(addEdgeToInMutation);
     }
 
+    private ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
+        return new ColumnVisibility(visibility.getVisibilityString());
+    }
+
     protected abstract void saveEdgeMutation(Mutation m);
 
     private Mutation createMutationForEdge(AccumuloEdge edge, ColumnVisibility edgeColumnVisibility) {
@@ -80,14 +84,14 @@ public abstract class ElementMutationBuilder {
         addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(edge.getVertexId(Direction.OUT).toString()), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
         addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(edge.getVertexId(Direction.IN).toString()), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
         for (Property property : edge.getProperties()) {
-            addPropertyToMutation(edge.getGraph(), addEdgeMutation, edgeRowKey, property);
+            addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
         }
         return addEdgeMutation;
     }
 
-    public void alterElementVisibility(AccumuloGraph graph, Mutation m, AccumuloElement element, Visibility newVisibility) {
-        ColumnVisibility currentColumnVisibility = graph.visibilityToAccumuloVisibility(element.getVisibility());
-        ColumnVisibility newColumnVisibility = graph.visibilityToAccumuloVisibility(newVisibility);
+    public void alterElementVisibility(Mutation m, AccumuloElement element, Visibility newVisibility) {
+        ColumnVisibility currentColumnVisibility = visibilityToAccumuloVisibility(element.getVisibility());
+        ColumnVisibility newColumnVisibility = visibilityToAccumuloVisibility(newVisibility);
         if (element instanceof AccumuloEdge) {
             AccumuloEdge edge = (AccumuloEdge) element;
             m.putDelete(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), currentColumnVisibility);
@@ -100,26 +104,25 @@ public abstract class ElementMutationBuilder {
         }
     }
 
-    public void addPropertyToMutation(AccumuloGraph graph, Mutation m, String rowKey, Property property) {
+    public void addPropertyToMutation(Mutation m, String rowKey, Property property) {
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
-        ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
-            StreamingPropertyValueRef streamingPropertyValueRef = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue);
-            propertyValue = streamingPropertyValueRef;
+            propertyValue = saveStreamingPropertyValue(rowKey, property, (StreamingPropertyValue) propertyValue);
         }
         if (propertyValue instanceof DateOnly) {
             propertyValue = ((DateOnly) propertyValue).getDate();
         }
         Value value = new Value(valueSerializer.objectToValue(propertyValue));
         m.put(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility, value);
-        addPropertyMetadataToMutation(graph, m, property);
+        addPropertyMetadataToMutation(m, property);
     }
 
-    public void addPropertyMetadataToMutation(AccumuloGraph graph, Mutation m, Property property) {
+    public void addPropertyMetadataToMutation(Mutation m, Property property) {
         Map<String, Object> metadata = property.getMetadata();
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
-        ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         if (metadata != null && metadata.size() > 0) {
             Value metadataValue = new Value(valueSerializer.objectToValue(metadata));
             m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
@@ -149,12 +152,11 @@ public abstract class ElementMutationBuilder {
         }
     }
 
-    public void addPropertyRemoveToMutation(AccumuloGraph graph, Mutation m, Property property) {
-        checkNotNull(graph, "graph cannot be null");
+    public void addPropertyRemoveToMutation(Mutation m, Property property) {
         checkNotNull(m, "mutation cannot be null");
         checkNotNull(property, "property cannot be null");
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
-        ColumnVisibility columnVisibility = graph.visibilityToAccumuloVisibility(property.getVisibility());
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
     }
