@@ -7,12 +7,14 @@ import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
 import com.altamiracorp.securegraph.util.MapUtils;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
 
+@Parameters(separators = "=")
 public abstract class GraphToolBase {
     @Parameter(names = {"-c", "--config"}, description = "Configuration file name")
     private String configFileName = null;
