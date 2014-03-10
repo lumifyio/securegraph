@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-public abstract class ElementMapper<KEYIN, VALUEIN> extends Mapper<KEYIN, VALUEIN, Text, Mutation> {
+public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
     public static final String GRAPH_CONFIG_PREFIX = "graphConfigPrefix";
     private ElementMutationBuilder elementMutationBuilder;
 
@@ -65,17 +65,11 @@ public abstract class ElementMapper<KEYIN, VALUEIN> extends Mapper<KEYIN, VALUEI
         };
     }
 
-    protected void saveDataMutation(Context context, Text dataTableName, Mutation m) throws IOException, InterruptedException {
-        context.write(dataTableName, m);
-    }
+    protected abstract void saveDataMutation(Context context, Text dataTableName, Mutation m) throws IOException, InterruptedException;
 
-    protected void saveEdgeMutation(Context context, Text edgesTableName, Mutation m) throws IOException, InterruptedException {
-        context.write(edgesTableName, m);
-    }
+    protected abstract void saveEdgeMutation(Context context, Text edgesTableName, Mutation m) throws IOException, InterruptedException;
 
-    protected void saveVertexMutation(Context context, Text verticesTableName, Mutation m) throws IOException, InterruptedException {
-        context.write(verticesTableName, m);
-    }
+    protected abstract void saveVertexMutation(Context context, Text verticesTableName, Mutation m) throws IOException, InterruptedException;
 
     public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
         if (vertexId == null) {
