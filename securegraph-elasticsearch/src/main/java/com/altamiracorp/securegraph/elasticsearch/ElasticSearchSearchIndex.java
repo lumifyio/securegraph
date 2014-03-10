@@ -198,7 +198,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         client.admin().indices().prepareFlush(indexName).execute().actionGet();
     }
 
-    private void addPropertiesToIndex(Iterable<Property> properties) {
+    public void addPropertiesToIndex(Iterable<Property> properties) {
         try {
             for (Property property : properties) {
                 addPropertyToIndex(property);
@@ -208,7 +208,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         }
     }
 
-    private void addPropertyToIndex(Property property) throws IOException {
+    public void addPropertyToIndex(Property property) throws IOException {
         String propertyName = property.getName();
 
         if (existingProperties.get(propertyName) != null) {
