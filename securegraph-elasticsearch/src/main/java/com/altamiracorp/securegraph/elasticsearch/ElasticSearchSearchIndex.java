@@ -112,55 +112,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         addPropertiesToIndex(element.getProperties());
 
         try {
-            XContentBuilder jsonBuilder = XContentFactory.jsonBuilder()
-                    .startObject();
-
-            if (element instanceof Vertex) {
-                jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_VERTEX);
-            } else if (element instanceof Edge) {
-                jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_EDGE);
-            } else {
-                throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
-            }
-
-            for (Property property : element.getProperties()) {
-                Object propertyValue = property.getValue();
-                if (propertyValue != null && shouldIgnoreType(propertyValue.getClass())) {
-                    continue;
-                } else if (propertyValue instanceof GeoPoint) {
-                    GeoPoint geoPoint = (GeoPoint) propertyValue;
-                    Map<String, Object> propertyValueMap = new HashMap<String, Object>();
-                    propertyValueMap.put("lat", geoPoint.getLatitude());
-                    propertyValueMap.put("lon", geoPoint.getLongitude());
-                    propertyValue = propertyValueMap;
-                } else if (propertyValue instanceof StreamingPropertyValue) {
-                    StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
-                    if (!streamingPropertyValue.isSearchIndex()) {
-                        continue;
-                    }
-                    Class valueType = streamingPropertyValue.getValueType();
-                    if (valueType == String.class) {
-                        propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream());
-                    } else {
-                        throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
-                    }
-                } else if (propertyValue instanceof Text) {
-                    Text textPropertyValue = (Text) propertyValue;
-                    if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
-                        jsonBuilder.field(property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, textPropertyValue.getText());
-                    }
-                    if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
-                        jsonBuilder.field(property.getName(), textPropertyValue.getText());
-                    }
-                    continue;
-                }
-
-                if (propertyValue instanceof DateOnly) {
-                    propertyValue = ((DateOnly) propertyValue).getDate();
-                }
-
-                jsonBuilder.field(property.getName(), propertyValue);
-            }
+            XContentBuilder jsonBuilder = buildJsonContentFromElement(element);
 
             IndexResponse response = client
                     .prepareIndex(indexName, ELEMENT_TYPE, element.getId().toString())
@@ -177,6 +129,68 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } catch (Exception e) {
             throw new SecureGraphException("Could not add document", e);
         }
+    }
+
+    public String createJsonForElement(Element element) {
+        try {
+            return buildJsonContentFromElement(element).string();
+        } catch (Exception e) {
+            throw new SecureGraphException("Could not create JSON for element", e);
+        }
+    }
+
+    private XContentBuilder buildJsonContentFromElement(Element element) throws IOException {
+        XContentBuilder jsonBuilder;
+        jsonBuilder = XContentFactory.jsonBuilder()
+                .startObject();
+
+        if (element instanceof Vertex) {
+            jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_VERTEX);
+        } else if (element instanceof Edge) {
+            jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_EDGE);
+        } else {
+            throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
+        }
+
+        for (Property property : element.getProperties()) {
+            Object propertyValue = property.getValue();
+            if (propertyValue != null && shouldIgnoreType(propertyValue.getClass())) {
+                continue;
+            } else if (propertyValue instanceof GeoPoint) {
+                GeoPoint geoPoint = (GeoPoint) propertyValue;
+                Map<String, Object> propertyValueMap = new HashMap<String, Object>();
+                propertyValueMap.put("lat", geoPoint.getLatitude());
+                propertyValueMap.put("lon", geoPoint.getLongitude());
+                propertyValue = propertyValueMap;
+            } else if (propertyValue instanceof StreamingPropertyValue) {
+                StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
+                if (!streamingPropertyValue.isSearchIndex()) {
+                    continue;
+                }
+                Class valueType = streamingPropertyValue.getValueType();
+                if (valueType == String.class) {
+                    propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream());
+                } else {
+                    throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
+                }
+            } else if (propertyValue instanceof Text) {
+                Text textPropertyValue = (Text) propertyValue;
+                if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
+                    jsonBuilder.field(property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, textPropertyValue.getText());
+                }
+                if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
+                    jsonBuilder.field(property.getName(), textPropertyValue.getText());
+                }
+                continue;
+            }
+
+            if (propertyValue instanceof DateOnly) {
+                propertyValue = ((DateOnly) propertyValue).getDate();
+            }
+
+            jsonBuilder.field(property.getName(), propertyValue);
+        }
+        return jsonBuilder;
     }
 
     @Override
