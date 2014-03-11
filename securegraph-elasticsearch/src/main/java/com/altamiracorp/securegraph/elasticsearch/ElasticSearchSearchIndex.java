@@ -348,4 +348,12 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     public VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations) {
         return new DefaultVertexQuery(graph, vertex, queryString, authorizations);
     }
+
+    public TransportClient getClient() {
+        return client;
+    }
+
+    public String getIndexName() {
+        return indexName;
+    }
 }
