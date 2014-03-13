@@ -1,10 +1,7 @@
 package com.altamiracorp.securegraph.elasticsearch;
 
 import com.altamiracorp.securegraph.*;
-import com.altamiracorp.securegraph.query.Compare;
-import com.altamiracorp.securegraph.query.GeoCompare;
-import com.altamiracorp.securegraph.query.GraphQueryBase;
-import com.altamiracorp.securegraph.query.TextPredicate;
+import com.altamiracorp.securegraph.query.*;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -51,7 +48,11 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + ((endTime - startTime) / 1000 / 1000) + "ms)");
         }
-        return getGraph().getVertices(ids, getParameters().getAuthorizations());
+
+        // since ES doesn't support security we will rely on the graph to provide vertex filtering
+        // and rely on the DefaultGraphQueryIterable to provide property filtering
+        Iterable<Vertex> vertices = getGraph().getVertices(ids, getParameters().getAuthorizations());
+        return new DefaultGraphQueryIterable<Vertex>(getParameters(), vertices);
     }
 
     @Override
@@ -69,7 +70,11 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + ((endTime - startTime) / 1000 / 1000) + "ms)");
         }
-        return getGraph().getEdges(ids, getParameters().getAuthorizations());
+
+        // since ES doesn't support security we will rely on the graph to provide edge filtering
+        // and rely on the DefaultGraphQueryIterable to provide property filtering
+        Iterable<Edge> edges = getGraph().getEdges(ids, getParameters().getAuthorizations());
+        return new DefaultGraphQueryIterable<Edge>(getParameters(), edges);
     }
 
     private SearchResponse getSearchResponse(String elementType) {

@@ -659,6 +659,40 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGraphQueryVertexHasWithSecurity() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("age", 25, VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("age", 25, VISIBILITY_B)
+                .save();
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryEdgeHasWithSecurity() {
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A).save();
+        Vertex v2 = graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A).save();
+        Vertex v3 = graph.prepareVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A).save();
+
+        graph.prepareEdge("e1", v1, v2, "edge", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("age", 25, VISIBILITY_A)
+                .save();
+        graph.prepareEdge("e2", v1, v3, "edge", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("age", 25, VISIBILITY_B)
+                .save();
+
+        Iterable<Edge> edges = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .edges();
+        assertEquals(1, count(edges));
+    }
+
+    @Test
     public void testGraphQueryHasWithSpaces() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("name", "Joe Ferner", VISIBILITY_A)
@@ -1185,7 +1219,6 @@ public abstract class GraphTestBase {
                 .save();
 
         // test that we can see the edge with B and not A
-        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
         v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
         assertEquals(1, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_B)));
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);

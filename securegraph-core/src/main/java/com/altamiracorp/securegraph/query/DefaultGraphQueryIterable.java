@@ -5,7 +5,7 @@ import com.altamiracorp.securegraph.Property;
 
 import java.util.Iterator;
 
-class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {
+public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {
     private final QueryBase.Parameters parameters;
     private final Iterable<T> iterable;
 
