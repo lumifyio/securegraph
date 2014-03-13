@@ -1163,15 +1163,7 @@ public abstract class GraphTestBase {
 
     @Test
     public void testChangeVisibilityEdge() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("prop1_key1", "value1");
-
-        Map<String, Object> prop2Metadata = new HashMap<String, Object>();
-        prop2Metadata.put("prop2_key1", "value1");
-
-        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
-                .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
-                .setProperty("prop2", "value2", prop2Metadata, VISIBILITY_EMPTY)
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_A)
                 .save();
 
         Vertex v2 = graph.prepareVertex("v2", VISIBILITY_EMPTY, AUTHORIZATIONS_A)
@@ -1193,7 +1185,8 @@ public abstract class GraphTestBase {
                 .save();
 
         // test that we can see the edge with B and not A
-        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
         assertEquals(1, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_B)));
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(0, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_A)));

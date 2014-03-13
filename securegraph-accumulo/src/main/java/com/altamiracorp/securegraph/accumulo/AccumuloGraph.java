@@ -797,13 +797,28 @@ public class AccumuloGraph extends GraphBase {
     }
 
     void alterElementVisibility(AccumuloElement element, Visibility newVisibility) {
-        BatchWriter writer = getWriterFromElementType(element);
+        BatchWriter elementWriter = getWriterFromElementType(element);
         String rowPrefix = getRowPrefixForElement(element);
         String elementRowKey = rowPrefix + element.getId();
 
+        if (element instanceof Edge) {
+            BatchWriter vertexWriter = getVerticesWriter();
+            Edge edge = (Edge) element;
+
+            String voutRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.OUT);
+            Mutation mvout = new Mutation(voutRowKey);
+            elementMutationBuilder.alterEdgeVertexOutVertex(mvout, edge, newVisibility);
+
+            String vinRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.IN);
+            Mutation mvin = new Mutation(vinRowKey);
+            elementMutationBuilder.alterEdgeVertexInVertex(mvin, edge, newVisibility);
+
+            addMutations(vertexWriter, mvin, mvout);
+        }
+
         Mutation m = new Mutation(elementRowKey);
         elementMutationBuilder.alterElementVisibility(m, element, newVisibility);
-        addMutations(writer, m);
+        addMutations(elementWriter, m);
     }
 
     void alterElementPropertyVisibilities(AccumuloElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {

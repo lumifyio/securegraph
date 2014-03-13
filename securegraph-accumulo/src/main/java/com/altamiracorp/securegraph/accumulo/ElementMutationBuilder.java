@@ -110,6 +110,22 @@ public abstract class ElementMutationBuilder {
         }
     }
 
+    public void alterEdgeVertexOutVertex(Mutation mvout, Edge edge, Visibility newVisibility) {
+        ColumnVisibility currentColumnVisibility = visibilityToAccumuloVisibility(edge.getVisibility());
+        ColumnVisibility newColumnVisibility = visibilityToAccumuloVisibility(newVisibility);
+        EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.IN));
+        mvout.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), currentColumnVisibility);
+        mvout.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), newColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+    }
+
+    public void alterEdgeVertexInVertex(Mutation mvin, Edge edge, Visibility newVisibility) {
+        ColumnVisibility currentColumnVisibility = visibilityToAccumuloVisibility(edge.getVisibility());
+        ColumnVisibility newColumnVisibility = visibilityToAccumuloVisibility(newVisibility);
+        EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.OUT));
+        mvin.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), currentColumnVisibility);
+        mvin.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), newColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+    }
+
     public void addPropertyToMutation(Mutation m, String rowKey, Property property) {
         Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
