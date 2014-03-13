@@ -96,6 +96,12 @@ public abstract class ElementMutationBuilder {
             AccumuloEdge edge = (AccumuloEdge) element;
             m.putDelete(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), currentColumnVisibility);
             m.put(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), newColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+
+            m.putDelete(AccumuloEdge.CF_OUT_VERTEX, new Text(edge.getVertexId(Direction.OUT).toString()), currentColumnVisibility);
+            m.put(AccumuloEdge.CF_OUT_VERTEX, new Text(edge.getVertexId(Direction.OUT).toString()), newColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+
+            m.putDelete(AccumuloEdge.CF_IN_VERTEX, new Text(edge.getVertexId(Direction.IN).toString()), currentColumnVisibility);
+            m.put(AccumuloEdge.CF_IN_VERTEX, new Text(edge.getVertexId(Direction.IN).toString()), newColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
         } else if (element instanceof AccumuloVertex) {
             m.putDelete(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, currentColumnVisibility);
             m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, newColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
