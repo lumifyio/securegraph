@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -169,7 +170,8 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 }
                 Class valueType = streamingPropertyValue.getValueType();
                 if (valueType == String.class) {
-                    propertyValue = StreamUtils.toString(streamingPropertyValue.getInputStream());
+                    InputStream in = streamingPropertyValue.getInputStream();
+                    propertyValue = StreamUtils.toString(in);
                 } else {
                     throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                 }

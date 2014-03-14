@@ -93,6 +93,9 @@ public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>
         if (value == null) {
             return false;
         }
+        if (queryString.equals("*")) {
+            return true;
+        }
         String valueString = value.toString().toLowerCase();
         return valueString.contains(queryString.toLowerCase());
     }

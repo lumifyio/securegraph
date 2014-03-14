@@ -656,6 +656,11 @@ public abstract class GraphTestBase {
                 .has("lastAccessed", Compare.EQUAL, new DateOnly(2014, 2, 24))
                 .vertices();
         assertEquals(1, count(vertices));
+
+        vertices = graph.query("*", AUTHORIZATIONS_A)
+                .has("age", Compare.IN, new Integer[]{25, 30})
+                .vertices();
+        assertEquals(2, count(vertices));
     }
 
     @Test
