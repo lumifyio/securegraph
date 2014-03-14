@@ -82,6 +82,9 @@ public enum Compare implements Predicate {
                 }
                 return ((Comparable) first).compareTo(second) <= 0;
             case IN:
+                if (first instanceof Text) {
+                    first = first.toString();
+                }
                 return evaluateIn(first, (Object[]) second);
             default:
                 throw new IllegalArgumentException("Invalid compare: " + this);
