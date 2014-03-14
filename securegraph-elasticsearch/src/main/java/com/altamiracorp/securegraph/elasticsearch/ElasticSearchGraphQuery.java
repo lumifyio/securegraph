@@ -51,8 +51,10 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
 
         // since ES doesn't support security we will rely on the graph to provide vertex filtering
         // and rely on the DefaultGraphQueryIterable to provide property filtering
-        Iterable<Vertex> vertices = getGraph().getVertices(ids, getParameters().getAuthorizations());
-        return new DefaultGraphQueryIterable<Vertex>(getParameters(), vertices);
+        Parameters filterParameters = getParameters().clone();
+        filterParameters.setSkip(0); // ES already did a skip
+        Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
+        return new DefaultGraphQueryIterable<Vertex>(filterParameters, vertices, false);
     }
 
     @Override
@@ -73,8 +75,10 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
 
         // since ES doesn't support security we will rely on the graph to provide edge filtering
         // and rely on the DefaultGraphQueryIterable to provide property filtering
-        Iterable<Edge> edges = getGraph().getEdges(ids, getParameters().getAuthorizations());
-        return new DefaultGraphQueryIterable<Edge>(getParameters(), edges);
+        Parameters filterParameters = getParameters().clone();
+        filterParameters.setSkip(0); // ES already did a skip
+        Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
+        return new DefaultGraphQueryIterable<Edge>(filterParameters, edges, false);
     }
 
     private SearchResponse getSearchResponse(String elementType) {

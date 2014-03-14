@@ -8,10 +8,12 @@ import java.util.Iterator;
 public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {
     private final QueryBase.Parameters parameters;
     private final Iterable<T> iterable;
+    private final boolean evaluateQueryString;
 
-    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable) {
+    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString) {
         this.parameters = parameters;
         this.iterable = iterable;
+        this.evaluateQueryString = evaluateQueryString;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>
                     if (!match) {
                         continue;
                     }
-                    if (parameters.getQueryString() != null && !evaluateQueryString(elem, parameters.getQueryString())) {
+                    if (evaluateQueryString && parameters.getQueryString() != null && !evaluateQueryString(elem, parameters.getQueryString())) {
                         continue;
                     }
 

@@ -14,13 +14,13 @@ public class DefaultGraphQuery extends GraphQueryBase {
     @Override
     public Iterable<Vertex> vertices() {
         LOGGER.warn("scanning all vertices! create your own GraphQuery.");
-        return new DefaultGraphQueryIterable<Vertex>(getParameters(), this.<Vertex>getIterableFromElementType(ElementType.VERTEX));
+        return new DefaultGraphQueryIterable<Vertex>(getParameters(), this.<Vertex>getIterableFromElementType(ElementType.VERTEX), true);
     }
 
     @Override
     public Iterable<Edge> edges() {
         LOGGER.warn("scanning all edges! create your own GraphQuery.");
-        return new DefaultGraphQueryIterable<Edge>(getParameters(), this.<Edge>getIterableFromElementType(ElementType.EDGE));
+        return new DefaultGraphQueryIterable<Edge>(getParameters(), this.<Edge>getIterableFromElementType(ElementType.EDGE), true);
     }
 
     @SuppressWarnings("unchecked")

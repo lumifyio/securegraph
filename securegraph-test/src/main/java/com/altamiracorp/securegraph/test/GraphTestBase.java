@@ -745,12 +745,6 @@ public abstract class GraphTestBase {
                 .has("name", TextPredicate.CONTAINS, "Ferner")
                 .vertices();
         assertEquals(1, count(vertices));
-
-        // TODO should this work?
-//        vertices = graph.query(AUTHORIZATIONS_A)
-//                .has("name", "Joe Ferner")
-//                .vertices();
-//        assertEquals(1, count(vertices));
     }
 
     protected boolean isUsingDefaultQuery(Graph graph) {

@@ -133,5 +133,13 @@ public abstract class QueryBase implements Query {
         public List<HasContainer> getHasContainers() {
             return hasContainers;
         }
+
+        public Parameters clone() {
+            Parameters result = new Parameters(this.getQueryString(), this.getAuthorizations());
+            result.setSkip(this.getSkip());
+            result.setLimit(this.getLimit());
+            result.hasContainers.addAll(this.getHasContainers());
+            return result;
+        }
     }
 }
