@@ -78,6 +78,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
+        // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
         return new DefaultGraphQueryIterable<Edge>(filterParameters, edges, false);
     }
 
