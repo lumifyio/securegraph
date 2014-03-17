@@ -131,7 +131,11 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 }
                 switch (compare) {
                     case CONTAINS:
-                        filters.add(FilterBuilders.termFilter(has.key, value));
+                        if (value instanceof String) {
+                            filters.add(FilterBuilders.termsFilter(has.key, splitStringIntoTerms((String) value)));
+                        } else {
+                            filters.add(FilterBuilders.termFilter(has.key, value));
+                        }
                         break;
                     default:
                         throw new SecureGraphException("Unexpected text predicate " + has.predicate);
@@ -168,6 +172,14 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
         LOGGER.debug("query: " + q);
         return q.execute()
                 .actionGet();
+    }
+
+    private String[] splitStringIntoTerms(String value) {
+        String[] values = value.split("[ -]");
+        for (int i = 0; i < values.length; i++) {
+            values[i] = values[i].trim();
+        }
+        return values;
     }
 
     protected QueryBuilder createQuery(String queryString) {

@@ -701,6 +701,7 @@ public abstract class GraphTestBase {
     public void testGraphQueryHasWithSpaces() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("name", "Joe Ferner", VISIBILITY_A)
+                .setProperty("propWithHyphen", "hyphen-word", VISIBILITY_A)
                 .save();
         graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("name", "Joe Smith", VISIBILITY_A)
@@ -743,6 +744,16 @@ public abstract class GraphTestBase {
         vertices = graph.query(AUTHORIZATIONS_A)
                 .has("name", TextPredicate.CONTAINS, "Joe")
                 .has("name", TextPredicate.CONTAINS, "Ferner")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("name", TextPredicate.CONTAINS, "Joe Ferner")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("propWithHyphen", TextPredicate.CONTAINS, "hyphen-word")
                 .vertices();
         assertEquals(1, count(vertices));
     }
