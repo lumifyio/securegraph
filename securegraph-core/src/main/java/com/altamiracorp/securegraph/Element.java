@@ -1,6 +1,6 @@
 package com.altamiracorp.securegraph;
 
-import com.altamiracorp.securegraph.mutation.ElementMutation;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
 
 import java.util.Map;
 
@@ -94,7 +94,7 @@ public interface Element {
      *
      * @return The mutation builder.
      */
-    ElementMutation prepareMutation();
+    ExistingElementMutation prepareMutation();
 
     /**
      * Removes a property given it's key and name from the element. Only properties which you have access to can be removed using

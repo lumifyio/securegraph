@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph;
 
 import com.altamiracorp.securegraph.mutation.ElementMutation;
+import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
@@ -170,7 +171,7 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
-    public abstract ElementMutation prepareMutation();
+    public abstract ExistingElementMutation prepareMutation();
 
     @Override
     public abstract void removeProperty(String key, String name);
