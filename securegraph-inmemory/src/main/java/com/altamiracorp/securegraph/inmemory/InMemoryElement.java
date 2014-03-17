@@ -8,7 +8,7 @@ import com.altamiracorp.securegraph.util.StreamUtils;
 
 import java.io.IOException;
 
-public abstract class InMemoryElement extends ElementBase {
+public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
     protected InMemoryElement(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
     }

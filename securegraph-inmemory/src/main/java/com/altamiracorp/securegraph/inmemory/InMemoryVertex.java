@@ -8,7 +8,7 @@ import com.altamiracorp.securegraph.query.VertexQuery;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
 import com.altamiracorp.securegraph.util.FilterIterable;
 
-public class InMemoryVertex extends InMemoryElement implements Vertex {
+public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     protected InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
     }

@@ -5,7 +5,7 @@ import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
 import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 import org.apache.hadoop.io.Text;
 
-public class AccumuloEdge extends AccumuloElement implements Edge {
+public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
     public static final Text CF_OUT_VERTEX = new Text("EOUT");
     public static final Text CF_IN_VERTEX = new Text("EIN");

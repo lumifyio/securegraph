@@ -4,7 +4,7 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
 import com.altamiracorp.securegraph.mutation.ExistingElementMutationImpl;
 
-public class InMemoryEdge extends InMemoryElement implements Edge {
+public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     private final Object outVertexId;
     private final Object inVertexId;
     private final String label;

@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class AccumuloVertex extends AccumuloElement implements Vertex {
+public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
     public static final Text CF_OUT_EDGE = new Text("EOUT");
     public static final Text CF_IN_EDGE = new Text("EIN");

@@ -6,7 +6,7 @@ import org.apache.hadoop.io.Text;
 
 import java.io.Serializable;
 
-public abstract class AccumuloElement extends ElementBase implements Serializable {
+public abstract class AccumuloElement<T extends Element> extends ElementBase<T> implements Serializable {
     private static final long serialVersionUID = 1L;
     public static final Text CF_PROPERTY = new Text("PROP");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");

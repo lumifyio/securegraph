@@ -1,6 +1,5 @@
 package com.altamiracorp.securegraph;
 
-import com.altamiracorp.securegraph.mutation.ElementMutation;
 import com.altamiracorp.securegraph.mutation.ExistingElementMutation;
 import com.altamiracorp.securegraph.property.PropertyValue;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
@@ -8,7 +7,7 @@ import com.altamiracorp.securegraph.util.FilterIterable;
 
 import java.util.*;
 
-public abstract class ElementBase implements Element {
+public abstract class ElementBase<T extends Element> implements Element {
     private final Graph graph;
     private final Object id;
     private Visibility visibility;
@@ -171,7 +170,7 @@ public abstract class ElementBase implements Element {
     }
 
     @Override
-    public abstract ExistingElementMutation prepareMutation();
+    public abstract ExistingElementMutation<T> prepareMutation();
 
     @Override
     public abstract void removeProperty(String key, String name);
