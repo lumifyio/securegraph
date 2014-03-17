@@ -37,14 +37,14 @@ public abstract class AccumuloElement extends ElementBase implements Serializabl
     }
 
     protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation) {
-        Iterable<Property> properties = mutation.getProperties();
-        updatePropertiesInternal(properties);
-        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties);
-
         if (mutation.getNewElementVisibility() != null) {
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());
         }
         getGraph().alterElementPropertyVisibilities((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyVisibilities());
         getGraph().alterPropertyMetadatas((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyMetadatas());
+
+        Iterable<Property> properties = mutation.getProperties();
+        updatePropertiesInternal(properties);
+        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties);
     }
 }

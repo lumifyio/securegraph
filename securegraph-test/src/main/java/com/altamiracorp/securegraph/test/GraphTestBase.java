@@ -1192,6 +1192,28 @@ public abstract class GraphTestBase {
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
         assertNotNull(v1.getProperty("prop1"));
         assertNotNull(v1.getProperty("prop2"));
+
+        // alter and set property in one mutation
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        v1.prepareMutation()
+                .alterPropertyVisibility("prop1", VISIBILITY_A)
+                .setProperty("prop1", "value1New", VISIBILITY_A)
+                .save();
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        assertNotNull(v1.getProperty("prop1"));
+        assertEquals("value1New", v1.getPropertyValue("prop1"));
+
+        // alter visibility to the same visibility
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        v1.prepareMutation()
+                .alterPropertyVisibility("prop1", VISIBILITY_A)
+                .setProperty("prop1", "value1New2", VISIBILITY_A)
+                .save();
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        assertNotNull(v1.getProperty("prop1"));
+        assertEquals("value1New2", v1.getPropertyValue("prop1"));
     }
 
     @Test
