@@ -865,4 +865,9 @@ public class AccumuloGraph extends GraphBase {
         }
         addMutations(writer, m);
     }
+
+    @Override
+    public boolean isVisibilityValid (Visibility visibility, Authorizations authorizations) {
+        return authorizations.canRead(visibility);
+    }
 }

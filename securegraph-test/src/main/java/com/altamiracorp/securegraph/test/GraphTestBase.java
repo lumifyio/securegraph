@@ -1320,4 +1320,12 @@ public abstract class GraphTestBase {
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
     }
+
+    @Test
+    public void testIsVisibilityValid () {
+        assertFalse(graph.isVisibilityValid(VISIBILITY_A, AUTHORIZATIONS_C));
+        assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_A_AND_B));
+        assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_B));
+        assertTrue(graph.isVisibilityValid(VISIBILITY_EMPTY, AUTHORIZATIONS_A));
+    }
 }

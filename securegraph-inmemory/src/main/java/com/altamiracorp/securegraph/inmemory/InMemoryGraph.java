@@ -307,4 +307,9 @@ public class InMemoryGraph extends GraphBase {
             property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
         }
     }
+
+    @Override
+    public boolean isVisibilityValid (Visibility visibility, Authorizations authorizations) {
+        return authorizations.canRead(visibility);
+    }
 }
