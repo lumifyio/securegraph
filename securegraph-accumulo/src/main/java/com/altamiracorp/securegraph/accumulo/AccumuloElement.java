@@ -37,8 +37,13 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
     }
 
     protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation) {
-        getGraph().alterElementPropertyVisibilities((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyVisibilities());
+        // Order matters a lot here
+
+        // metadata must be altered first because the lookup of a property can include visibility which will be altered by alterElementPropertyVisibilities
         getGraph().alterPropertyMetadatas((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyMetadatas());
+
+        // altering properties comes next because alterElementVisibility may alter the vertex and we won't find it
+        getGraph().alterElementPropertyVisibilities((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyVisibilities());
 
         Iterable<Property> properties = mutation.getProperties();
         updatePropertiesInternal(properties);

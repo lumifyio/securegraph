@@ -853,6 +853,9 @@ public class AccumuloGraph extends GraphBase {
         List<Property> propertiesToSave = new ArrayList<Property>();
         for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
             Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
+            if (property == null) {
+                throw new SecureGraphException(String.format("Could not find property %s:%s(%s)", apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility()));
+            }
             property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
             propertiesToSave.add(property);
         }
