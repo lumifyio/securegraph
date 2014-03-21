@@ -243,6 +243,15 @@ public interface Graph {
     IdGenerator getIdGenerator();
 
     /**
+     * Given an authorization is the visibility object valid.
+     *
+     * @param visibility        The visibility you want to check.
+     * @param authorizations    The given authorizations.
+     * @return true if the visibility is valid given an authorization, else return false.
+     */
+    boolean isVisibilityValid (Visibility visibility, Authorizations authorizations);
+
+    /**
      * Reindex all vertices and edges.
      * @param authorizations
      */
