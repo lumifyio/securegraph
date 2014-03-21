@@ -9,6 +9,8 @@ import com.altamiracorp.securegraph.mutation.AlterPropertyVisibility;
 import com.altamiracorp.securegraph.property.MutableProperty;
 import com.altamiracorp.securegraph.property.StreamingPropertyValue;
 import com.altamiracorp.securegraph.search.SearchIndex;
+import com.altamiracorp.securegraph.util.ClosableIterable;
+import com.altamiracorp.securegraph.util.EmptyClosableIterable;
 import com.altamiracorp.securegraph.util.LookAheadIterable;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
@@ -403,7 +405,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
+    public ClosableIterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
@@ -412,7 +414,7 @@ public class AccumuloGraph extends GraphBase {
             ranges.add(new Range(rowKey));
         }
         if (ranges.size() == 0) {
-            return new ArrayList<Vertex>();
+            return new EmptyClosableIterable<Vertex>();
         }
 
         return new LookAheadIterable<Map.Entry<Key, Value>, Vertex>() {
@@ -443,14 +445,14 @@ public class AccumuloGraph extends GraphBase {
             }
 
             @Override
-            protected void done() {
-                super.done();
+            public void close() {
+                super.close();
                 batchScanner.close();
             }
         };
     }
 
-    private Iterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private ClosableIterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
 
         final Key startKey;
@@ -490,8 +492,8 @@ public class AccumuloGraph extends GraphBase {
             }
 
             @Override
-            protected void done() {
-                super.done();
+            public void close() {
+                super.close();
                 scanner.close();
             }
         };
@@ -609,7 +611,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
+    public ClosableIterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
@@ -618,7 +620,7 @@ public class AccumuloGraph extends GraphBase {
             ranges.add(new Range(rowKey));
         }
         if (ranges.size() == 0) {
-            return new ArrayList<Edge>();
+            return new EmptyClosableIterable<Edge>();
         }
 
         return new LookAheadIterable<Map.Entry<Key, Value>, Edge>() {
@@ -649,14 +651,14 @@ public class AccumuloGraph extends GraphBase {
             }
 
             @Override
-            protected void done() {
-                super.done();
+            public void close() {
+                super.close();
                 batchScanner.close();
             }
         };
     }
 
-    private Iterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private ClosableIterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
 
         final Key startKey;
@@ -696,8 +698,8 @@ public class AccumuloGraph extends GraphBase {
             }
 
             @Override
-            protected void done() {
-                super.done();
+            public void close() {
+                super.close();
                 scanner.close();
             }
         };
