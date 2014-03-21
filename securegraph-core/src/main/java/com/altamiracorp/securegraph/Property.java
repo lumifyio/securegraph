@@ -1,5 +1,6 @@
 package com.altamiracorp.securegraph;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Property implements Comparable<Property> {
@@ -10,6 +11,10 @@ public abstract class Property implements Comparable<Property> {
     private final Map<String, Object> metadata;
 
     protected Property(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        if (metadata == null) {
+            metadata = new HashMap<String, Object>();
+        }
+
         this.key = key;
         this.name = name;
         this.value = value;

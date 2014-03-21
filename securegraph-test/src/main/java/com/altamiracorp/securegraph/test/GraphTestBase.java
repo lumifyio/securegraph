@@ -1309,6 +1309,7 @@ public abstract class GraphTestBase {
 
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
+                .setProperty("prop2", "value2", null, VISIBILITY_EMPTY)
                 .save();
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
@@ -1319,6 +1320,15 @@ public abstract class GraphTestBase {
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v1.prepareMutation()
+                .alterPropertyMetadata("prop2", "prop2_key1", "valueNew")
+                .save();
+        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().get("prop2_key1"));
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().get("prop2_key1"));
     }
 
     @Test
