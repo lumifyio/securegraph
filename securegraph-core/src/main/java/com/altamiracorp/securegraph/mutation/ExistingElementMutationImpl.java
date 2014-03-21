@@ -45,13 +45,19 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     @Override
+    public ExistingElementMutation<T> alterPropertyVisibility(Property property, Visibility visibility) {
+        this.alterPropertyVisibilities.add(new AlterPropertyVisibility(property.getKey(), property.getName(), property.getVisibility(), visibility));
+        return this;
+    }
+
+    @Override
     public ExistingElementMutation<T> alterPropertyVisibility(String name, Visibility visibility) {
         return alterPropertyVisibility(DEFAULT_ID, name, visibility);
     }
 
     @Override
     public ExistingElementMutation<T> alterPropertyVisibility(String key, String name, Visibility visibility) {
-        this.alterPropertyVisibilities.add(new AlterPropertyVisibility(key, name, visibility));
+        this.alterPropertyVisibilities.add(new AlterPropertyVisibility(key, name, null, visibility));
         return this;
     }
 
@@ -62,13 +68,19 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     @Override
+    public ExistingElementMutation<T> alterPropertyMetadata(Property property, String metadataName, Object newValue) {
+        this.alterPropertyMetadatas.add(new AlterPropertyMetadata(property.getKey(), property.getName(), property.getVisibility(), metadataName, newValue));
+        return this;
+    }
+
+    @Override
     public ExistingElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue) {
         return alterPropertyMetadata(DEFAULT_ID, propertyName, metadataName, newValue);
     }
 
     @Override
     public ExistingElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue) {
-        this.alterPropertyMetadatas.add(new AlterPropertyMetadata(propertyKey, propertyName, metadataName, newValue));
+        this.alterPropertyMetadatas.add(new AlterPropertyMetadata(propertyKey, propertyName, null, metadataName, newValue));
         return this;
     }
 

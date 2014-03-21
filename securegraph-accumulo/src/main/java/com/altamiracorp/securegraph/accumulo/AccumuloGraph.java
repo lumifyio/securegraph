@@ -834,7 +834,7 @@ public class AccumuloGraph extends GraphBase {
 
         Mutation m = new Mutation(elementRowKey);
         for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
-            MutableProperty property = (MutableProperty) element.getProperty(apv.getKey(), apv.getName());
+            MutableProperty property = (MutableProperty) element.getProperty(apv.getKey(), apv.getName(), apv.getExistingVisibility());
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
             }
@@ -852,7 +852,7 @@ public class AccumuloGraph extends GraphBase {
 
         List<Property> propertiesToSave = new ArrayList<Property>();
         for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
-            Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName());
+            Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
             property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
             propertiesToSave.add(property);
         }
@@ -869,7 +869,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public boolean isVisibilityValid (Visibility visibility, Authorizations authorizations) {
+    public boolean isVisibilityValid(Visibility visibility, Authorizations authorizations) {
         return authorizations.canRead(visibility);
     }
 }

@@ -37,13 +37,28 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Property getProperty(Object key, String name) {
+    public Property getProperty(Object key, String name, Visibility visibility) {
         for (Property p : getProperties()) {
-            if (p.getKey().equals(key) && p.getName().equals(name)) {
+            if (!p.getKey().equals(key)) {
+                continue;
+            }
+            if (!p.getName().equals(name)) {
+                continue;
+            }
+            if (visibility == null) {
                 return p;
             }
+            if (!visibility.equals(p.getVisibility())) {
+                continue;
+            }
+            return p;
         }
         return null;
+    }
+
+    @Override
+    public Property getProperty(Object key, String name) {
+        return getProperty(key, name, null);
     }
 
     @Override

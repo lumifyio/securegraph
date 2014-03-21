@@ -38,6 +38,16 @@ public interface Element {
     Property getProperty(Object key, String name);
 
     /**
+     * Gets a property by key, name, and visibility.
+     *
+     * @param key        the key of the property.
+     * @param name       the name of the property.
+     * @param visibility The visibility of the property to get.
+     * @return The property if found. null, if not found.
+     */
+    Property getProperty(Object key, String name, Visibility visibility);
+
+    /**
      * Gets a property by name. This assumes a single valued property. If multiple property values exists this will only return the first one.
      *
      * @param name the name of the property.

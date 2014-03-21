@@ -277,7 +277,7 @@ public class InMemoryGraph extends GraphBase {
 
     void alterElementPropertyVisibilities(InMemoryElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
         for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
-            Property property = element.getProperty(apv.getKey(), apv.getName());
+            Property property = element.getProperty(apv.getKey(), apv.getName(), apv.getExistingVisibility());
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
             }
@@ -299,7 +299,7 @@ public class InMemoryGraph extends GraphBase {
 
     private void alterElementPropertyMetadata(Element element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
         for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
-            Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName());
+            Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apm.getPropertyKey() + ":" + apm.getPropertyName());
             }
@@ -309,7 +309,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public boolean isVisibilityValid (Visibility visibility, Authorizations authorizations) {
+    public boolean isVisibilityValid(Visibility visibility, Authorizations authorizations) {
         return authorizations.canRead(visibility);
     }
 }
