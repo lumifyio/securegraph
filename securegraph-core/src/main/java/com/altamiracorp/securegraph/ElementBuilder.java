@@ -47,7 +47,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * @param visibility The visibility to give this property.
      */
     public ElementBuilder<T> setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        return addPropertyValue(ElementMutation.DEFAULT_ID, name, value, metadata, visibility);
+        return addPropertyValue(ElementMutation.DEFAULT_KEY, name, value, metadata, visibility);
     }
 
     /**

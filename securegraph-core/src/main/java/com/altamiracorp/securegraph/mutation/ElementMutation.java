@@ -7,7 +7,7 @@ import com.altamiracorp.securegraph.Visibility;
 import java.util.Map;
 
 public interface ElementMutation<T extends Element> {
-    static final String DEFAULT_ID = "";
+    public static final String DEFAULT_KEY = "";
 
     /**
      * saves the properties to the graph.

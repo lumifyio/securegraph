@@ -28,7 +28,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     public ElementMutation<T> setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        return addPropertyValue(DEFAULT_ID, name, value, metadata, visibility);
+        return addPropertyValue(DEFAULT_KEY, name, value, metadata, visibility);
     }
 
     public ElementMutation<T> addPropertyValue(String key, String name, Object value, Visibility visibility) {
@@ -52,7 +52,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     @Override
     public ExistingElementMutation<T> alterPropertyVisibility(String name, Visibility visibility) {
-        return alterPropertyVisibility(DEFAULT_ID, name, visibility);
+        return alterPropertyVisibility(DEFAULT_KEY, name, visibility);
     }
 
     @Override
@@ -75,7 +75,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     @Override
     public ExistingElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue) {
-        return alterPropertyMetadata(DEFAULT_ID, propertyName, metadataName, newValue);
+        return alterPropertyMetadata(DEFAULT_KEY, propertyName, metadataName, newValue);
     }
 
     @Override
