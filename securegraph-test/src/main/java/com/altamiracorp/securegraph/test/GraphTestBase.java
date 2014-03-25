@@ -1176,6 +1176,17 @@ public abstract class GraphTestBase {
         assertNull(v1);
         v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
         assertNotNull(v1);
+
+        // change to same visibility
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
+        v1.prepareMutation()
+                .alterElementVisibility(VISIBILITY_B)
+                .save();
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertNull(v1);
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
+        assertNotNull(v1);
     }
 
     @Test
@@ -1246,6 +1257,18 @@ public abstract class GraphTestBase {
 
         // change the edge
         Edge e1 = graph.getEdge("e1", AUTHORIZATIONS_A);
+        e1.prepareMutation()
+                .alterElementVisibility(VISIBILITY_B)
+                .save();
+
+        // test that we can see the edge with B and not A
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_B);
+        assertEquals(1, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_B)));
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(0, count(v1.getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+
+        // change the edge visibility to same
+        e1 = graph.getEdge("e1", AUTHORIZATIONS_B);
         e1.prepareMutation()
                 .alterElementVisibility(VISIBILITY_B)
                 .save();
@@ -1332,7 +1355,7 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testIsVisibilityValid () {
+    public void testIsVisibilityValid() {
         assertFalse(graph.isVisibilityValid(VISIBILITY_A, AUTHORIZATIONS_C));
         assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_A_AND_B));
         assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_B));

@@ -809,18 +809,21 @@ public class AccumuloGraph extends GraphBase {
 
             String voutRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.OUT);
             Mutation mvout = new Mutation(voutRowKey);
-            elementMutationBuilder.alterEdgeVertexOutVertex(mvout, edge, newVisibility);
+            if (elementMutationBuilder.alterEdgeVertexOutVertex(mvout, edge, newVisibility)) {
+                addMutations(vertexWriter, mvout);
+            }
 
             String vinRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.IN);
             Mutation mvin = new Mutation(vinRowKey);
-            elementMutationBuilder.alterEdgeVertexInVertex(mvin, edge, newVisibility);
-
-            addMutations(vertexWriter, mvin, mvout);
+            if (elementMutationBuilder.alterEdgeVertexInVertex(mvin, edge, newVisibility)) {
+                addMutations(vertexWriter, mvin);
+            }
         }
 
         Mutation m = new Mutation(elementRowKey);
-        elementMutationBuilder.alterElementVisibility(m, element, newVisibility);
-        addMutations(elementWriter, m);
+        if (elementMutationBuilder.alterElementVisibility(m, element, newVisibility)) {
+            addMutations(elementWriter, m);
+        }
     }
 
     void alterElementPropertyVisibilities(AccumuloElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
@@ -832,17 +835,24 @@ public class AccumuloGraph extends GraphBase {
         String rowPrefix = getRowPrefixForElement(element);
         String elementRowKey = rowPrefix + element.getId();
 
+        boolean propertyChanged = false;
         Mutation m = new Mutation(elementRowKey);
         for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
             MutableProperty property = (MutableProperty) element.getProperty(apv.getKey(), apv.getName(), apv.getExistingVisibility());
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
             }
+            if (property.getVisibility().equals(apv.getVisibility())) {
+                continue;
+            }
             elementMutationBuilder.addPropertyRemoveToMutation(m, property);
             property.setVisibility(apv.getVisibility());
             elementMutationBuilder.addPropertyToMutation(m, elementRowKey, property);
+            propertyChanged = true;
         }
-        addMutations(writer, m);
+        if (propertyChanged) {
+            addMutations(writer, m);
+        }
     }
 
     void alterPropertyMetadatas(AccumuloElement element, List<AlterPropertyMetadata> alterPropertyMetadatas) {

@@ -89,9 +89,13 @@ public abstract class ElementMutationBuilder {
         return addEdgeMutation;
     }
 
-    public void alterElementVisibility(Mutation m, AccumuloElement element, Visibility newVisibility) {
+    public boolean alterElementVisibility(Mutation m, AccumuloElement element, Visibility newVisibility) {
         ColumnVisibility currentColumnVisibility = visibilityToAccumuloVisibility(element.getVisibility());
         ColumnVisibility newColumnVisibility = visibilityToAccumuloVisibility(newVisibility);
+        if (currentColumnVisibility.equals(newColumnVisibility)) {
+            return false;
+        }
+
         if (element instanceof AccumuloEdge) {
             AccumuloEdge edge = (AccumuloEdge) element;
             m.putDelete(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), currentColumnVisibility);
@@ -108,22 +112,31 @@ public abstract class ElementMutationBuilder {
         } else {
             throw new IllegalArgumentException("Invalid element type: " + element);
         }
+        return true;
     }
 
-    public void alterEdgeVertexOutVertex(Mutation mvout, Edge edge, Visibility newVisibility) {
+    public boolean alterEdgeVertexOutVertex(Mutation mvout, Edge edge, Visibility newVisibility) {
         ColumnVisibility currentColumnVisibility = visibilityToAccumuloVisibility(edge.getVisibility());
         ColumnVisibility newColumnVisibility = visibilityToAccumuloVisibility(newVisibility);
+        if (currentColumnVisibility.equals(newColumnVisibility)) {
+            return false;
+        }
         EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.IN));
         mvout.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), currentColumnVisibility);
         mvout.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), newColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+        return true;
     }
 
-    public void alterEdgeVertexInVertex(Mutation mvin, Edge edge, Visibility newVisibility) {
+    public boolean alterEdgeVertexInVertex(Mutation mvin, Edge edge, Visibility newVisibility) {
         ColumnVisibility currentColumnVisibility = visibilityToAccumuloVisibility(edge.getVisibility());
         ColumnVisibility newColumnVisibility = visibilityToAccumuloVisibility(newVisibility);
+        if (currentColumnVisibility.equals(newColumnVisibility)) {
+            return false;
+        }
         EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.OUT));
         mvin.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), currentColumnVisibility);
         mvin.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), newColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+        return true;
     }
 
     public void addPropertyToMutation(Mutation m, String rowKey, Property property) {
