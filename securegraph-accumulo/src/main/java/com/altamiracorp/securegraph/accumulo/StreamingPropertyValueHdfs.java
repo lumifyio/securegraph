@@ -21,6 +21,15 @@ class StreamingPropertyValueHdfs extends StreamingPropertyValue {
     }
 
     @Override
+    public long getLength() {
+        try {
+            return fs.getFileStatus(path).getLen();
+        } catch (IOException ex) {
+            throw new SecureGraphException("Could not get length of: " + this.path, ex);
+        }
+    }
+
+    @Override
     public InputStream getInputStream() {
         try {
             return fs.open(this.path);

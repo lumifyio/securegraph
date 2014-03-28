@@ -10,7 +10,7 @@ class InMemoryStreamingPropertyValue extends StreamingPropertyValue {
     private byte[] data;
 
     InMemoryStreamingPropertyValue(byte[] data, Class valueType) throws IOException {
-        super(null, valueType);
+        super(null, valueType, data.length);
         this.data = data;
     }
 

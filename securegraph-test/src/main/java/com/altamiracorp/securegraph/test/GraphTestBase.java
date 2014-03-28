@@ -109,6 +109,7 @@ public abstract class GraphTestBase {
         assertTrue("propSmallValue was " + propSmallValue.getClass().getName(), propSmallValue instanceof StreamingPropertyValue);
         StreamingPropertyValue value = (StreamingPropertyValue) propSmallValue;
         assertEquals(String.class, value.getValueType());
+        assertEquals("value1".getBytes().length, value.getLength());
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
 
@@ -118,6 +119,7 @@ public abstract class GraphTestBase {
         assertTrue(largePropertyName + " was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propLargeValue;
         assertEquals(String.class, value.getValueType());
+        assertEquals(expectedLargeValue.getBytes().length, value.getLength());
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
 
@@ -128,6 +130,7 @@ public abstract class GraphTestBase {
         assertTrue("propSmallValue was " + propSmallValue.getClass().getName(), propSmallValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propSmallValue;
         assertEquals(String.class, value.getValueType());
+        assertEquals("value1".getBytes().length, value.getLength());
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
         assertEquals("value1", IOUtils.toString(value.getInputStream()));
 
@@ -137,6 +140,7 @@ public abstract class GraphTestBase {
         assertTrue(largePropertyName + " was " + propLargeValue.getClass().getName(), propLargeValue instanceof StreamingPropertyValue);
         value = (StreamingPropertyValue) propLargeValue;
         assertEquals(String.class, value.getValueType());
+        assertEquals(expectedLargeValue.getBytes().length, value.getLength());
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
     }
