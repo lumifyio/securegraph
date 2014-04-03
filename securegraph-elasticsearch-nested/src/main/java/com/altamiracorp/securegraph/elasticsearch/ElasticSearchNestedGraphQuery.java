@@ -4,14 +4,15 @@ import com.altamiracorp.securegraph.*;
 import com.altamiracorp.securegraph.query.*;
 import com.altamiracorp.securegraph.type.GeoCircle;
 import com.altamiracorp.securegraph.util.ConvertingIterable;
+import com.spatial4j.core.shape.Circle;
+import com.spatial4j.core.shape.Shape;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.geo.builders.CircleBuilder;
+import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
@@ -22,12 +23,12 @@ import java.util.List;
 
 import static com.altamiracorp.securegraph.util.IterableUtils.toList;
 
-public class ElasticSearchGraphQuery extends GraphQueryBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQuery.class);
+public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchNestedGraphQuery.class);
     private final TransportClient client;
     private String indexName;
 
-    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
+    public ElasticSearchNestedGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
         super(graph, queryString, authorizations);
         this.client = client;
         this.indexName = indexName;
@@ -36,7 +37,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
     @Override
     public Iterable<Vertex> vertices() {
         long startTime = System.nanoTime();
-        SearchResponse response = getSearchResponse(ElasticSearchSearchIndex.ELEMENT_TYPE_VERTEX);
+        SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_VERTEX);
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -60,7 +61,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
     @Override
     public Iterable<Edge> edges() {
         long startTime = System.nanoTime();
-        SearchResponse response = getSearchResponse(ElasticSearchSearchIndex.ELEMENT_TYPE_EDGE);
+        SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_EDGE);
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -83,42 +84,52 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
     }
 
     private SearchResponse getSearchResponse(String elementType) {
-        List<FilterBuilder> filters = new ArrayList<FilterBuilder>();
-        filters.add(FilterBuilders.inFilter(ElasticSearchSearchIndex.ELEMENT_TYPE_FIELD_NAME, elementType));
+        List<QueryBuilder> nestedQueries = new ArrayList<QueryBuilder>();
+
         for (HasContainer has : getParameters().getHasContainers()) {
             if (has.predicate instanceof Compare) {
                 Compare compare = (Compare) has.predicate;
                 Object value = has.value;
                 String key = has.key;
                 if (value instanceof String || value instanceof String[]) {
-                    key = key + ElasticSearchSearchIndex.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
+                    key = key + ElasticSearchNestedSearchIndex.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
                 }
                 switch (compare) {
                     case EQUAL:
                         if (value instanceof DateOnly) {
                             DateOnly dateOnlyValue = ((DateOnly) value);
-                            filters.add(FilterBuilders.rangeFilter(key).from(dateOnlyValue.toString()).to(dateOnlyValue.toString()));
+                            RangeQueryBuilder dateOnlyQuery = QueryBuilders.rangeQuery(key).from(dateOnlyValue.toString()).to(dateOnlyValue.toString());
+                            nestedQueries.add(nestedPropertyQuery(dateOnlyQuery));
                         } else {
-                            filters.add(FilterBuilders.termFilter(key, value));
+                            TermQueryBuilder termQuery = QueryBuilders.termQuery(key, value);
+                            nestedQueries.add(nestedPropertyQuery(termQuery));
                         }
                         break;
                     case GREATER_THAN_EQUAL:
-                        filters.add(FilterBuilders.rangeFilter(key).gte(value));
+                        RangeQueryBuilder gteQuery = QueryBuilders.rangeQuery(key).gte(value);
+                        nestedQueries.add(nestedPropertyQuery(gteQuery));
                         break;
                     case GREATER_THAN:
-                        filters.add(FilterBuilders.rangeFilter(key).gt(value));
+                        RangeQueryBuilder gtQuery = QueryBuilders.rangeQuery(key).gt(value);
+                        nestedQueries.add(nestedPropertyQuery(gtQuery));
                         break;
                     case LESS_THAN_EQUAL:
-                        filters.add(FilterBuilders.rangeFilter(key).lte(value));
+                        RangeQueryBuilder lteQuery = QueryBuilders.rangeQuery(key).lte(value);
+                        nestedQueries.add(nestedPropertyQuery(lteQuery));
                         break;
                     case LESS_THAN:
-                        filters.add(FilterBuilders.rangeFilter(key).lt(value));
+                        RangeQueryBuilder ltQuery = QueryBuilders.rangeQuery(key).lt(value);
+                        nestedQueries.add(nestedPropertyQuery(ltQuery));
                         break;
                     case NOT_EQUAL:
-                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(key, value)));
+                        TermQueryBuilder termQuery = QueryBuilders.termQuery(key, value);
+                        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+                        boolQuery.mustNot(termQuery);
+                        nestedQueries.add(nestedPropertyQuery(boolQuery));
                         break;
                     case IN:
-                        filters.add(FilterBuilders.inFilter(key, (Object[]) has.value));
+                        TermsQueryBuilder inQuery = QueryBuilders.inQuery(key, (Object[]) has.value);
+                        nestedQueries.add(nestedPropertyQuery(inQuery));
                         break;
                     default:
                         throw new SecureGraphException("Unexpected Compare predicate " + has.predicate);
@@ -132,9 +143,11 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 switch (compare) {
                     case CONTAINS:
                         if (value instanceof String) {
-                            filters.add(FilterBuilders.termsFilter(has.key, splitStringIntoTerms((String) value)));
+                            TermsQueryBuilder termsQuery = QueryBuilders.termsQuery(has.key, splitStringIntoTerms((String) value));
+                            nestedQueries.add(nestedPropertyQuery(termsQuery));
                         } else {
-                            filters.add(FilterBuilders.termFilter(has.key, value));
+                            TermQueryBuilder termQuery = QueryBuilders.termQuery(has.key, value);
+                            nestedQueries.add(nestedPropertyQuery(termQuery));
                         }
                         break;
                     default:
@@ -149,7 +162,9 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                             double lat = geoCircle.getLatitude();
                             double lon = geoCircle.getLongitude();
                             double distance = geoCircle.getRadius();
-                            filters.add(FilterBuilders.geoDistanceFilter(has.key).point(lat, lon).distance(distance, DistanceUnit.KILOMETERS));
+                            CircleBuilder circleBuilder = ShapeBuilder.newCircleBuilder().center(lon, lat).radius(distance, DistanceUnit.KILOMETERS);
+                            GeoShapeQueryBuilder geoQuery = QueryBuilders.geoShapeQuery(has.key, circleBuilder);
+                            nestedQueries.add(nestedPropertyQuery(geoQuery));
                         } else {
                             throw new SecureGraphException("Unexpected has value type " + has.value.getClass().getName());
                         }
@@ -161,17 +176,39 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
                 throw new SecureGraphException("Unexpected predicate type " + has.predicate.getClass().getName());
             }
         }
-        QueryBuilder query = createQuery(getParameters().getQueryString());
+
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        TermQueryBuilder elementTypeQuery = QueryBuilders.termQuery(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_FIELD_NAME, elementType);
+        query.must(elementTypeQuery);
+
+        String queryString = getParameters().getQueryString();
+        if (queryString != null && !queryString.equals("")) {
+            QueryStringQueryBuilder queryStringQuery = QueryBuilders.queryString(getParameters().getQueryString());
+            query.must(queryStringQuery);
+        }
+
+        for (QueryBuilder builder : nestedQueries) {
+            query.must(builder);
+        }
+
         SearchRequestBuilder q = client
                 .prepareSearch(indexName)
-                .setTypes(ElasticSearchSearchIndex.ELEMENT_TYPE)
+                .setTypes(ElasticSearchNestedSearchIndex.ELEMENT_TYPE)
                 .setQuery(query)
-                .setPostFilter(FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])))
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
-        LOGGER.debug("query: " + q);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("query: " + q);
+        }
+        
         return q.execute()
                 .actionGet();
+    }
+
+    private NestedQueryBuilder nestedPropertyQuery(QueryBuilder propertyQuery) {
+        FilteredQueryBuilder filteredQuery = QueryBuilders.filteredQuery(propertyQuery, null);
+        return QueryBuilders.nestedQuery(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME, filteredQuery);
     }
 
     private String[] splitStringIntoTerms(String value) {

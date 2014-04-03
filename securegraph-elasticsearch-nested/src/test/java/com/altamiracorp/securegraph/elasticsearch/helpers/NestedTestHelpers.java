@@ -2,7 +2,7 @@ package com.altamiracorp.securegraph.elasticsearch.helpers;
 
 import com.altamiracorp.securegraph.Graph;
 import com.altamiracorp.securegraph.GraphConfiguration;
-import com.altamiracorp.securegraph.elasticsearch.ElasticSearchSearchIndex;
+import com.altamiracorp.securegraph.elasticsearch.ElasticSearchNestedSearchIndex;
 import com.altamiracorp.securegraph.inmemory.InMemoryGraph;
 import com.altamiracorp.securegraph.inmemory.InMemoryGraphConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestHelpers {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestHelpers.class);
+public class NestedTestHelpers {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NestedTestHelpers.class);
     private static File tempDir;
     private static Node elasticSearchNode;
     private static String addr;
@@ -27,8 +27,8 @@ public class TestHelpers {
     public static Graph createGraph() {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.ES_LOCATIONS, addr);
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchNestedSearchIndex.class.getName());
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchNestedSearchIndex.ES_LOCATIONS, addr);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }

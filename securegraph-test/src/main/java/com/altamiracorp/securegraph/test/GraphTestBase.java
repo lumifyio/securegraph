@@ -726,12 +726,6 @@ public abstract class GraphTestBase {
         }
 
         if (!isUsingDefaultQuery(graph)) {
-            vertices = graph.query("name:\"joe ferner\"", AUTHORIZATIONS_A)
-                    .vertices();
-            assertEquals(1, count(vertices));
-        }
-
-        if (!isUsingDefaultQuery(graph)) {
             vertices = graph.query("joe smith", AUTHORIZATIONS_A)
                     .vertices();
             List<Vertex> verticesList = toList(vertices);
@@ -762,6 +756,23 @@ public abstract class GraphTestBase {
         assertEquals(1, count(vertices));
     }
 
+    @Test
+    public void testGraphQueryHasWithSpacesAndFieldedQueryString() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("name", "Joe Ferner", VISIBILITY_A)
+                .setProperty("propWithHyphen", "hyphen-word", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("name", "Joe Smith", VISIBILITY_A)
+                .save();
+
+        if (!isUsingDefaultQuery(graph)) {
+            Iterable<Vertex> vertices = graph.query("name:\"joe ferner\"", AUTHORIZATIONS_A)
+                    .vertices();
+            assertEquals(1, count(vertices));
+        }
+    }
+
     protected boolean isUsingDefaultQuery(Graph graph) {
         return graph.query(AUTHORIZATIONS_A) instanceof DefaultGraphQuery;
     }
@@ -781,7 +792,7 @@ public abstract class GraphTestBase {
         assertEquals(1, count(vertices));
 
         vertices = graph.query(AUTHORIZATIONS_A)
-                .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 15))
+                .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 25))
                 .vertices();
         assertEquals(2, count(vertices));
     }
