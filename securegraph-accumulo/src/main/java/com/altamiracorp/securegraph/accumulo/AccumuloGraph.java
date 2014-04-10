@@ -337,7 +337,7 @@ public class AccumuloGraph extends GraphBase {
             ((AccumuloVertex) out).removeOutEdge(edge);
         }
         if (in instanceof AccumuloVertex) {
-            ((AccumuloVertex) out).removeInEdge(edge);
+            ((AccumuloVertex) in).removeInEdge(edge);
         }
     }
 
@@ -397,7 +397,7 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
-        Iterator<Vertex> vertices = getVerticesInRange(vertexId, vertexId, authorizations).iterator();
+        Iterator<Vertex> vertices = getVerticesInRange(new Range(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId), authorizations).iterator();
         if (vertices.hasNext()) {
             return vertices.next();
         }
@@ -453,8 +453,6 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private ClosableIterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
-        final AccumuloGraph graph = this;
-
         final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
@@ -469,6 +467,11 @@ public class AccumuloGraph extends GraphBase {
             endKey = new Key(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + endId + "~");
         }
 
+        Range range = new Range(startKey, endKey);
+        return getVerticesInRange(range, authorizations);
+    }
+
+    private ClosableIterable<Vertex> getVerticesInRange(final Range range, final Authorizations authorizations) {
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
             public Scanner scanner;
 
@@ -479,14 +482,14 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
-                VertexMaker maker = new VertexMaker(graph, next);
+                VertexMaker maker = new VertexMaker(AccumuloGraph.this, next);
                 return maker.make();
             }
 
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
                 scanner = createVertexScanner(authorizations);
-                scanner.setRange(new Range(startKey, endKey));
+                scanner.setRange(range);
                 scanner.clearColumns();
                 return new RowIterator(scanner.iterator());
             }

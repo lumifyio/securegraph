@@ -78,6 +78,12 @@ public abstract class GraphTestBase {
         assertNotNull(v);
         assertEquals("v1", v.getId());
         assertEquals(VISIBILITY_A, v.getVisibility());
+
+        v = graph.getVertex("", AUTHORIZATIONS_A);
+        assertNull(v);
+
+        v = graph.getVertex(null, AUTHORIZATIONS_A);
+        assertNull(v);
     }
 
     @Test
