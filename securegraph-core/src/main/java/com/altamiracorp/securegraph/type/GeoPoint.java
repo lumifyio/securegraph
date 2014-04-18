@@ -1,6 +1,7 @@
 package com.altamiracorp.securegraph.type;
 
 import com.altamiracorp.securegraph.SecureGraphException;
+
 import java.io.Serializable;
 
 public class GeoPoint implements Serializable, GeoShape {
@@ -9,15 +10,25 @@ public class GeoPoint implements Serializable, GeoShape {
     private final double latitude;
     private final double longitude;
     private final Double altitude;
+    private final String description;
 
-    public GeoPoint(double latitude, double longitude, Double altitude) {
+    public GeoPoint(double latitude, double longitude, Double altitude, String description) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.altitude = altitude;
+        this.description = description;
+    }
+
+    public GeoPoint(double latitude, double longitude, Double altitude) {
+        this(latitude, longitude, altitude, null);
     }
 
     public GeoPoint(double latitude, double longitude) {
-        this(latitude, longitude, null);
+        this(latitude, longitude, null, null);
+    }
+
+    public GeoPoint(double latitude, double longitude, String description) {
+        this(latitude, longitude, null, description);
     }
 
     public double getLatitude() {
@@ -30,6 +41,10 @@ public class GeoPoint implements Serializable, GeoShape {
 
     public Double getAltitude() {
         return altitude;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     @Override

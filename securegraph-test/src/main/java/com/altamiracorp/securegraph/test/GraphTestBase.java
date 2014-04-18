@@ -786,20 +786,25 @@ public abstract class GraphTestBase {
     @Test
     public void testGraphQueryGeoPoint() {
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
-                .setProperty("location", new GeoPoint(38.9186, -77.2297), VISIBILITY_A)
+                .setProperty("location", new GeoPoint(38.9186, -77.2297, "Reston, VA"), VISIBILITY_A)
                 .save();
         graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
-                .setProperty("location", new GeoPoint(38.9544, -77.3464), VISIBILITY_A)
+                .setProperty("location", new GeoPoint(38.9544, -77.3464, "Reston, VA"), VISIBILITY_A)
                 .save();
 
-        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+        List<Vertex> vertices = toList(graph.query(AUTHORIZATIONS_A)
                 .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 1))
-                .vertices();
+                .vertices());
         assertEquals(1, count(vertices));
+        GeoPoint geoPoint = (GeoPoint) vertices.get(0).getPropertyValue("location");
+        assertEquals(38.9186, geoPoint.getLatitude(), 0.001);
+        assertEquals(-77.2297, geoPoint.getLongitude(), 0.001);
+        assertEquals("Reston, VA", geoPoint.getDescription());
 
-        vertices = graph.query(AUTHORIZATIONS_A)
+        vertices = toList(graph.query(AUTHORIZATIONS_A)
                 .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 25))
-                .vertices();
+                .vertices());
+
         assertEquals(2, count(vertices));
     }
 
