@@ -32,7 +32,7 @@ Maven
 
 ```
 <properties>
-    <securegraph.version>0.1.0</securegraph.version>
+    <securegraph.version>0.2.0</securegraph.version>
 </properties>
 ```
 
