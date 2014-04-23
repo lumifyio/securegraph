@@ -1,5 +1,16 @@
 package org.securegraph.accumulo;
 
+import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
+import org.apache.accumulo.core.iterators.user.WholeRowIterator;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import org.securegraph.accumulo.serializer.ValueSerializer;
@@ -12,17 +23,6 @@ import org.securegraph.search.SearchIndex;
 import org.securegraph.util.ClosableIterable;
 import org.securegraph.util.EmptyClosableIterable;
 import org.securegraph.util.LookAheadIterable;
-import org.apache.accumulo.core.client.*;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
-import org.apache.accumulo.core.iterators.user.WholeRowIterator;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -346,7 +346,9 @@ public class AccumuloGraph extends GraphBase {
         flushWriter(this.dataWriter);
         flushWriter(this.verticesWriter);
         flushWriter(this.edgesWriter);
-        getSearchIndex().flush();
+        if (getSearchIndex() != null) {
+            getSearchIndex().flush();
+        }
     }
 
     private static void flushWriter(BatchWriter writer) {
@@ -374,6 +376,9 @@ public class AccumuloGraph extends GraphBase {
             if (this.edgesWriter != null) {
                 this.edgesWriter.close();
                 this.edgesWriter = null;
+            }
+            if (getSearchIndex() != null) {
+                getSearchIndex().shutdown();
             }
         } catch (Exception ex) {
             throw new SecureGraphException(ex);

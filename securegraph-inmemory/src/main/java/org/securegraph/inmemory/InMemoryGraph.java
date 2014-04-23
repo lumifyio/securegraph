@@ -154,12 +154,17 @@ public class InMemoryGraph extends GraphBase {
 
     @Override
     public void flush() {
-        getSearchIndex().flush();
+        if (getSearchIndex() != null) {
+            getSearchIndex().flush();
+        }
     }
 
     @Override
     public void shutdown() {
-
+        flush();
+        if (getSearchIndex() != null) {
+            getSearchIndex().shutdown();
+        }
     }
 
     public Iterable<Edge> getEdgesFromVertex(final Object vertexId, final Authorizations authorizations) {

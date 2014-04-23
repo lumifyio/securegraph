@@ -47,4 +47,9 @@ public class DefaultSearchIndex implements SearchIndex {
     public void flush() {
 
     }
+
+    @Override
+    public void shutdown() {
+
+    }
 }

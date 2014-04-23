@@ -1,13 +1,5 @@
 package org.securegraph.elasticsearch;
 
-import org.securegraph.*;
-import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.query.DefaultVertexQuery;
-import org.securegraph.query.GraphQuery;
-import org.securegraph.query.VertexQuery;
-import org.securegraph.search.SearchIndex;
-import org.securegraph.type.GeoPoint;
-import org.securegraph.util.StreamUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
@@ -16,6 +8,14 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.securegraph.*;
+import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.query.DefaultVertexQuery;
+import org.securegraph.query.GraphQuery;
+import org.securegraph.query.VertexQuery;
+import org.securegraph.search.SearchIndex;
+import org.securegraph.type.GeoPoint;
+import org.securegraph.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,6 +198,11 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     @Override
     public void flush() {
         client.admin().indices().prepareFlush(indexName).execute().actionGet();
+    }
+
+    @Override
+    public void shutdown() {
+        client.close();
     }
 
     public void addPropertiesToIndex(Iterable<Property> properties) {

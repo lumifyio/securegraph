@@ -65,6 +65,7 @@ public abstract class GraphTestBase {
 
     @After
     public void after() throws Exception {
+        graph.shutdown();
         graph = null;
     }
 

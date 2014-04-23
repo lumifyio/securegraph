@@ -1,13 +1,5 @@
 package org.securegraph.elasticsearch;
 
-import org.securegraph.*;
-import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.query.DefaultVertexQuery;
-import org.securegraph.query.GraphQuery;
-import org.securegraph.query.VertexQuery;
-import org.securegraph.search.SearchIndex;
-import org.securegraph.type.GeoPoint;
-import org.securegraph.util.StreamUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
@@ -17,6 +9,14 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.securegraph.*;
+import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.query.DefaultVertexQuery;
+import org.securegraph.query.GraphQuery;
+import org.securegraph.query.VertexQuery;
+import org.securegraph.search.SearchIndex;
+import org.securegraph.type.GeoPoint;
+import org.securegraph.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,30 +90,30 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
             try {
                 XContentBuilder mapping = XContentFactory.jsonBuilder()
                         .startObject()
-                            .startObject(ELEMENT_TYPE)
-                                .startObject("_source")
-                                    .field("enabled", storeSourceData)
-                                .endObject()
-                                .startObject("properties")
-                                    .startObject(ELEMENT_TYPE_FIELD_NAME)
-                                        .field("type", "string")
-                                    .endObject()
-                                    .startObject(PROPERTY_NESTED_FIELD_NAME)
-                                        .field("type", "nested")
-                                        .field("include_in_parent", false)
-                                        .startObject("properties")
-                                            .startObject(PROPERTY_TEXT_FIELD_NAME)
-                                                .field("type", "string")
-                                            .endObject()
-                                            .startObject(PROPERTY_VISIBILITY_FIELD_NAME)
-                                                .field("type", "string")
-                                                .field("include_in_all", false)
-                                                .field("store", true)
-                                            .endObject()
-                                        .endObject()
-                                    .endObject()
-                                .endObject()
-                            .endObject()
+                        .startObject(ELEMENT_TYPE)
+                        .startObject("_source")
+                        .field("enabled", storeSourceData)
+                        .endObject()
+                        .startObject("properties")
+                        .startObject(ELEMENT_TYPE_FIELD_NAME)
+                        .field("type", "string")
+                        .endObject()
+                        .startObject(PROPERTY_NESTED_FIELD_NAME)
+                        .field("type", "nested")
+                        .field("include_in_parent", false)
+                        .startObject("properties")
+                        .startObject(PROPERTY_TEXT_FIELD_NAME)
+                        .field("type", "string")
+                        .endObject()
+                        .startObject(PROPERTY_VISIBILITY_FIELD_NAME)
+                        .field("type", "string")
+                        .field("include_in_all", false)
+                        .field("store", true)
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
                         .endObject();
                 CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).addMapping(ELEMENT_TYPE, mapping).execute().actionGet();
                 LOGGER.debug(createResponse.toString());
@@ -182,7 +182,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
                 GeoPoint geoPoint = (GeoPoint) propertyValue;
                 Map<String, Object> propertyValueMap = new HashMap<String, Object>();
                 propertyValueMap.put("type", "point");
-                propertyValueMap.put("coordinates", new double[] { geoPoint.getLongitude(), geoPoint.getLatitude() });
+                propertyValueMap.put("coordinates", new double[]{geoPoint.getLongitude(), geoPoint.getLatitude()});
                 propertyValue = propertyValueMap;
             } else if (propertyValue instanceof StreamingPropertyValue) {
                 StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
@@ -238,6 +238,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     @Override
     public void flush() {
         client.admin().indices().prepareFlush(indexName).execute().actionGet();
+    }
+
+    @Override
+    public void shutdown() {
+        client.close();
     }
 
     public void addPropertiesToIndex(Iterable<Property> properties) {
