@@ -152,21 +152,6 @@ public class InMemoryGraph extends GraphBase {
         getSearchIndex().removeElement(this, edge);
     }
 
-    @Override
-    public void flush() {
-        if (getSearchIndex() != null) {
-            getSearchIndex().flush();
-        }
-    }
-
-    @Override
-    public void shutdown() {
-        flush();
-        if (getSearchIndex() != null) {
-            getSearchIndex().shutdown();
-        }
-    }
-
     public Iterable<Edge> getEdgesFromVertex(final Object vertexId, final Authorizations authorizations) {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override

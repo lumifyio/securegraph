@@ -346,9 +346,7 @@ public class AccumuloGraph extends GraphBase {
         flushWriter(this.dataWriter);
         flushWriter(this.verticesWriter);
         flushWriter(this.edgesWriter);
-        if (getSearchIndex() != null) {
-            getSearchIndex().flush();
-        }
+        super.flush();
     }
 
     private static void flushWriter(BatchWriter writer) {
@@ -377,9 +375,7 @@ public class AccumuloGraph extends GraphBase {
                 this.edgesWriter.close();
                 this.edgesWriter = null;
             }
-            if (getSearchIndex() != null) {
-                getSearchIndex().shutdown();
-            }
+            super.shutdown();
         } catch (Exception ex) {
             throw new SecureGraphException(ex);
         }

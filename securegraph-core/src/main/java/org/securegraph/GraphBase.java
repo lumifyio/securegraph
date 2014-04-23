@@ -18,7 +18,7 @@ public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
     private final GraphConfiguration configuration;
     private final IdGenerator idGenerator;
-    private final SearchIndex searchIndex;
+    private SearchIndex searchIndex;
     private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
 
     protected GraphBase(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
@@ -220,5 +220,21 @@ public abstract class GraphBase implements Graph {
 
     private void reindexEdges(Authorizations authorizations) {
         this.searchIndex.addElements(this, new ToElementIterable<Edge>(getEdges(authorizations)));
+    }
+
+    @Override
+    public void flush() {
+        if (getSearchIndex() != null) {
+            this.searchIndex.flush();
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        flush();
+        if (getSearchIndex() != null) {
+            this.searchIndex.shutdown();
+            this.searchIndex = null;
+        }
     }
 }
