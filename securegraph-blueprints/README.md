@@ -5,7 +5,7 @@ Setting up Gremlin command line interface
 1. [Download](https://github.com/tinkerpop/gremlin/wiki/Downloads) and extract Gremlin
 1. Create a file called `gremlin-sg-accumulo.config` with the following contents:
 
-        storage=com.altamiracorp.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraphFactory
+        storage=org.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraphFactory
         storage.graph.useServerSideElementVisibilityRowFilter=false
         storage.graph.tableNamePrefix=sg
         storage.graph.accumuloInstanceName=sg
@@ -14,22 +14,22 @@ Setting up Gremlin command line interface
         storage.graph.password=password
         storage.graph.autoFlush=true
 
-        storage.graph.search=com.altamiracorp.securegraph.elasticsearch.ElasticSearchSearchIndex
+        storage.graph.search=org.securegraph.elasticsearch.ElasticSearchSearchIndex
         storage.graph.search.locations=localhost
         storage.graph.search.indexName=sg
 
-        storage.graph.serializer=com.altamiracorp.securegraph.accumulo.serializer.JavaValueSerializer
+        storage.graph.serializer=org.securegraph.accumulo.serializer.JavaValueSerializer
 
-        storage.graph.idgenerator=com.altamiracorp.securegraph.id.UUIDIdGenerator
+        storage.graph.idgenerator=org.securegraph.id.UUIDIdGenerator
 
-        storage.visibilityProvider=com.altamiracorp.securegraph.blueprints.DefaultVisibilityProvider
+        storage.visibilityProvider=org.securegraph.blueprints.DefaultVisibilityProvider
 
-        storage.authorizationsProvider=com.altamiracorp.securegraph.accumulo.blueprints.AccumuloAuthorizationsProvider
+        storage.authorizationsProvider=org.securegraph.accumulo.blueprints.AccumuloAuthorizationsProvider
         storage.authorizationsProvider.auths=auth1,auth2
 
 1. Create a file called `gremlin-sg.script` with the following contents:
 
-        g = com.altamiracorp.securegraph.blueprints.SecureGraphBlueprintsFactory.open('gremlin-sg-accumulo.config')
+        g = org.securegraph.blueprints.SecureGraphBlueprintsFactory.open('gremlin-sg-accumulo.config')
 
 1. Run `mvn package -DskipTests` from the root of securegraph.
 1. Run
@@ -89,21 +89,21 @@ Setting up Rexster
 
         <graph>
             <graph-name>securegraph</graph-name>
-            <graph-type>com.altamiracorp.securegraph.accumulo.blueprints.AccumuloSecureGraphRexsterGraphConfiguration</graph-type>
-            <storage>com.altamiracorp.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraphFactory</storage>
+            <graph-type>org.securegraph.accumulo.blueprints.AccumuloSecureGraphRexsterGraphConfiguration</graph-type>
+            <storage>org.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraphFactory</storage>
             <graph-useServerSideElementVisibilityRowFilter>false</graph-useServerSideElementVisibilityRowFilter>
             <graph-accumuloInstanceName>accumulo</graph-accumuloInstanceName>
             <graph-username>root</graph-username>
             <graph-password>password</graph-password>
             <graph-tableNamePrefix>sg</graph-tableNamePrefix>
             <graph-zookeeperServers>192.168.33.10,192.168.33.10</graph-zookeeperServers>
-            <graph-serializer>com.altamiracorp.securegraph.accumulo.serializer.JavaValueSerializer</graph-serializer>
-            <graph-idgenerator>com.altamiracorp.securegraph.id.UUIDIdGenerator</graph-idgenerator>
-            <graph-search>com.altamiracorp.securegraph.elasticsearch.ElasticSearchSearchIndex</graph-search>
+            <graph-serializer>org.securegraph.accumulo.serializer.JavaValueSerializer</graph-serializer>
+            <graph-idgenerator>org.securegraph.id.UUIDIdGenerator</graph-idgenerator>
+            <graph-search>org.securegraph.elasticsearch.ElasticSearchSearchIndex</graph-search>
             <graph-search-locations>192.168.33.10</graph-search-locations>
             <graph-search-indexName>securegraph</graph-search-indexName>
-            <visibilityProvider>com.altamiracorp.securegraph.blueprints.DefaultVisibilityProvider</visibilityProvider>
-            <authorizationsProvider>com.altamiracorp.securegraph.accumulo.blueprints.AccumuloAuthorizationsProvider</authorizationsProvider>
+            <visibilityProvider>org.securegraph.blueprints.DefaultVisibilityProvider</visibilityProvider>
+            <authorizationsProvider>org.securegraph.accumulo.blueprints.AccumuloAuthorizationsProvider</authorizationsProvider>
             <authorizationsProvider-auths>auth1,auth2</authorizationsProvider-auths>
             <extensions>
                 <allows>

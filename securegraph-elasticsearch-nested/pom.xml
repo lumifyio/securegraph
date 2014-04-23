@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>securegraph-root</artifactId>
-        <groupId>com.altamiracorp.securegraph</groupId>
-        <version>0.3.0-SNAPSHOT</version>
+        <groupId>org.securegraph</groupId>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -19,18 +19,18 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.altamiracorp.securegraph</groupId>
+            <groupId>org.securegraph</groupId>
             <artifactId>securegraph-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.altamiracorp.securegraph</groupId>
+            <groupId>org.securegraph</groupId>
             <artifactId>securegraph-test</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.altamiracorp.securegraph</groupId>
+            <groupId>org.securegraph</groupId>
             <artifactId>securegraph-inmemory</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

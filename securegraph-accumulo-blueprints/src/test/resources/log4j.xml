@@ -14,7 +14,7 @@
         </layout>
     </appender>
 
-    <logger name="com.altamiracorp" additivity="false">
+    <logger name="org.securegraph" additivity="false">
         <level value="DEBUG" />
         <appender-ref ref="console" />
     </logger>

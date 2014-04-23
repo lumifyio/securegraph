@@ -39,22 +39,22 @@ Maven
 ```
 <dependencies>
     <dependency>
-        <groupId>com.altamiracorp.securegraph</groupId>
+        <groupId>org.securegraph</groupId>
         <artifactId>securegraph-core</artifactId>
         <version>${securegraph.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.altamiracorp.securegraph</groupId>
+        <groupId>org.securegraph</groupId>
         <artifactId>securegraph-inmemory</artifactId>
         <version>${securegraph.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.altamiracorp.securegraph</groupId>
+        <groupId>org.securegraph</groupId>
         <artifactId>securegraph-elasticsearch</artifactId>
         <version>${securegraph.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.altamiracorp.securegraph</groupId>
+        <groupId>org.securegraph</groupId>
         <artifactId>securegraph-accumulo</artifactId>
         <version>${securegraph.version}</version>
     </dependency>
@@ -86,9 +86,9 @@ API Usage Examples
 import java.util.Map;
 import java.util.HashMap;
 
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.accumulo.AccumuloGraph;
-import com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration;
+import org.securegraph.Graph;
+import org.securegraph.accumulo.AccumuloGraph;
+import org.securegraph.accumulo.AccumuloGraphConfiguration;
 
 // specify Accumulo config, more options than shown are available
 Map mapConfig = new HashMap();
@@ -104,9 +104,9 @@ Graph graph = AccumuloGraph.create(graphConfig);
 ### add a vertex
 
 ```java
-import com.altamiracorp.securegraph.Authorizations;
-import com.altamiracorp.securegraph.Graph;
-import com.altamiracorp.securegraph.accumulo.AccumuloAuthorizations;
+import org.securegraph.Authorizations;
+import org.securegraph.Graph;
+import org.securegraph.accumulo.AccumuloAuthorizations;
 
 // visibility of vertex to be created
 Visibility visA = new Visibility("a");
@@ -144,8 +144,8 @@ Edge e = graph.addEdge(v1, v2, "label1", visA, authA);
 ### get all vertex edges
 
 ```java
-import com.altamiracorp.securegraph.Direction;
-import com.altamiracorp.securegraph.Edge;
+import org.securegraph.Direction;
+import org.securegraph.Edge;
 
 Authorizations authA = new AccumuloAuthorizations("a");
 Vertex v1 = graph.getVertex("v1", authA);
@@ -164,7 +164,7 @@ Configuration
 
 The Accumulo implementation has quite a few configuration properties, all with
 defaults. Please see the `public static final String` fields in
-[com.altamiracorp.securegraph.accumulo.AccumuloGraphConfiguration](securegraph-accumulo/src/main/java/com/altamiracorp/securegraph/accumulo/AccumuloGraphConfiguration.java?source=c#L29) for a full
+[org.securegraph.accumulo.AccumuloGraphConfiguration](securegraph-accumulo/src/main/java/org/securegraph/accumulo/AccumuloGraphConfiguration.java?source=c#L29) for a full
 listing.
 
 Iterators
@@ -187,7 +187,7 @@ Contributing
 ============
 
 We welcome and encourage participation and contribution from anyone interested
-in using Secure Graph. Please see our [contributing guide](https://github.com/altamiracorp/secure-graph/blob/master/CONTRIBUTING.md)
+in using Secure Graph. Please see our [contributing guide](https://github.com/altamiracorp/securegraph/blob/master/CONTRIBUTING.md)
 to better understand how you can pitch in.
 
 License
