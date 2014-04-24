@@ -34,7 +34,7 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/altamiracorp/securegraph</url>
+        <url>scm:git:git@github.com:altamiracorp/securegraph.git</url>
         <connection>scm:git:git@github.com:altamiracorp/securegraph.git</connection>
         <developerConnection>scm:git:git@github.com:altamiracorp/securegraph.git</developerConnection>
         <tag>HEAD</tag>
