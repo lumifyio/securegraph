@@ -12,7 +12,7 @@
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.4.0-SNAPSHOT</version>
+    <version>0.4.0</version>
     <name>securegraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
