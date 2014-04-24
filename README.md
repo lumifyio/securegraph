@@ -14,25 +14,8 @@ Maven
 =====
 
 ```
-<repositories>
-    <repository>
-        <id>lumify-releases</id>
-        <url>http://bits.lumify.io/m2/releases/</url>
-    </repository>
-    <repository>
-        <snapshots>
-            <enabled>true</enabled>
-            <updatePolicy>always</updatePolicy>
-        </snapshots>
-        <id>lumify-snapshots</id>
-        <url>http://bits.lumify.io/m2/snapshots/</url>
-    </repository>
-</repositories>
-```
-
-```
 <properties>
-    <securegraph.version>0.2.0</securegraph.version>
+    <securegraph.version>0.4.0</securegraph.version>
 </properties>
 ```
 
@@ -57,6 +40,11 @@ Maven
         <groupId>org.securegraph</groupId>
         <artifactId>securegraph-accumulo</artifactId>
         <version>${securegraph.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.17</version>
     </dependency>
 </dependencies>
 ```
@@ -92,6 +80,7 @@ import org.securegraph.accumulo.AccumuloGraphConfiguration;
 
 // specify Accumulo config, more options than shown are available
 Map mapConfig = new HashMap();
+mapConfig.put(AccumuloGraphConfiguration.USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER, false);
 mapConfig.put(AccumuloGraphConfiguration.ACCUMULO_INSTANCE_NAME, "instance_name");
 mapConfig.put(AccumuloGraphConfiguration.ACCUMULO_USERNAME, "username");
 mapConfig.put(AccumuloGraphConfiguration.ACCUMULO_PASSWORD, "password");
