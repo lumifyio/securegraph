@@ -3,11 +3,56 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+    
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
     <version>0.4.0-SNAPSHOT</version>
+    <name>securegraph</name>
+    <description>
+        Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
+        requires authorizations and visibilities. Secure graph also supports multivalued properties as well as property
+        metadata.
+
+        The Secure Graph API was designed to be generic, allowing for multiple implementations. The only implementation
+        provided currently is built on top of Apache Accumulo for data storage and Elastic Search for indexing.
+    </description>
+    <url>http://securegraph.org</url>
+    <inceptionYear>2014</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/altamiracorp/securegraph</url>
+        <connection>scm:git:git@github.com:altamiracorp/securegraph.git</connection>
+        <developerConnection>scm:git:git@github.com:altamiracorp/securegraph.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/altamiracorp/securegraph/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <name>Joe Ferner</name>
+            <url>https://github.com/joeferner</url>
+            <timezone>-5</timezone>
+            <email>joe.m.ferner@gmail.com</email>
+        </developer>
+    </developers>
 
     <properties>
         <junit.version>4.11</junit.version>
@@ -17,20 +62,14 @@
         <json.version>20131018</json.version>
         <commons-codec.version>1.8</commons-codec.version>
         <jcommander-version>1.32</jcommander-version>
-        <plugin.maven.source.version>2.2.1</plugin.maven.source.version>
-        <plugin.maven.javadoc.version>2.9.1</plugin.maven.javadoc.version>
-    </properties>
 
-    <distributionManagement>
-        <repository>
-            <id>bits.lumify.io.releases</id>
-            <url>file:///var/www/maven/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>bits.lumify.io.snapshots</id>
-            <url>file:///var/www/maven/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
+        <maven.plugin.gpg.version>1.4</maven.plugin.gpg.version>
+        <maven.plugin.javadoc.version>2.9.1</maven.plugin.javadoc.version>
+        <maven.plugin.source.version>2.2.1</maven.plugin.source.version>
+        <maven.plugin.plugin.version>3.2</maven.plugin.plugin.version>
+        <maven.plugin.release.version>2.4.2</maven.plugin.release.version>
+        <maven.plugin.scm.version>1.8.1</maven.plugin.scm.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -79,14 +118,19 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>${maven.plugin.scm.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>${plugin.maven.source.version}</version>
+                <version>${maven.plugin.source.version}</version>
                 <executions>
                     <execution>
-                        <id>attach-sources</id>
+                        <id>source-jar</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
-                            <goal>test-jar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -94,21 +138,38 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${plugin.maven.javadoc.version}</version>
-                <configuration>
-                    <failOnError>false</failOnError>
-                    <footer>Generated ${maven.build.timestamp}</footer>
-                    <quiet>true</quiet>
-                    <show>package</show>
-                </configuration>
+                <version>${maven.plugin.javadoc.version}</version>
                 <executions>
                     <execution>
-                        <id>attach-javadocs</id>
+                        <id>javadocs-jar</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven.plugin.release.version}</version>
+                <configuration>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <arguments>-Psonatype-oss-release</arguments>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-api</artifactId>
+                        <version>${maven.plugin.scm.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-provider-gitexe</artifactId>
+                        <version>${maven.plugin.scm.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
@@ -127,4 +188,35 @@
         <module>securegraph-performance-test</module>
         <module>securegraph-elasticsearch-nested</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>release-tasks</id>
+            <activation>
+                <!-- mvn release:perform sets this to true -->
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.plugin.gpg.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
