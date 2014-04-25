@@ -37,6 +37,20 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
+    public Iterable<Object> getPropertyValues(Object key, String name) {
+        return new ConvertingIterable<Property, Object>(getProperties(key, name)) {
+            @Override
+            protected Object convert(Property p) {
+                Object v = p.getValue();
+                if (v instanceof Text) {
+                    v = ((Text) v).getText();
+                }
+                return v;
+            }
+        };
+    }
+
+    @Override
     public Property getProperty(Object key, String name, Visibility visibility) {
         for (Property p : getProperties()) {
             if (!p.getKey().equals(key)) {
@@ -92,6 +106,27 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
+    public Object getPropertyValue(Object key, String name, int index) {
+        Iterator<Object> values = getPropertyValues(key, name).iterator();
+        while (values.hasNext() && index >= 0) {
+            Object v = values.next();
+            if (index == 0) {
+                if (v instanceof Text) {
+                    return ((Text) v).getText();
+                }
+                return v;
+            }
+            index--;
+        }
+        return null;
+    }
+
+    @Override
+    public Object getPropertyValue(Object key, String name) {
+        return getPropertyValue(key, name, 0);
+    }
+
+    @Override
     public Object getId() {
         return this.id;
     }
@@ -116,6 +151,17 @@ public abstract class ElementBase<T extends Element> implements Element {
             @Override
             protected boolean isIncluded(Property property) {
                 return property.getName().equals(name);
+            }
+        };
+    }
+
+    @Override
+    public Iterable<Property> getProperties(final Object key, final String name) {
+        return new FilterIterable<Property>(getProperties()) {
+            @Override
+            protected boolean isIncluded(Property property) {
+
+                return property.getName().equals(name) && property.getKey().equals(key);
             }
         };
     }
@@ -209,4 +255,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         prepareMutation().setProperty(name, value, metadata, visibility).save();
     }
+
+    @Override
+    public abstract void removeProperty(String name);
 }
