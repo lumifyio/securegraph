@@ -18,4 +18,5 @@ DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
   cd ${DIR}/..
   git pull
   echo "updated from ${bundle_filename}"
+  git log -n 1 > ../${bundle_filename}.txt
 )

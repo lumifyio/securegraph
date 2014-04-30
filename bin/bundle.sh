@@ -14,7 +14,7 @@ DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
   git pull
   git tag | grep -q last-bundle
   [ $? -eq 0 ] && ref='last-bundle..master' || ref='master'
-  bundle_filename="${DIR}/../../secure-graph.$(date '+%Y%m%dT%H%M').bundle"
+  bundle_filename="${DIR}/../../securegraph.$(date '+%Y%m%dT%H%M').bundle"
   git bundle create ${bundle_filename} ${ref}
   git tag -f last-bundle master
   git push origin :last-bundle
