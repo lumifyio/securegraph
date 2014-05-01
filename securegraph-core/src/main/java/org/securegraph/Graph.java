@@ -245,15 +245,16 @@ public interface Graph {
     /**
      * Given an authorization is the visibility object valid.
      *
-     * @param visibility        The visibility you want to check.
-     * @param authorizations    The given authorizations.
+     * @param visibility     The visibility you want to check.
+     * @param authorizations The given authorizations.
      * @return true if the visibility is valid given an authorization, else return false.
      */
-    boolean isVisibilityValid (Visibility visibility, Authorizations authorizations);
+    boolean isVisibilityValid(Visibility visibility, Authorizations authorizations);
 
     /**
      * Reindex all vertices and edges.
-     * @param authorizations
+     *
+     * @param authorizations authorizations used to query for the data to reindex.
      */
     void reindex(Authorizations authorizations);
 }
