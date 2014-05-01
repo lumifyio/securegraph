@@ -6,6 +6,7 @@ import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -41,6 +42,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     public static final int DEFAULT_ES_PORT = 9300;
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     public static final String PROPERTY_NESTED_FIELD_NAME = "property";
+    public static final String SETTING_CLUSTER_NAME = "clusterName";
     private final TransportClient client;
     private final boolean autoflush;
     private String indexName;
@@ -69,7 +71,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
         autoflush = autoFlushObj != null && "true".equals(autoFlushObj.toString());
         LOGGER.info("Auto flush: " + autoflush);
 
-        client = new TransportClient();
+        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        if (config.get(SETTING_CLUSTER_NAME) != null) {
+            settingsBuilder.put("cluster.name", config.get(SETTING_CLUSTER_NAME));
+        }
+        client = new TransportClient(settingsBuilder.build());
         for (String esLocation : esLocations) {
             String[] locationSocket = esLocation.split(":");
             String hostname;
