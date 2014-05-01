@@ -618,9 +618,6 @@ public abstract class GraphTestBase {
             assertTrue("results was not of type IterableWithFacetedResults: " + results.getClass().getName(), results instanceof IterableWithFacetedResults);
             FacetedResult facetedResult = ((IterableWithFacetedResults) results).getFacetedResult("f1");
             assertNotNull("facetedResults was null for name 'f1'", facetedResult);
-            assertEquals(1, facetedResult.getMissing());
-            assertEquals(0, facetedResult.getOther());
-            assertEquals(3, facetedResult.getTotal());
             assertEquals(2, count(facetedResult.getTerms()));
             for (FacetedTerm facetedTerm : facetedResult.getTerms()) {
                 if (facetedTerm.getTerm().equals("male")) {

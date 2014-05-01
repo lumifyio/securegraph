@@ -229,7 +229,8 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
             if (facet instanceof TermFacet) {
                 TermFacet termFacet = (TermFacet) facet;
                 TermsFacetBuilder esFacets = FacetBuilders.termsFacet(termFacet.getName())
-                        .field(termFacet.getPropertyName())
+                        .field(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME + "." + termFacet.getPropertyName())
+                        .nested(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME)
                         .size(1000);
                 q.addFacet(esFacets);
             } else {

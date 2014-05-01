@@ -13,21 +13,6 @@ public class ElasticSearchTermsFacetFacetedResult extends FacetedResult {
     }
 
     @Override
-    public long getMissing() {
-        return this.termsFacet.getMissingCount();
-    }
-
-    @Override
-    public long getTotal() {
-        return this.termsFacet.getTotalCount();
-    }
-
-    @Override
-    public long getOther() {
-        return this.termsFacet.getOtherCount();
-    }
-
-    @Override
     public Iterable<FacetedTerm> getTerms() {
         return new ConvertingIterable<TermsFacet.Entry, FacetedTerm>((Iterable<TermsFacet.Entry>) this.termsFacet.getEntries()) {
             @Override
