@@ -1,9 +1,5 @@
 package org.securegraph.elasticsearch;
 
-import org.securegraph.*;
-import org.securegraph.query.*;
-import org.securegraph.type.GeoCircle;
-import org.securegraph.util.ConvertingIterable;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
@@ -13,18 +9,29 @@ import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.facet.Facets;
+import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
+import org.securegraph.*;
+import org.securegraph.query.*;
+import org.securegraph.type.GeoCircle;
+import org.securegraph.util.ConvertingIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.securegraph.util.IterableUtils.toList;
 
-public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
+public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements QuerySupportingFacetedResults {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchNestedGraphQuery.class);
     private final TransportClient client;
     private String indexName;
+    private List<Facet> facets = new ArrayList<Facet>();
 
     public ElasticSearchNestedGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
         super(graph, queryString, authorizations);
@@ -36,6 +43,7 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
     public Iterable<Vertex> vertices() {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_VERTEX);
+        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getFacets());
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -53,13 +61,14 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
-        return new DefaultGraphQueryIterable<Vertex>(filterParameters, vertices, false);
+        return new DefaultGraphQueryIterableWithFacetedResults<Vertex>(filterParameters, vertices, false, facetedResult);
     }
 
     @Override
     public Iterable<Edge> edges() {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_EDGE);
+        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getFacets());
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -78,7 +87,27 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
-        return new DefaultGraphQueryIterable<Edge>(filterParameters, edges, false);
+        return new DefaultGraphQueryIterableWithFacetedResults<Edge>(filterParameters, edges, false, facetedResult);
+    }
+
+    private Map<String, FacetedResult> toFacetedResults(Facets facets) {
+        Map<String, FacetedResult> facetedResults = new HashMap<String, FacetedResult>();
+        if (facets == null || facets.facets() == null) {
+            return facetedResults;
+        }
+        for (org.elasticsearch.search.facet.Facet esFacet : facets.facets()) {
+            facetedResults.put(esFacet.getName(), toFacetedResult(esFacet));
+        }
+        return facetedResults;
+    }
+
+    private FacetedResult toFacetedResult(org.elasticsearch.search.facet.Facet esFacet) {
+        if (esFacet instanceof TermsFacet) {
+            TermsFacet termsFacet = (TermsFacet) esFacet;
+            return new ElasticSearchTermsFacetFacetedResult(termsFacet);
+        } else {
+            throw new SecureGraphException("Invalid facet type: " + esFacet.getClass().getName());
+        }
     }
 
     private SearchResponse getSearchResponse(String elementType) {
@@ -196,10 +225,24 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
 
+        if (this.facets.size() > 0) {
+            for (Facet facet : this.facets) {
+                if (facet instanceof TermFacet) {
+                    TermFacet termFacet = (TermFacet) facet;
+                    TermsFacetBuilder esFacets = FacetBuilders.termsFacet(termFacet.getName())
+                            .field(termFacet.getPropertyName())
+                            .size(1000);
+                    q.addFacet(esFacets);
+                } else {
+                    throw new SecureGraphException("Unsupported facet type: " + facet.getClass().getName());
+                }
+            }
+        }
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("query: " + q);
         }
-        
+
         return q.execute()
                 .actionGet();
     }
@@ -225,5 +268,10 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase {
             query = QueryBuilders.queryString(queryString);
         }
         return query;
+    }
+
+    @Override
+    public void addFacet(Facet facet) {
+        this.facets.add(facet);
     }
 }

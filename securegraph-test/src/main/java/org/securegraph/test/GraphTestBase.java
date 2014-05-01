@@ -1,35 +1,35 @@
 package org.securegraph.test;
 
 
-import org.securegraph.*;
-import org.securegraph.mutation.ElementMutation;
-import org.securegraph.property.PropertyValue;
-import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.query.Compare;
-import org.securegraph.query.DefaultGraphQuery;
-import org.securegraph.query.GeoCompare;
-import org.securegraph.query.TextPredicate;
-import org.securegraph.test.util.LargeStringInputStream;
-import org.securegraph.type.GeoCircle;
-import org.securegraph.type.GeoPoint;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.securegraph.*;
+import org.securegraph.mutation.ElementMutation;
+import org.securegraph.property.PropertyValue;
+import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.query.*;
+import org.securegraph.test.util.LargeStringInputStream;
+import org.securegraph.type.GeoCircle;
+import org.securegraph.type.GeoPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static org.junit.Assert.*;
 import static org.securegraph.test.util.IterableUtils.assertContains;
 import static org.securegraph.util.IterableUtils.count;
 import static org.securegraph.util.IterableUtils.toList;
-import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphTestBase.class);
     public static final Visibility VISIBILITY_A = new Visibility("a");
     public static final Visibility VISIBILITY_B = new Visibility("b");
     public static final Visibility VISIBILITY_EMPTY = new Visibility("");
@@ -593,6 +593,48 @@ public abstract class GraphTestBase {
 
         vertices = graph.query("dog", AUTHORIZATIONS_B).vertices();
         assertEquals(0, count(vertices));
+    }
+
+    @Test
+    public void testFacetedResults() {
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("gender", "male", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("gender", "male", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("gender", "female", VISIBILITY_A)
+                .save();
+        graph.prepareVertex("v4", VISIBILITY_A, AUTHORIZATIONS_A)
+                .save();
+        graph.flush();
+
+        Query q = graph.query(AUTHORIZATIONS_A)
+                .has("gender", "male");
+        if (q instanceof QuerySupportingFacetedResults) {
+            //((QuerySupportingFacetedResults) q).addFacet(new TermFacet("f1", "gender"));
+            Iterable<Vertex> results = q.vertices();
+            assertEquals(4, count(results));
+            assertTrue("results was not of type IterableWithFacetedResults: " + results.getClass().getName(), results instanceof IterableWithFacetedResults);
+            FacetedResult facetedResult = ((IterableWithFacetedResults) results).getFacetedResult("f1");
+            assertNotNull("facetedResults was null for name 'f1'", facetedResult);
+            assertEquals(1, facetedResult.getMissing());
+            assertEquals(0, facetedResult.getOther());
+            assertEquals(3, facetedResult.getTotal());
+            assertEquals(2, count(facetedResult.getTerms()));
+            for (FacetedTerm facetedTerm : facetedResult.getTerms()) {
+                if (facetedTerm.getTerm().equals("male")) {
+                    assertEquals(2, facetedTerm.getCount());
+                } else if (facetedTerm.getTerm().equals("female")) {
+                    assertEquals(1, facetedTerm.getCount());
+                } else {
+                    throw new RuntimeException("Unexpected FacetedTerm: " + facetedTerm.getTerm());
+                }
+            }
+        } else {
+            LOGGER.warn("query does not support faceted results: " + q.getClass().getName());
+        }
     }
 
     @Test

@@ -22,10 +22,11 @@ import java.util.List;
 
 import static org.securegraph.util.IterableUtils.toList;
 
-public class ElasticSearchGraphQuery extends GraphQueryBase {
+public class ElasticSearchGraphQuery extends GraphQueryBase implements QuerySupportingFacetedResults {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQuery.class);
     private final TransportClient client;
     private String indexName;
+    private List<Facet> facets = new ArrayList<Facet>();
 
     public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
         super(graph, queryString, authorizations);
@@ -190,5 +191,10 @@ public class ElasticSearchGraphQuery extends GraphQueryBase {
             query = QueryBuilders.queryString(queryString);
         }
         return query;
+    }
+
+    @Override
+    public void addFacet(Facet facet) {
+        this.facets.add(facet);
     }
 }
