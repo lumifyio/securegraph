@@ -1,12 +1,12 @@
 package org.securegraph.tools;
 
-import org.securegraph.*;
-import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.util.JavaSerializableUtils;
 import com.beust.jcommander.Parameter;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.securegraph.*;
+import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.util.JavaSerializableUtils;
 
 import java.io.*;
 import java.util.HashMap;
@@ -52,14 +52,15 @@ public class GraphRestore extends GraphToolBase {
                     case 'V':
                         element = restoreVertex(graph, json, authorizations);
                         break;
-                    case 'D':
-                        restoreStreamingPropertyValue(in, graph, json, element);
-                        break;
                     case 'E':
+                        // flush when we make the transition to edges so that we have vertices to lookup and link to.
                         if (type != lastType) {
                             graph.flush();
                         }
-                        restoreEdge(graph, json, authorizations);
+                        element = restoreEdge(graph, json, authorizations);
+                        break;
+                    case 'D':
+                        restoreStreamingPropertyValue(in, graph, json, element);
                         break;
                     default:
                         throw new RuntimeException("Unexpected line: " + line);
@@ -97,7 +98,7 @@ public class GraphRestore extends GraphToolBase {
         return v.save();
     }
 
-    private void restoreEdge(Graph graph, JSONObject json, Authorizations authorizations) {
+    private Edge restoreEdge(Graph graph, JSONObject json, Authorizations authorizations) {
         Visibility visibility = jsonToVisibility(json);
         Object edgeId = jsonStringToObject(json.getString("id"));
         Object outVertexId = jsonStringToObject(json.getString("outVertexId"));
@@ -107,7 +108,7 @@ public class GraphRestore extends GraphToolBase {
         Vertex inVertex = graph.getVertex(inVertexId, authorizations);
         EdgeBuilder e = graph.prepareEdge(edgeId, outVertex, inVertex, label, visibility, authorizations);
         jsonToProperties(json, e);
-        e.save();
+        return e.save();
     }
 
     protected Visibility jsonToVisibility(JSONObject jsonObject) {
@@ -139,6 +140,8 @@ public class GraphRestore extends GraphToolBase {
         Class valueType = Class.forName(propertyJson.getString("valueType"));
         InputStream spvin = new StreamingPropertyValueInputStream(in);
         StreamingPropertyValue value = new StreamingPropertyValue(spvin, valueType);
+        value.searchIndex(propertyJson.optBoolean("searchIndex", false));
+        value.store(propertyJson.optBoolean("store", true));
         element.addPropertyValue(key, name, value, metadata, visibility);
     }
 
@@ -156,7 +159,8 @@ public class GraphRestore extends GraphToolBase {
     }
 
     private Object jsonStringToObject(String str) {
-        if (str.startsWith("base64/java:")) {
+        if (str.startsWith(GraphBackup.BASE64_PREFIX)) {
+            str = str.substring(GraphBackup.BASE64_PREFIX.length());
             return JavaSerializableUtils.bytesToObject(Base64.decodeBase64(str));
         } else {
             return str;

@@ -1,17 +1,19 @@
 package org.securegraph.tools;
 
-import org.securegraph.*;
-import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.util.JavaSerializableUtils;
 import com.beust.jcommander.Parameter;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.securegraph.*;
+import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.util.JavaSerializableUtils;
 
 import java.io.*;
 import java.util.Map;
 
 public class GraphBackup extends GraphToolBase {
+    public static final String BASE64_PREFIX = "base64/java:";
+
     @Parameter(names = {"--out", "-o"}, description = "Output filename")
     private String outputFileName = null;
 
@@ -39,28 +41,40 @@ public class GraphBackup extends GraphToolBase {
     }
 
     public void save(Graph graph, OutputStream out, Authorizations authorizations) throws IOException {
-        saveVertices(graph.getVertices(authorizations), out);
-        saveEdges(graph.getEdges(authorizations), out);
+        save(graph.getVertices(authorizations), graph.getEdges(authorizations), out);
     }
 
-    private void saveVertices(Iterable<Vertex> vertices, OutputStream out) throws IOException {
+    public void save(Iterable<Vertex> vertices, Iterable<Edge> edges, OutputStream out) throws IOException {
+        saveVertices(vertices, out);
+        saveEdges(edges, out);
+    }
+
+    public void saveVertices(Iterable<Vertex> vertices, OutputStream out) throws IOException {
         for (Vertex vertex : vertices) {
-            JSONObject json = vertexToJson(vertex);
-            out.write('V');
-            out.write(json.toString().getBytes());
-            out.write('\n');
-            saveStreamingPropertyValues(out, vertex);
+            saveVertex(vertex, out);
         }
     }
 
-    private void saveEdges(Iterable<Edge> edges, OutputStream out) throws IOException {
+    public void saveVertex(Vertex vertex, OutputStream out) throws IOException {
+        JSONObject json = vertexToJson(vertex);
+        out.write('V');
+        out.write(json.toString().getBytes());
+        out.write('\n');
+        saveStreamingPropertyValues(out, vertex);
+    }
+
+    public void saveEdges(Iterable<Edge> edges, OutputStream out) throws IOException {
         for (Edge edge : edges) {
-            JSONObject json = edgeToJson(edge);
-            out.write('E');
-            out.write(json.toString().getBytes());
-            out.write('\n');
-            saveStreamingPropertyValues(out, edge);
+            saveEdge(edge, out);
         }
+    }
+
+    public void saveEdge(Edge edge, OutputStream out) throws IOException {
+        JSONObject json = edgeToJson(edge);
+        out.write('E');
+        out.write(json.toString().getBytes());
+        out.write('\n');
+        saveStreamingPropertyValues(out, edge);
     }
 
     private JSONObject vertexToJson(Vertex vertex) {
@@ -130,6 +144,8 @@ public class GraphBackup extends GraphToolBase {
         StreamingPropertyValue spv = (StreamingPropertyValue) property.getValue();
         JSONObject json = propertyToJson(property);
         json.put("valueType", spv.getValueType().getName());
+        json.put("searchIndex", spv.isSearchIndex());
+        json.put("store", spv.isStore());
         out.write('D');
         out.write(json.toString().getBytes());
         out.write('\n');
@@ -150,6 +166,9 @@ public class GraphBackup extends GraphToolBase {
         if (value instanceof String) {
             return (String) value;
         }
-        return "base64/java:" + Base64.encodeBase64String(JavaSerializableUtils.objectToBytes(value));
+        if (value instanceof Text) {
+            return ((Text) value).getText();
+        }
+        return BASE64_PREFIX + Base64.encodeBase64String(JavaSerializableUtils.objectToBytes(value));
     }
 }
