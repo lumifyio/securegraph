@@ -5,6 +5,8 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -35,6 +37,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
+    public static final String SETTING_CLUSTER_NAME = "clusterName";
     public static final int DEFAULT_ES_PORT = 9300;
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     private final TransportClient client;
@@ -65,7 +68,11 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         autoflush = autoFlushObj != null && "true".equals(autoFlushObj.toString());
         LOGGER.info("Auto flush: " + autoflush);
 
-        client = new TransportClient();
+        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        if (config.get(SETTING_CLUSTER_NAME) != null) {
+            settingsBuilder.put("cluster.name", config.get(SETTING_CLUSTER_NAME));
+        }
+        client = new TransportClient(settingsBuilder.build());
         for (String esLocation : esLocations) {
             String[] locationSocket = esLocation.split(":");
             String hostname;

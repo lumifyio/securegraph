@@ -17,18 +17,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class NestedTestHelpers {
     private static final Logger LOGGER = LoggerFactory.getLogger(NestedTestHelpers.class);
     private static File tempDir;
     private static Node elasticSearchNode;
     private static String addr;
+    private static String clusterName;
 
     public static Graph createGraph() {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchNestedSearchIndex.class.getName());
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchNestedSearchIndex.ES_LOCATIONS, addr);
+        config.put(ElasticSearchNestedSearchIndex.SETTING_CLUSTER_NAME, clusterName);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }
@@ -39,8 +42,10 @@ public class NestedTestHelpers {
         tempDir.mkdir();
         LOGGER.info("writing to: " + tempDir);
 
+        clusterName = UUID.randomUUID().toString();
         elasticSearchNode = NodeBuilder
                 .nodeBuilder()
+                .clusterName(clusterName)
                 .local(false)
                 .settings(
                         ImmutableSettings.settingsBuilder()
