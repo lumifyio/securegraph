@@ -610,10 +610,9 @@ public abstract class GraphTestBase {
                 .save();
         graph.flush();
 
-        Query q = graph.query(AUTHORIZATIONS_A)
-                .has("gender", "male");
+        Query q = graph.query(AUTHORIZATIONS_A);
         if (q instanceof QuerySupportingFacetedResults) {
-            //((QuerySupportingFacetedResults) q).addFacet(new TermFacet("f1", "gender"));
+            ((QuerySupportingFacetedResults) q).addFacet(new TermFacet("f1", "gender"));
             Iterable<Vertex> results = q.vertices();
             assertEquals(4, count(results));
             assertTrue("results was not of type IterableWithFacetedResults: " + results.getClass().getName(), results instanceof IterableWithFacetedResults);

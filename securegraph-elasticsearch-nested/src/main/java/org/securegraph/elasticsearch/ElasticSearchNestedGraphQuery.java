@@ -225,17 +225,15 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
 
-        if (this.facets.size() > 0) {
-            for (Facet facet : this.facets) {
-                if (facet instanceof TermFacet) {
-                    TermFacet termFacet = (TermFacet) facet;
-                    TermsFacetBuilder esFacets = FacetBuilders.termsFacet(termFacet.getName())
-                            .field(termFacet.getPropertyName())
-                            .size(1000);
-                    q.addFacet(esFacets);
-                } else {
-                    throw new SecureGraphException("Unsupported facet type: " + facet.getClass().getName());
-                }
+        for (Facet facet : this.facets) {
+            if (facet instanceof TermFacet) {
+                TermFacet termFacet = (TermFacet) facet;
+                TermsFacetBuilder esFacets = FacetBuilders.termsFacet(termFacet.getName())
+                        .field(termFacet.getPropertyName())
+                        .size(1000);
+                q.addFacet(esFacets);
+            } else {
+                throw new SecureGraphException("Unsupported facet type: " + facet.getClass().getName());
             }
         }
 
