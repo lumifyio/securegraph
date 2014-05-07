@@ -166,9 +166,6 @@ public class GraphBackup extends GraphToolBase {
         if (value instanceof String) {
             return (String) value;
         }
-        if (value instanceof Text) {
-            return ((Text) value).getText();
-        }
         return BASE64_PREFIX + Base64.encodeBase64String(JavaSerializableUtils.objectToBytes(value));
     }
 }
