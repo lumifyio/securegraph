@@ -12,6 +12,8 @@ import org.securegraph.mutation.ElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.*;
+import org.securegraph.test.util.GraphBackup;
+import org.securegraph.test.util.GraphRestore;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
@@ -19,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
@@ -43,6 +46,10 @@ public abstract class GraphTestBase {
     protected Graph graph;
 
     protected abstract Graph createGraph() throws Exception;
+
+    protected Graph clearGraph() throws Exception {
+        return createGraph();
+    }
 
     public Graph getGraph() {
         return graph;
@@ -1425,5 +1432,56 @@ public abstract class GraphTestBase {
         assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_A_AND_B));
         assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_B));
         assertTrue(graph.isVisibilityValid(VISIBILITY_EMPTY, AUTHORIZATIONS_A));
+    }
+
+    @Test
+    public void testBackupAndRestore() throws Exception {
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_A)
+                .setProperty("none", new Text("Test Value", TextIndexHint.NONE), VISIBILITY_A)
+                .setProperty("both", new Text("Test Value", TextIndexHint.ALL), VISIBILITY_A)
+                .setProperty("fullText", new Text("Test Value", TextIndexHint.FULL_TEXT), VISIBILITY_A)
+                .setProperty("exactMatch", new Text("Test Value", TextIndexHint.EXACT_MATCH), VISIBILITY_A)
+                .save();
+
+        Vertex v2 = graph.prepareVertex("v2", VISIBILITY_EMPTY, AUTHORIZATIONS_A)
+                .save();
+
+        Edge e1 = graph.prepareEdge("e1", v1, v2, "", VISIBILITY_A, AUTHORIZATIONS_A)
+                .save();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GraphBackup backup = new GraphBackup();
+        backup.save(graph, out, AUTHORIZATIONS_A_AND_B);
+
+        graph = clearGraph();
+        assertNull(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B));
+
+        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        GraphRestore restore = new GraphRestore();
+        restore.restore(graph, in, AUTHORIZATIONS_A_AND_B);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        assertNotNull(v1);
+
+        List<Vertex> vertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).has("none", "Test Value").vertices());
+        assertEquals(0, vertices.size());
+
+        vertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).has("both", "Test Value").vertices());
+        assertEquals(1, vertices.size());
+        assertEquals("v1", vertices.get(0).getId());
+
+        vertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).has("fullText", TextPredicate.CONTAINS, "Value").vertices());
+        assertEquals(1, vertices.size());
+        assertEquals("v1", vertices.get(0).getId());
+
+        vertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).has("exactMatch", "Test Value").vertices());
+        assertEquals(1, vertices.size());
+        assertEquals("v1", vertices.get(0).getId());
+
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A_AND_B);
+        assertNotNull(v2);
+
+        e1 = graph.getEdge("e1", AUTHORIZATIONS_A_AND_B);
+        assertNotNull(e1);
     }
 }

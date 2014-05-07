@@ -1,16 +1,17 @@
 package org.securegraph.tools;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Graph;
-import org.securegraph.GraphFactory;
-import org.securegraph.accumulo.AccumuloAuthorizations;
-import org.securegraph.util.MapUtils;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import org.securegraph.Authorizations;
+import org.securegraph.Graph;
+import org.securegraph.GraphFactory;
+import org.securegraph.SecureGraphException;
+import org.securegraph.util.MapUtils;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.Properties;
 
@@ -53,7 +54,27 @@ public abstract class GraphToolBase {
         if (split.length == 1 && split[0].length() == 0) {
             split = new String[0];
         }
-        return new AccumuloAuthorizations(split);
+
+        String authorizationsClassName = "org.securegraph.accumulo.AccumuloAuthorizations";
+        Class authorizationsClass;
+        try {
+            authorizationsClass = Class.forName(authorizationsClassName);
+        } catch (ClassNotFoundException e) {
+            throw new SecureGraphException("Could not load class: " + authorizationsClassName, e);
+        }
+
+        Constructor constructor;
+        try {
+            constructor = authorizationsClass.getConstructor(String[].class);
+        } catch (NoSuchMethodException e) {
+            throw new SecureGraphException("Could not find constructor in class " + authorizationsClass.getName() + "(String[])");
+        }
+
+        try {
+            return (Authorizations) constructor.newInstance(split);
+        } catch (Exception e) {
+            throw new SecureGraphException("Could not run method " + constructor.toString());
+        }
     }
 
     protected Graph getGraph() {

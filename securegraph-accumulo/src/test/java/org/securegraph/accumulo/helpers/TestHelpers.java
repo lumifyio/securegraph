@@ -1,13 +1,15 @@
 package org.securegraph.accumulo.helpers;
 
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.hadoop.io.Text;
 import org.securegraph.Graph;
 import org.securegraph.SecureGraphException;
 import org.securegraph.accumulo.AccumuloGraph;
 import org.securegraph.accumulo.AccumuloGraphConfiguration;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -25,6 +27,14 @@ public class TestHelpers {
         dropGraph(connector, AccumuloGraph.getVerticesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
         dropGraph(connector, AccumuloGraph.getEdgesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
         connector.securityOperations().changeUserAuthorizations(AccumuloGraphConfiguration.DEFAULT_ACCUMULO_USERNAME, new Authorizations("a", "b", "c"));
+    }
+
+    public static Graph clearGraph(Graph graph) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        AccumuloGraph accumuloGraph = (AccumuloGraph) graph;
+        accumuloGraph.getConnector().tableOperations().deleteRows(AccumuloGraph.getDataTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX), new Text("a"), new Text("z"));
+        accumuloGraph.getConnector().tableOperations().deleteRows(AccumuloGraph.getVerticesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX), new Text("a"), new Text("z"));
+        accumuloGraph.getConnector().tableOperations().deleteRows(AccumuloGraph.getEdgesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX), new Text("a"), new Text("z"));
+        return graph;
     }
 
     public static void after() {

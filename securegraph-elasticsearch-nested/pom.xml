@@ -33,6 +33,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.securegraph</groupId>
+            <artifactId>securegraph-tools</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.elasticsearch</groupId>

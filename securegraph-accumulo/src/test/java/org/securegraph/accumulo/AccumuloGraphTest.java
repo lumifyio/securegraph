@@ -1,11 +1,5 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Graph;
-import org.securegraph.SecureGraphException;
-import org.securegraph.Vertex;
-import org.securegraph.accumulo.helpers.TestHelpers;
-import org.securegraph.test.GraphTestBase;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.RowIterator;
@@ -18,6 +12,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.securegraph.Authorizations;
+import org.securegraph.Graph;
+import org.securegraph.SecureGraphException;
+import org.securegraph.Vertex;
+import org.securegraph.accumulo.helpers.TestHelpers;
+import org.securegraph.test.GraphTestBase;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -34,6 +34,11 @@ public class AccumuloGraphTest extends GraphTestBase {
     @Override
     protected Graph createGraph() throws AccumuloSecurityException, AccumuloException, SecureGraphException, InterruptedException, IOException, URISyntaxException {
         return TestHelpers.createGraph();
+    }
+
+    @Override
+    protected Graph clearGraph() throws Exception {
+        return TestHelpers.clearGraph(graph);
     }
 
     @Override
