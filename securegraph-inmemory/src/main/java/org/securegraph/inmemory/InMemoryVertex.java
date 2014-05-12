@@ -9,7 +9,7 @@ import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
 public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
-    protected InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
+    public InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
     }
 
