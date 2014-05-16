@@ -34,8 +34,8 @@ public class ElasticSearchGraphQuery extends GraphQueryBase implements QuerySupp
     private String indexName;
     private List<Facet> facets = new ArrayList<Facet>();
 
-    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
-        super(graph, queryString, authorizations);
+    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
+        super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
         this.indexName = indexName;
     }

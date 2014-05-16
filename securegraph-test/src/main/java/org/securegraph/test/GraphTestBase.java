@@ -1204,6 +1204,7 @@ public abstract class GraphTestBase {
     @Test
     public void testTextIndex() {
         graph.defineProperty("none").dataType(String.class).textIndexHint(TextIndexHint.NONE).define();
+        graph.defineProperty("none").dataType(String.class).textIndexHint(TextIndexHint.NONE).define(); // try calling define twice
         graph.defineProperty("both").dataType(String.class).textIndexHint(TextIndexHint.ALL).define();
         graph.defineProperty("fullText").dataType(String.class).textIndexHint(TextIndexHint.FULL_TEXT).define();
         graph.defineProperty("exactMatch").dataType(String.class).textIndexHint(TextIndexHint.EXACT_MATCH).define();

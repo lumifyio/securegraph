@@ -4,6 +4,8 @@ import org.securegraph.*;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.query.VertexQuery;
 
+import java.io.IOException;
+
 public interface SearchIndex {
     void addElement(Graph graph, Element element);
 
@@ -19,5 +21,5 @@ public interface SearchIndex {
 
     void shutdown();
 
-    void addPropertyDefinition(PropertyDefinition propertyDefinition);
+    void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException;
 }

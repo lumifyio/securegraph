@@ -42,7 +42,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     private final TransportClient client;
     private final boolean autoflush;
     private String indexName;
-    private Map<String, Boolean> existingProperties = new HashMap<String, Boolean>();
+    private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
 
     public ElasticSearchSearchIndex(Map config) {
         String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ES_LOCATIONS);
@@ -181,13 +181,13 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 } else {
                     throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                 }
-            } else if (propertyValue instanceof Text) {
-                Text textPropertyValue = (Text) propertyValue;
-                if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
-                    jsonBuilder.field(property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, textPropertyValue.getText());
+            } else if (propertyValue instanceof String) {
+                PropertyDefinition propertyDefinition = propertyDefinitions.get(property.getName());
+                if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
+                    jsonBuilder.field(property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, propertyValue);
                 }
-                if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
-                    jsonBuilder.field(property.getName(), textPropertyValue.getText());
+                if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
+                    jsonBuilder.field(property.getName(), propertyValue);
                 }
                 continue;
             }
@@ -211,6 +211,21 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         client.close();
     }
 
+    @Override
+    public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
+        if (propertyDefinition.getDataType() == String.class) {
+            if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
+                addPropertyToIndex(propertyDefinition.getPropertyName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, String.class, false);
+            }
+            if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
+                addPropertyToIndex(propertyDefinition.getPropertyName(), String.class, true);
+            }
+        } else {
+            addPropertyToIndex(propertyDefinition.getPropertyName(), propertyDefinition.getDataType(), true);
+        }
+        this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
+    }
+
     public void addPropertiesToIndex(Iterable<Property> properties) {
         try {
             for (Property property : properties) {
@@ -224,7 +239,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     public void addPropertyToIndex(Property property) throws IOException {
         String propertyName = property.getName();
 
-        if (existingProperties.get(propertyName) != null) {
+        if (propertyDefinitions.get(propertyName) != null) {
             return;
         }
 
@@ -236,26 +251,19 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 return;
             }
             dataType = streamingPropertyValue.getValueType();
+            addPropertyToIndex(propertyName, dataType, true);
+        } else if (propertyValue instanceof String) {
+            dataType = String.class;
+            addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
+            addPropertyToIndex(propertyName, dataType, true);
         } else {
             dataType = propertyValue.getClass();
-        }
-
-        if (propertyValue instanceof Text) {
-            Text textPropertyValue = (Text) propertyValue;
-            dataType = String.class;
-            if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
-                addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
-            }
-            if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
-                addPropertyToIndex(propertyName, dataType, true);
-            }
-        } else {
             addPropertyToIndex(propertyName, dataType, true);
         }
     }
 
     private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed) throws IOException {
-        if (existingProperties.get(propertyName) != null) {
+        if (propertyDefinitions.get(propertyName) != null) {
             return;
         }
 
@@ -323,7 +331,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 .actionGet();
         LOGGER.debug(response.toString());
 
-        existingProperties.put(propertyName, true);
+        propertyDefinitions.put(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.ALL));
     }
 
     protected boolean shouldIgnoreType(Class dataType) {
@@ -354,7 +362,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchGraphQuery(client, indexName, graph, queryString, authorizations);
+        return new ElasticSearchGraphQuery(client, indexName, graph, queryString, this.propertyDefinitions, authorizations);
     }
 
     @Override

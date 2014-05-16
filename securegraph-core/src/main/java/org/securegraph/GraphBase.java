@@ -10,6 +10,7 @@ import org.securegraph.util.ToElementIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.securegraph.util.IterableUtils.toList;
@@ -244,7 +245,11 @@ public abstract class GraphBase implements Graph {
             @Override
             public PropertyDefinition define() {
                 PropertyDefinition propertyDefinition = super.define();
-                getSearchIndex().addPropertyDefinition(propertyDefinition);
+                try {
+                    getSearchIndex().addPropertyDefinition(propertyDefinition);
+                } catch (IOException e) {
+                    throw new SecureGraphException("Could not add property definition to search index", e);
+                }
                 return propertyDefinition;
             }
         };

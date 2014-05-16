@@ -250,7 +250,17 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addPropertyDefinition(PropertyDefinition propertyDefinition) {
+    public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
+        if (propertyDefinition.getDataType() == String.class) {
+            if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
+                addPropertyToIndex(propertyDefinition.getPropertyName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, String.class, false);
+            }
+            if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
+                addPropertyToIndex(propertyDefinition.getPropertyName(), String.class, true);
+            }
+        } else {
+            addPropertyToIndex(propertyDefinition.getPropertyName(), propertyDefinition.getDataType(), true);
+        }
         this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
     }
 
@@ -279,11 +289,15 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
                 return;
             }
             dataType = streamingPropertyValue.getValueType();
+            addPropertyToIndex(propertyName, dataType, true);
+        } else if (propertyValue instanceof String) {
+            dataType = String.class;
+            addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
+            addPropertyToIndex(propertyName, dataType, true);
         } else {
             dataType = propertyValue.getClass();
+            addPropertyToIndex(propertyName, dataType, true);
         }
-
-        addPropertyToIndex(propertyName, dataType, true);
     }
 
     private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed) throws IOException {
@@ -361,7 +375,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
                 .actionGet();
         LOGGER.debug(response.toString());
 
-        propertyDefinitions.put(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.NONE));
+        propertyDefinitions.put(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.ALL));
     }
 
     protected boolean shouldIgnoreType(Class dataType) {
