@@ -6,7 +6,6 @@ import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -360,7 +359,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
     @Override
     public VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations) {
-        return new DefaultVertexQuery(graph, vertex, queryString, authorizations);
+        return new DefaultVertexQuery(graph, vertex, queryString, this.propertyDefinitions, authorizations);
     }
 
     public TransportClient getClient() {

@@ -3,11 +3,13 @@ package org.securegraph.query;
 import org.securegraph.*;
 import org.securegraph.util.FilterIterable;
 
+import java.util.Map;
+
 public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
     private final Vertex sourceVertex;
 
-    protected VertexQueryBase(Graph graph, Vertex sourceVertex, String queryString, Authorizations authorizations) {
-        super(graph, queryString, authorizations);
+    protected VertexQueryBase(Graph graph, Vertex sourceVertex, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
+        super(graph, queryString, propertyDefinitions, authorizations);
         this.sourceVertex = sourceVertex;
     }
 

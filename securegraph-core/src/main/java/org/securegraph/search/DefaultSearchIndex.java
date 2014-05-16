@@ -1,17 +1,17 @@
 package org.securegraph.search;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Element;
-import org.securegraph.Graph;
-import org.securegraph.Vertex;
+import org.securegraph.*;
 import org.securegraph.query.DefaultGraphQuery;
 import org.securegraph.query.DefaultVertexQuery;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.query.VertexQuery;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class DefaultSearchIndex implements SearchIndex {
+    private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
+
     public DefaultSearchIndex(Map configuration) {
 
     }
@@ -35,12 +35,12 @@ public class DefaultSearchIndex implements SearchIndex {
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new DefaultGraphQuery(graph, queryString, authorizations);
+        return new DefaultGraphQuery(graph, queryString, this.propertyDefinitions, authorizations);
     }
 
     @Override
     public VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations) {
-        return new DefaultVertexQuery(graph, vertex, queryString, authorizations);
+        return new DefaultVertexQuery(graph, vertex, queryString, this.propertyDefinitions, authorizations);
     }
 
     @Override
@@ -51,5 +51,10 @@ public class DefaultSearchIndex implements SearchIndex {
     @Override
     public void shutdown() {
 
+    }
+
+    @Override
+    public void addPropertyDefinition(PropertyDefinition propertyDefinition) {
+        this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
     }
 }

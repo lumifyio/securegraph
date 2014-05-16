@@ -2,25 +2,27 @@ package org.securegraph.query;
 
 import org.securegraph.DateOnly;
 import org.securegraph.Property;
-import org.securegraph.Text;
+import org.securegraph.PropertyDefinition;
 import org.securegraph.TextIndexHint;
 
 import java.util.Date;
+import java.util.Map;
 
 public enum Compare implements Predicate {
     EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, IN;
 
     @Override
-    public boolean evaluate(final Iterable<Property> properties, final Object second) {
+    public boolean evaluate(final Iterable<Property> properties, final Object second, Map<String, PropertyDefinition> propertyDefinitions) {
         for (Property property : properties) {
-            if (evaluate(property, second)) {
+            PropertyDefinition propertyDefinition = propertyDefinitions.get(property.getName());
+            if (evaluate(property, second, propertyDefinition)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean evaluate(Property property, Object second) {
+    private boolean evaluate(Property property, Object second, PropertyDefinition propertyDefinition) {
         Object first = property.getValue();
 
         if (first instanceof DateOnly) {
@@ -41,19 +43,8 @@ public enum Compare implements Predicate {
                 if (null == first) {
                     return second == null;
                 }
-                if (first instanceof Text) {
-                    Text firstText = (Text) first;
-                    if (!firstText.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
-                        return false;
-                    }
-                    first = firstText.getText();
-                }
-                if (second instanceof Text) {
-                    Text secondText = (Text) second;
-                    if (!secondText.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
-                        return false;
-                    }
-                    second = secondText.getText();
+                if (propertyDefinition != null && !propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
+                    return false;
                 }
                 return first.equals(second);
             case NOT_EQUAL:
@@ -82,9 +73,6 @@ public enum Compare implements Predicate {
                 }
                 return ((Comparable) first).compareTo(second) <= 0;
             case IN:
-                if (first instanceof Text) {
-                    first = first.toString();
-                }
                 return evaluateIn(first, (Object[]) second);
             default:
                 throw new IllegalArgumentException("Invalid compare: " + this);

@@ -46,7 +46,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     private final TransportClient client;
     private final boolean autoflush;
     private String indexName;
-    private Map<String, Boolean> existingProperties = new HashMap<String, Boolean>();
+    private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
 
     public ElasticSearchNestedSearchIndex(Map config) {
         String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ES_LOCATIONS);
@@ -202,16 +202,14 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
                 } else {
                     throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                 }
-            } else if (propertyValue instanceof Text) {
-                Text textPropertyValue = (Text) propertyValue;
-                if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
+            } else if (propertyValue instanceof String) {
+                PropertyDefinition propertyDefinition = this.propertyDefinitions.get(propertyName);
+                if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
                     propertyName = property.getName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX;
-                    propertyValue = textPropertyValue.getText();
                     addField(jsonBuilder, propertyName, propertyValue, property.getVisibility().toString());
                 }
-                if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
+                if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
                     propertyName = property.getName();
-                    propertyValue = textPropertyValue.getText();
                     addField(jsonBuilder, propertyName, propertyValue, property.getVisibility().toString());
                 }
                 continue;
@@ -251,6 +249,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
         client.close();
     }
 
+    @Override
+    public void addPropertyDefinition(PropertyDefinition propertyDefinition) {
+        this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
+    }
+
     public void addPropertiesToIndex(Iterable<Property> properties) {
         try {
             for (Property property : properties) {
@@ -264,7 +267,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     public void addPropertyToIndex(Property property) throws IOException {
         String propertyName = property.getName();
 
-        if (existingProperties.get(propertyName) != null) {
+        if (propertyDefinitions.get(propertyName) != null) {
             return;
         }
 
@@ -280,22 +283,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
             dataType = propertyValue.getClass();
         }
 
-        if (propertyValue instanceof Text) {
-            Text textPropertyValue = (Text) propertyValue;
-            dataType = String.class;
-            if (textPropertyValue.getIndexHint().contains(TextIndexHint.EXACT_MATCH)) {
-                addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
-            }
-            if (textPropertyValue.getIndexHint().contains(TextIndexHint.FULL_TEXT)) {
-                addPropertyToIndex(propertyName, dataType, true);
-            }
-        } else {
-            addPropertyToIndex(propertyName, dataType, true);
-        }
+        addPropertyToIndex(propertyName, dataType, true);
     }
 
     private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed) throws IOException {
-        if (existingProperties.get(propertyName) != null) {
+        if (propertyDefinitions.get(propertyName) != null) {
             return;
         }
 
@@ -369,7 +361,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
                 .actionGet();
         LOGGER.debug(response.toString());
 
-        existingProperties.put(propertyName, true);
+        propertyDefinitions.put(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.NONE));
     }
 
     protected boolean shouldIgnoreType(Class dataType) {
@@ -403,12 +395,12 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchNestedGraphQuery(client, indexName, graph, queryString, authorizations);
+        return new ElasticSearchNestedGraphQuery(client, indexName, graph, queryString, this.propertyDefinitions, authorizations);
     }
 
     @Override
     public VertexQuery queryVertex(Graph graph, Vertex vertex, String queryString, Authorizations authorizations) {
-        return new DefaultVertexQuery(graph, vertex, queryString, authorizations);
+        return new DefaultVertexQuery(graph, vertex, queryString, this.propertyDefinitions, authorizations);
     }
 
     public TransportClient getClient() {

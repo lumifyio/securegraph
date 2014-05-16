@@ -33,8 +33,8 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
     private String indexName;
     private List<Facet> facets = new ArrayList<Facet>();
 
-    public ElasticSearchNestedGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Authorizations authorizations) {
-        super(graph, queryString, authorizations);
+    public ElasticSearchNestedGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
+        super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
         this.indexName = indexName;
     }

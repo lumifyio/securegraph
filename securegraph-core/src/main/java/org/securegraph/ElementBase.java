@@ -27,11 +27,7 @@ public abstract class ElementBase<T extends Element> implements Element {
         return new ConvertingIterable<Property, Object>(getProperties(name)) {
             @Override
             protected Object convert(Property p) {
-                Object v = p.getValue();
-                if (v instanceof Text) {
-                    v = ((Text) v).getText();
-                }
-                return v;
+                return p.getValue();
             }
         };
     }
@@ -41,11 +37,7 @@ public abstract class ElementBase<T extends Element> implements Element {
         return new ConvertingIterable<Property, Object>(getProperties(key, name)) {
             @Override
             protected Object convert(Property p) {
-                Object v = p.getValue();
-                if (v instanceof Text) {
-                    v = ((Text) v).getText();
-                }
-                return v;
+                return p.getValue();
             }
         };
     }
@@ -95,9 +87,6 @@ public abstract class ElementBase<T extends Element> implements Element {
         while (values.hasNext() && index >= 0) {
             Object v = values.next();
             if (index == 0) {
-                if (v instanceof Text) {
-                    return ((Text) v).getText();
-                }
                 return v;
             }
             index--;
@@ -111,9 +100,6 @@ public abstract class ElementBase<T extends Element> implements Element {
         while (values.hasNext() && index >= 0) {
             Object v = values.next();
             if (index == 0) {
-                if (v instanceof Text) {
-                    return ((Text) v).getText();
-                }
                 return v;
             }
             index--;

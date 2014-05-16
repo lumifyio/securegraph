@@ -237,4 +237,16 @@ public abstract class GraphBase implements Graph {
             this.searchIndex = null;
         }
     }
+
+    @Override
+    public DefinePropertyBuilder defineProperty(String propertyName) {
+        return new DefinePropertyBuilder(propertyName) {
+            @Override
+            public PropertyDefinition define() {
+                PropertyDefinition propertyDefinition = super.define();
+                getSearchIndex().addPropertyDefinition(propertyDefinition);
+                return propertyDefinition;
+            }
+        };
+    }
 }

@@ -4,6 +4,7 @@ import org.securegraph.id.IdGenerator;
 import org.securegraph.query.GraphQuery;
 
 import java.util.List;
+import java.util.Set;
 
 public interface Graph {
     /**
@@ -257,4 +258,11 @@ public interface Graph {
      * @param authorizations authorizations used to query for the data to reindex.
      */
     void reindex(Authorizations authorizations);
+
+    /**
+     * Creates a defines property builder. This is typically used by the indexer to give it hints on how it should index a property.
+     *
+     * @param propertyName The name of the property to define.
+     */
+    DefinePropertyBuilder defineProperty(String propertyName);
 }

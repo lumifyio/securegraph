@@ -1203,11 +1203,16 @@ public abstract class GraphTestBase {
 
     @Test
     public void testTextIndex() {
+        graph.defineProperty("none").dataType(String.class).textIndexHint(TextIndexHint.NONE).define();
+        graph.defineProperty("both").dataType(String.class).textIndexHint(TextIndexHint.ALL).define();
+        graph.defineProperty("fullText").dataType(String.class).textIndexHint(TextIndexHint.FULL_TEXT).define();
+        graph.defineProperty("exactMatch").dataType(String.class).textIndexHint(TextIndexHint.EXACT_MATCH).define();
+
         graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
-                .setProperty("none", new Text("Test Value", TextIndexHint.NONE), VISIBILITY_A)
-                .setProperty("both", new Text("Test Value", TextIndexHint.ALL), VISIBILITY_A)
-                .setProperty("fullText", new Text("Test Value", TextIndexHint.FULL_TEXT), VISIBILITY_A)
-                .setProperty("exactMatch", new Text("Test Value", TextIndexHint.EXACT_MATCH), VISIBILITY_A)
+                .setProperty("none", "Test Value", VISIBILITY_A)
+                .setProperty("both", "Test Value", VISIBILITY_A)
+                .setProperty("fullText", "Test Value", VISIBILITY_A)
+                .setProperty("exactMatch", "Test Value", VISIBILITY_A)
                 .save();
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
