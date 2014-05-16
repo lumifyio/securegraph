@@ -1202,7 +1202,7 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testTextIndex() {
+    public void testTextIndex() throws Exception {
         graph.defineProperty("none").dataType(String.class).textIndexHint(TextIndexHint.NONE).define();
         graph.defineProperty("none").dataType(String.class).textIndexHint(TextIndexHint.NONE).define(); // try calling define twice
         graph.defineProperty("both").dataType(String.class).textIndexHint(TextIndexHint.ALL).define();

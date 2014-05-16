@@ -6,6 +6,10 @@ import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.hppc.cursors.ObjectObjectCursor;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -23,9 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ElasticSearchNestedSearchIndex implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchNestedSearchIndex.class);
@@ -92,6 +94,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
             client.addTransportAddress(new InetSocketTransportAddress(hostname, port));
         }
 
+        ensureIndexCreated(storeSourceData);
+        loadPropertyDefinitions();
+    }
+
+    private void ensureIndexCreated(boolean storeSourceData) {
         if (!client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
             try {
                 XContentBuilder mapping = XContentFactory.jsonBuilder()
@@ -130,6 +137,92 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
                 throw new SecureGraphException("Could not create index", e);
             }
         }
+    }
+
+    private void loadPropertyDefinitions() {
+        Map<String, String> propertyTypes = getPropertyTypesFromServer();
+        for (Map.Entry<String, String> property : propertyTypes.entrySet()) {
+            String propertyName = property.getKey();
+            String typeName = property.getValue();
+            if (typeName.equals("nested")) {
+                continue;
+            }
+            Class dataType = elasticSearchTypeToClass(typeName);
+            Set<TextIndexHint> indexHints = new HashSet<TextIndexHint>();
+
+            if (dataType == String.class) {
+                if (propertyName.endsWith(EXACT_MATCH_PROPERTY_NAME_SUFFIX)) {
+                    indexHints.add(TextIndexHint.EXACT_MATCH);
+                    if (propertyTypes.containsKey(propertyName.substring(0, propertyName.length() - EXACT_MATCH_PROPERTY_NAME_SUFFIX.length()))) {
+                        indexHints.add(TextIndexHint.FULL_TEXT);
+                    }
+                } else {
+                    indexHints.add(TextIndexHint.FULL_TEXT);
+                    if (propertyTypes.containsKey(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX)) {
+                        indexHints.add(TextIndexHint.EXACT_MATCH);
+                    }
+                }
+            }
+
+            PropertyDefinition propertyDefinition = new PropertyDefinition(propertyName, dataType, indexHints);
+            this.propertyDefinitions.put(propertyName, propertyDefinition);
+        }
+    }
+
+    private Class elasticSearchTypeToClass(String typeName) {
+        if ("string".equals(typeName)) {
+            return String.class;
+        }
+        if ("float".equals(typeName)) {
+            return Float.class;
+        }
+        if ("double".equals(typeName)) {
+            return Double.class;
+        }
+        if ("byte".equals(typeName)) {
+            return Byte.class;
+        }
+        if ("short".equals(typeName)) {
+            return Short.class;
+        }
+        if ("integer".equals(typeName)) {
+            return Integer.class;
+        }
+        if ("date".equals(typeName)) {
+            return Date.class;
+        }
+        if ("long".equals(typeName)) {
+            return Long.class;
+        }
+        if ("boolean".equals(typeName)) {
+            return Boolean.class;
+        }
+        if ("geo_point".equals(typeName)) {
+            return GeoPoint.class;
+        }
+        throw new SecureGraphException("Unhandled type: " + typeName);
+    }
+
+    private Map<String, String> getPropertyTypesFromServer() {
+        Map<String, String> propertyTypes = new HashMap<String, String>();
+        try {
+            ClusterState cs = client.admin().cluster().prepareState().setIndices(indexName).execute().actionGet().getState();
+            IndexMetaData imd = cs.getMetaData().index(indexName);
+            for (ObjectObjectCursor<String, MappingMetaData> m : imd.getMappings()) {
+                Map<String, Object> sourceAsMap = m.value.getSourceAsMap();
+                Map properties = (Map) sourceAsMap.get("properties");
+                for (Object propertyObj : properties.entrySet()) {
+                    Map.Entry property = (Map.Entry) propertyObj;
+                    String propertyName = (String) property.getKey();
+                    Map propertyAttributes = (Map) property.getValue();
+                    String propertyType = (String) propertyAttributes.get("type");
+                    propertyTypes.put(propertyName, propertyType);
+                }
+            }
+        } catch (IOException ex) {
+            throw new SecureGraphException("Could not get current properties from elastic search", ex);
+        }
+        return propertyTypes;
     }
 
     @Override
