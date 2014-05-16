@@ -41,6 +41,36 @@ public enum TextIndexHint {
         return hints;
     }
 
+    public static Set<TextIndexHint> parse(String str) {
+        if (str == null || str.equalsIgnoreCase("NONE")) {
+            return NONE;
+        }
+
+        if (str.equalsIgnoreCase("ALL")) {
+            return ALL;
+        }
+
+        String[] textIndexHintParts = str.split(",");
+        Set<TextIndexHint> textIndexHints = new HashSet<TextIndexHint>();
+        for (String textIndexHintPart : textIndexHintParts) {
+            if (textIndexHintPart.trim().length() == 0) {
+                continue;
+            }
+            textIndexHints.add(parsePart(textIndexHintPart));
+        }
+        return textIndexHints;
+    }
+
+    private static TextIndexHint parsePart(String part) {
+        part = part.trim();
+        for (TextIndexHint textIndexHint : TextIndexHint.values()) {
+            if (textIndexHint.name().equalsIgnoreCase(part)) {
+                return textIndexHint;
+            }
+        }
+        return TextIndexHint.valueOf(part);
+    }
+
     /**
      * Use this to prevent indexing of this Text property.  The property
      * will not be searchable.
