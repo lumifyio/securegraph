@@ -9,10 +9,13 @@ import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.facet.FacetBuilders;
-import org.elasticsearch.search.facet.Facets;
-import org.elasticsearch.search.facet.terms.TermsFacet;
-import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.nested.InternalNested;
+import org.elasticsearch.search.aggregations.bucket.nested.NestedBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.securegraph.*;
 import org.securegraph.query.*;
 import org.securegraph.type.GeoCircle;
@@ -43,7 +46,7 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
     public Iterable<Vertex> vertices() {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_VERTEX);
-        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getFacets());
+        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getAggregations());
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -68,7 +71,7 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
     public Iterable<Edge> edges() {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_EDGE);
-        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getFacets());
+        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getAggregations());
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -90,24 +93,24 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
         return new DefaultGraphQueryIterableWithFacetedResults<Edge>(filterParameters, edges, false, facetedResult);
     }
 
-    private Map<String, FacetedResult> toFacetedResults(Facets facets) {
+    private Map<String, FacetedResult> toFacetedResults(Aggregations aggregations) {
         Map<String, FacetedResult> facetedResults = new HashMap<String, FacetedResult>();
-        if (facets == null || facets.facets() == null) {
+        if (aggregations == null) {
             return facetedResults;
         }
-        for (org.elasticsearch.search.facet.Facet esFacet : facets.facets()) {
-            facetedResults.put(esFacet.getName(), toFacetedResult(esFacet));
+
+        for (Aggregation aggregation : aggregations) {
+            if (aggregation instanceof InternalNested) {
+                InternalNested internalNested = (InternalNested) aggregation;
+                for (Aggregation nestedAggregation : internalNested.getAggregations()) {
+                    if (nestedAggregation instanceof Terms) {
+                        String facetName = nestedAggregation.getName();
+                        facetedResults.put(facetName, new ElasticSearchTermsAggregationFacetedResult((Terms)nestedAggregation));
+                    }
+                }
+            }
         }
         return facetedResults;
-    }
-
-    private FacetedResult toFacetedResult(org.elasticsearch.search.facet.Facet esFacet) {
-        if (esFacet instanceof TermsFacet) {
-            TermsFacet termsFacet = (TermsFacet) esFacet;
-            return new ElasticSearchTermsFacetFacetedResult(termsFacet);
-        } else {
-            throw new SecureGraphException("Invalid facet type: " + esFacet.getClass().getName());
-        }
     }
 
     private SearchResponse getSearchResponse(String elementType) {
@@ -225,18 +228,24 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
 
+        NestedBuilder nestedAgg = AggregationBuilders.nested("properties")
+                .path(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME);
+
         for (Facet facet : this.facets) {
             if (facet instanceof TermFacet) {
                 TermFacet termFacet = (TermFacet) facet;
-                TermsFacetBuilder esFacets = FacetBuilders.termsFacet(termFacet.getName())
+                TermsBuilder esAggs = AggregationBuilders.terms(termFacet.getName())
                         .field(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME + "." + termFacet.getPropertyName())
-                        .nested(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME)
-                        .size(1000);
-                q.addFacet(esFacets);
+                        .shardSize(0)
+                        .size(0)
+                        .order(Terms.Order.term(true));
+                nestedAgg.subAggregation(esAggs);
             } else {
                 throw new SecureGraphException("Unsupported facet type: " + facet.getClass().getName());
             }
         }
+
+        q.addAggregation(nestedAgg);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("query: " + q);
@@ -257,16 +266,6 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
             values[i] = values[i].trim();
         }
         return values;
-    }
-
-    protected QueryBuilder createQuery(String queryString) {
-        QueryBuilder query;
-        if (queryString == null) {
-            query = QueryBuilders.matchAllQuery();
-        } else {
-            query = QueryBuilders.queryString(queryString);
-        }
-        return query;
     }
 
     @Override
