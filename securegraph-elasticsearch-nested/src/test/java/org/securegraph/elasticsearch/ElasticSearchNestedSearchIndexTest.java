@@ -1,5 +1,11 @@
 package org.securegraph.elasticsearch;
 
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
@@ -10,9 +16,6 @@ import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.test.GraphTestBase;
 import org.securegraph.test.util.LargeStringInputStream;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
-import org.junit.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
