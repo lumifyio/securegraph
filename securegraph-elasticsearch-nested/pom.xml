@@ -8,6 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>securegraph-elasticsearch-nested</artifactId>
+    <name>SecureGraph: Elasticsearch Nested</name>
 
     <properties>
         <elasticsearch.version>1.1.1</elasticsearch.version>

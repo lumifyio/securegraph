@@ -12,7 +12,7 @@
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
     <version>0.5.1-SNAPSHOT</version>
-    <name>securegraph</name>
+    <name>SecureGraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
         requires authorizations and visibilities. Secure graph also supports multivalued properties as well as property
@@ -201,6 +201,7 @@
         <module>securegraph-accumulo-iterators</module>
         <module>securegraph-performance-test</module>
         <module>securegraph-elasticsearch-nested</module>
+        <module>securegraph-kryo-serializer</module>
     </modules>
 
     <profiles>

@@ -8,6 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>securegraph-performance-test</artifactId>
+    <name>SecureGraph: Performance Test</name>
 
     <dependencies>
         <dependency>

@@ -8,6 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>securegraph-inmemory</artifactId>
+    <name>SecureGraph: In-memory</name>
 
     <dependencies>
         <dependency>
