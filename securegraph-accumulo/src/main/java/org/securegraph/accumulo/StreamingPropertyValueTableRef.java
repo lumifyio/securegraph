@@ -2,9 +2,15 @@ package org.securegraph.accumulo;
 
 import org.securegraph.property.StreamingPropertyValue;
 
-class StreamingPropertyValueTableRef extends StreamingPropertyValueRef {
-    private final String dataRowKey;
-    private final transient byte[] data;
+public class StreamingPropertyValueTableRef extends StreamingPropertyValueRef {
+    private String dataRowKey;
+    private transient byte[] data;
+
+    protected StreamingPropertyValueTableRef() {
+        super();
+        dataRowKey = null;
+        data = null;
+    }
 
     public StreamingPropertyValueTableRef(String dataRowKey, StreamingPropertyValue propertyValue, byte[] data) {
         super(propertyValue);

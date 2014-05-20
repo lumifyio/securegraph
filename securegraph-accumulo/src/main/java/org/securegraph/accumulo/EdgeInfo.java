@@ -7,6 +7,9 @@ public class EdgeInfo implements Serializable {
     private String label;
     private Object vertexId;
 
+    protected EdgeInfo() {
+    }
+
     public EdgeInfo(String label, Object vertexId) {
         this.label = label;
         this.vertexId = vertexId;

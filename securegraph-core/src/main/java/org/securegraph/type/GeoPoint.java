@@ -8,10 +8,17 @@ public class GeoPoint implements Serializable, GeoShape, Comparable<GeoPoint> {
     private static final long serialVersionUID = 1L;
     private static final double COMPARE_TOLERANCE = 0.00001;
     private static double EARTH_RADIUS = 6371; // km
-    private final double latitude;
-    private final double longitude;
-    private final Double altitude;
-    private final String description;
+    private double latitude;
+    private double longitude;
+    private Double altitude;
+    private String description;
+
+    protected GeoPoint() {
+        latitude = 0;
+        longitude = 0;
+        altitude = null;
+        description = null;
+    }
 
     public GeoPoint(double latitude, double longitude, Double altitude, String description) {
         this.latitude = latitude;

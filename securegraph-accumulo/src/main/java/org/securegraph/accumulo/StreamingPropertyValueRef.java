@@ -5,11 +5,17 @@ import org.securegraph.property.StreamingPropertyValue;
 
 import java.io.Serializable;
 
-abstract class StreamingPropertyValueRef implements Serializable {
+public abstract class StreamingPropertyValueRef implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final String valueType;
-    private final boolean searchIndex;
-    private final boolean store;
+    private String valueType;
+    private boolean searchIndex;
+    private boolean store;
+
+    protected StreamingPropertyValueRef() {
+        this.valueType = null;
+        this.searchIndex = false;
+        this.store = false;
+    }
 
     protected StreamingPropertyValueRef(StreamingPropertyValue propertyValue) {
         this.valueType = propertyValue.getValueType().getName();
