@@ -445,6 +445,9 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
         } else if (dataType == GeoPoint.class) {
             LOGGER.debug("Registering geo_shape type for {}", propertyName);
             mapping.field("type", "geo_shape");
+        } else if (Number.class.isAssignableFrom(dataType)) {
+            LOGGER.debug("Registering double type for {}", propertyName);
+            mapping.field("type", "double");
         } else {
             throw new SecureGraphException("Unexpected value type for property \"" + propertyName + "\": " + dataType.getName());
         }

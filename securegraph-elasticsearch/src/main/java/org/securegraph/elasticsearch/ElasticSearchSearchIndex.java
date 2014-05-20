@@ -399,6 +399,9 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         } else if (dataType == GeoPoint.class) {
             LOGGER.debug("Registering geo_point type for {}", propertyName);
             mapping.field("type", "geo_point");
+        } else if (Number.class.isAssignableFrom(dataType)) {
+            LOGGER.debug("Registering double type for {}", propertyName);
+            mapping.field("type", "double");
         } else {
             throw new SecureGraphException("Unexpected value type for property \"" + propertyName + "\": " + dataType.getName());
         }

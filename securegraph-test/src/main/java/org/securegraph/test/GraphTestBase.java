@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -1231,6 +1232,37 @@ public abstract class GraphTestBase {
         assertEquals("default has predicate is equals which shouldn't work for full text", 0, count(graph.query(AUTHORIZATIONS_A).has("fullText", "Test Value").vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("exactMatch", "Test Value").vertices()));
         assertEquals("default has predicate is equals which shouldn't work for unindexed", 0, count(graph.query(AUTHORIZATIONS_A).has("none", "Test Value").vertices()));
+    }
+
+    @Test
+    public void testValueTypes() throws Exception {
+        Date date = createDate(2014, 2, 24, 13, 0, 5);
+
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("int", 5, VISIBILITY_A)
+                .setProperty("bigDecimal", new BigDecimal(10), VISIBILITY_A)
+                .setProperty("double", 5.6, VISIBILITY_A)
+                .setProperty("float", 6.4f, VISIBILITY_A)
+                .setProperty("string", "test", VISIBILITY_A)
+                .setProperty("byte", (byte) 5, VISIBILITY_A)
+                .setProperty("long", (long) 5, VISIBILITY_A)
+                .setProperty("boolean", true, VISIBILITY_A)
+                .setProperty("geopoint", new GeoPoint(77, -33), VISIBILITY_A)
+                .setProperty("short", (short) 5, VISIBILITY_A)
+                .setProperty("date", date, VISIBILITY_A)
+                .save();
+
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("int", 5).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("double", 5.6).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("float", 6.4f).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("string", "test").vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("byte", 5).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("long", 5).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("boolean", true).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("short", 5).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("date", date).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("bigDecimal", 10).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("geopoint", GeoCompare.WITHIN, new GeoCircle(77, -33, 1)).vertices()));
     }
 
     @Test

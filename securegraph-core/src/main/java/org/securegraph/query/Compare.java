@@ -46,37 +46,62 @@ public enum Compare implements Predicate {
                 if (propertyDefinition != null && !propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
                     return false;
                 }
-                return first.equals(second);
+                return compare(first, second) == 0;
             case NOT_EQUAL:
                 if (null == first) {
                     return second != null;
                 }
-                return !first.equals(second);
+                return compare(first, second) != 0;
             case GREATER_THAN:
                 if (null == first || second == null) {
                     return false;
                 }
-                return ((Comparable) first).compareTo(second) >= 1;
+                return compare(first, second) >= 1;
             case LESS_THAN:
                 if (null == first || second == null) {
                     return false;
                 }
-                return ((Comparable) first).compareTo(second) <= -1;
+                return compare(first, second) <= -1;
             case GREATER_THAN_EQUAL:
                 if (null == first || second == null) {
                     return false;
                 }
-                return ((Comparable) first).compareTo(second) >= 0;
+                return compare(first, second) >= 0;
             case LESS_THAN_EQUAL:
                 if (null == first || second == null) {
                     return false;
                 }
-                return ((Comparable) first).compareTo(second) <= 0;
+                return compare(first, second) <= 0;
             case IN:
                 return evaluateIn(first, (Object[]) second);
             default:
                 throw new IllegalArgumentException("Invalid compare: " + this);
         }
+    }
+
+    private int compare(Object first, Object second) {
+        if (first instanceof Number && second instanceof Number) {
+            double firstDouble = ((Number) first).doubleValue();
+            double secondDouble = ((Number) second).doubleValue();
+            return Double.compare(firstDouble, secondDouble);
+        }
+        if (first instanceof Number && second instanceof String) {
+            double firstDouble = ((Number) first).doubleValue();
+            double secondDouble = Double.parseDouble(second.toString());
+            return Double.compare(firstDouble, secondDouble);
+        }
+        if (first instanceof String && second instanceof Number) {
+            double firstDouble = Double.parseDouble(first.toString());
+            double secondDouble = ((Number) second).doubleValue();
+            return Double.compare(firstDouble, secondDouble);
+        }
+        if (first instanceof Comparable) {
+            return ((Comparable) first).compareTo(second);
+        }
+        if (second instanceof Comparable) {
+            return ((Comparable) second).compareTo(first);
+        }
+        return first.equals(second) ? 0 : 1;
     }
 
     private boolean evaluateIn(Object first, Object[] second) {
