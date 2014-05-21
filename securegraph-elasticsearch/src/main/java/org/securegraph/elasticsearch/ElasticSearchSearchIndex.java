@@ -304,15 +304,20 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
         if (propertyDefinition.getDataType() == String.class) {
             if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
-                addPropertyToIndex(propertyDefinition.getPropertyName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, String.class, false);
+                addPropertyToIndex(propertyDefinition.getPropertyName() + EXACT_MATCH_PROPERTY_NAME_SUFFIX, String.class, false, propertyDefinition.getBoost());
             }
             if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
-                addPropertyToIndex(propertyDefinition.getPropertyName(), String.class, true);
+                addPropertyToIndex(propertyDefinition.getPropertyName(), String.class, true, propertyDefinition.getBoost());
             }
         } else {
-            addPropertyToIndex(propertyDefinition.getPropertyName(), propertyDefinition.getDataType(), true);
+            addPropertyToIndex(propertyDefinition);
         }
         this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
+    }
+
+    @Override
+    public boolean isFieldBoostSupported() {
+        return true;
     }
 
     public void addPropertiesToIndex(Iterable<Property> properties) {
@@ -352,6 +357,14 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     }
 
     private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed) throws IOException {
+        addPropertyToIndex(propertyName, dataType, analyzed, null);
+    }
+
+    private void addPropertyToIndex(PropertyDefinition propertyDefinition) throws IOException {
+        addPropertyToIndex(propertyDefinition.getPropertyName(), propertyDefinition.getDataType(), true, propertyDefinition.getBoost());
+    }
+
+    private void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException {
         if (propertyDefinitions.get(propertyName) != null) {
             return;
         }
@@ -404,6 +417,10 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             mapping.field("type", "double");
         } else {
             throw new SecureGraphException("Unexpected value type for property \"" + propertyName + "\": " + dataType.getName());
+        }
+
+        if (boost != null) {
+            mapping.field("boost", boost.doubleValue());
         }
 
         mapping

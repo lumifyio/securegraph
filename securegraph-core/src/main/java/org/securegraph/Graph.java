@@ -265,4 +265,9 @@ public interface Graph {
      * @param propertyName The name of the property to define.
      */
     DefinePropertyBuilder defineProperty(String propertyName);
+
+    /**
+     * Determine if field boost is support.
+     */
+    boolean isFieldBoostSupported();
 }

@@ -1235,6 +1235,39 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testBoost() throws Exception {
+        if (!graph.isFieldBoostSupported()) {
+            LOGGER.warn("Boost not supported");
+            return;
+        }
+
+        graph.defineProperty("a")
+                .dataType(String.class)
+                .textIndexHint(TextIndexHint.ALL)
+                .boost(1)
+                .define();
+        graph.defineProperty("b")
+                .dataType(String.class)
+                .textIndexHint(TextIndexHint.ALL)
+                .boost(2)
+                .define();
+
+        graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("a", "Test Value", VISIBILITY_A)
+                .save();
+
+        graph.prepareVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A)
+                .setProperty("b", "Test Value", VISIBILITY_A)
+                .save();
+
+        List<Vertex> vertices = toList(graph.query("Test", AUTHORIZATIONS_A).vertices());
+
+        assertEquals(2, vertices.size());
+        assertEquals("v2", vertices.get(0).getId());
+        assertEquals("v1", vertices.get(1).getId());
+    }
+
+    @Test
     public void testValueTypes() throws Exception {
         Date date = createDate(2014, 2, 24, 13, 0, 5);
 

@@ -57,4 +57,9 @@ public class DefaultSearchIndex implements SearchIndex {
     public void addPropertyDefinition(PropertyDefinition propertyDefinition) {
         this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
     }
+
+    @Override
+    public boolean isFieldBoostSupported() {
+        return false;
+    }
 }

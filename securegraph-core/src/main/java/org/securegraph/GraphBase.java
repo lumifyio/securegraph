@@ -254,4 +254,9 @@ public abstract class GraphBase implements Graph {
             }
         };
     }
+
+    @Override
+    public boolean isFieldBoostSupported() {
+        return getSearchIndex().isFieldBoostSupported();
+    }
 }

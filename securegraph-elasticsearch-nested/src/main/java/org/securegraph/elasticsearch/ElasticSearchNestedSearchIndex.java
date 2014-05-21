@@ -357,6 +357,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
         this.propertyDefinitions.put(propertyDefinition.getPropertyName(), propertyDefinition);
     }
 
+    @Override
+    public boolean isFieldBoostSupported() {
+        return false;
+    }
+
     public void addPropertiesToIndex(Iterable<Property> properties) {
         try {
             for (Property property : properties) {

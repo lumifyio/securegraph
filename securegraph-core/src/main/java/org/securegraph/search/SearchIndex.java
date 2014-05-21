@@ -22,4 +22,6 @@ public interface SearchIndex {
     void shutdown();
 
     void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException;
+
+    boolean isFieldBoostSupported();
 }
