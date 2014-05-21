@@ -1235,7 +1235,7 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testBoost() throws Exception {
+    public void testFieldBoost() throws Exception {
         if (!graph.isFieldBoostSupported()) {
             LOGGER.warn("Boost not supported");
             return;
@@ -1260,11 +1260,7 @@ public abstract class GraphTestBase {
                 .setProperty("b", "Test Value", VISIBILITY_A)
                 .save();
 
-        List<Vertex> vertices = toList(graph.query("Test", AUTHORIZATIONS_A).vertices());
-
-        assertEquals(2, vertices.size());
-        assertEquals("v2", vertices.get(0).getId());
-        assertEquals("v1", vertices.get(1).getId());
+        assertVertexIds(graph.query("Test", AUTHORIZATIONS_A).vertices(), new String[]{"v2", "v1"});
     }
 
     @Test
@@ -1496,5 +1492,13 @@ public abstract class GraphTestBase {
         assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_A_AND_B));
         assertTrue(graph.isVisibilityValid(VISIBILITY_B, AUTHORIZATIONS_B));
         assertTrue(graph.isVisibilityValid(VISIBILITY_EMPTY, AUTHORIZATIONS_A));
+    }
+
+    protected void assertVertexIds(Iterable<Vertex> vertices, String[] ids) {
+        List<Vertex> verticesList = toList(vertices);
+        assertEquals(ids.length, verticesList.size());
+        for (int i = 0; i < ids.length; i++) {
+            assertEquals("at offset: " + i, ids[i], verticesList.get(i).getId());
+        }
     }
 }
