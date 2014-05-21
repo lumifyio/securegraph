@@ -56,6 +56,11 @@ public class GeoPoint implements Serializable, GeoShape, Comparable<GeoPoint> {
     }
 
     @Override
+    public String toString() {
+        return "GeoPoint[" + getLatitude() + ", " + getLongitude() + "]";
+    }
+
+    @Override
     public boolean within(GeoShape geoShape) {
         throw new SecureGraphException("Not implemented for argument type " + geoShape.getClass().getName());
     }
