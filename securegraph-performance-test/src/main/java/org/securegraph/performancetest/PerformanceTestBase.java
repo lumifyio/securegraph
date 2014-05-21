@@ -46,15 +46,15 @@ public abstract class PerformanceTestBase {
                     categoriesArray = parts[4].split(",");
                 }
 
-                Vertex movieVertex = graph.prepareVertex(MOVIE_ID_PREFIX + title, visibility, authorizations)
+                Vertex movieVertex = graph.prepareVertex(MOVIE_ID_PREFIX + title, visibility)
                         .setProperty("title", title, visibility)
                         .setProperty("year", year, visibility)
                         .setProperty("rating", rating, visibility)
-                        .save();
+                        .save(authorizations);
                 for (String category : categoriesArray) {
-                    Vertex categoryVertex = graph.prepareVertex(CATEGORY_ID_PREFIX + category, visibility, authorizations)
+                    Vertex categoryVertex = graph.prepareVertex(CATEGORY_ID_PREFIX + category, visibility)
                             .setProperty("title", category, visibility)
-                            .save();
+                            .save(authorizations);
                     graph.addEdge(categoryVertex.getId() + "->" + movieVertex.getId(), categoryVertex, movieVertex, "hasMovie", visibility, authorizations);
                 }
             }

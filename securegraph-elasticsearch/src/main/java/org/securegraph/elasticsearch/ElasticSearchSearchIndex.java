@@ -36,6 +36,8 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     private static final String DEFAULT_INDEX_NAME = "securegraph";
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
+    public static final String IN_EDGE_COUNT_FIELD_NAME = "__inEdgeCount";
+    public static final String OUT_EDGE_COUNT_FIELD_NAME = "__outEdgeCount";
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
     public static final String SETTING_CLUSTER_NAME = "clusterName";
@@ -104,9 +106,9 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                         .field("enabled", storeSourceData)
                         .endObject()
                         .startObject("properties")
-                        .startObject(ELEMENT_TYPE_FIELD_NAME)
-                        .field("type", "string")
-                        .endObject()
+                        .startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").field("store", "true").endObject()
+                        .startObject(IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
+                        .startObject(OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
                         .endObject()
                         .endObject()
                         .endObject();
@@ -204,11 +206,11 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElement(Graph graph, Element element) {
+    public void addElement(Graph graph, Element element, Authorizations authorizations) {
         addPropertiesToIndex(element.getProperties());
 
         try {
-            XContentBuilder jsonBuilder = buildJsonContentFromElement(element);
+            XContentBuilder jsonBuilder = buildJsonContentFromElement(element, authorizations);
 
             IndexResponse response = client
                     .prepareIndex(indexName, ELEMENT_TYPE, element.getId().toString())
@@ -227,21 +229,23 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         }
     }
 
-    public String createJsonForElement(Element element) {
+    public String createJsonForElement(Element element, Authorizations authorizations) {
         try {
-            return buildJsonContentFromElement(element).string();
+            return buildJsonContentFromElement(element, authorizations).string();
         } catch (Exception e) {
             throw new SecureGraphException("Could not create JSON for element", e);
         }
     }
 
-    private XContentBuilder buildJsonContentFromElement(Element element) throws IOException {
+    private XContentBuilder buildJsonContentFromElement(Element element, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
         if (element instanceof Vertex) {
             jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_VERTEX);
+            jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, ((Vertex) element).getEdgeCount(Direction.IN, authorizations));
+            jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, ((Vertex) element).getEdgeCount(Direction.OUT, authorizations));
         } else if (element instanceof Edge) {
             jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_EDGE);
         } else {
@@ -456,14 +460,14 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElements(Graph graph, Iterable<Element> elements) {
+    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
         // TODO change this to use elastic search bulk import
         int count = 0;
         for (Element element : elements) {
             if (count % 1000 == 0) {
                 LOGGER.debug("adding elements... " + count);
             }
-            addElement(graph, element);
+            addElement(graph, element, authorizations);
             count++;
         }
         LOGGER.debug("added " + count + " elements");

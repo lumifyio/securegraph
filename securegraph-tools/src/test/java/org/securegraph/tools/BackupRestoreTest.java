@@ -1,5 +1,9 @@
 package org.securegraph.tools;
 
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.securegraph.*;
 import org.securegraph.id.UUIDIdGenerator;
 import org.securegraph.inmemory.InMemoryAuthorizations;
@@ -8,17 +12,13 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.test.GraphTestBase;
 import org.securegraph.test.util.LargeStringInputStream;
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.securegraph.util.IterableUtils.count;
 import static org.junit.Assert.*;
+import static org.securegraph.util.IterableUtils.count;
 
 @RunWith(JUnit4.class)
 public class BackupRestoreTest {
@@ -57,12 +57,12 @@ public class BackupRestoreTest {
         String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(largePropertyValueSize));
         StreamingPropertyValue largeDataValue = new StreamingPropertyValue(new ByteArrayInputStream(expectedLargeValue.getBytes()), String.class);
 
-        Vertex v1 = graph.prepareVertex("v1", GraphTestBase.VISIBILITY_A, AUTHORIZATIONS_A)
+        Vertex v1 = graph.prepareVertex("v1", GraphTestBase.VISIBILITY_A)
                 .addPropertyValue("id1a", "prop1", "value1a", prop1Metadata, GraphTestBase.VISIBILITY_A)
                 .addPropertyValue("id1b", "prop1", "value1b", GraphTestBase.VISIBILITY_A)
                 .addPropertyValue("id2", "prop2", "value2", GraphTestBase.VISIBILITY_B)
                 .setProperty("largeData", largeDataValue, GraphTestBase.VISIBILITY_A)
-                .save();
+                .save(AUTHORIZATIONS_A_AND_B);
         Vertex v2 = graph.addVertex("v2", GraphTestBase.VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v3 = graph.addVertex("v3", GraphTestBase.VISIBILITY_B, AUTHORIZATIONS_B);
         graph.addEdge("e1to2", v1, v2, "label1", GraphTestBase.VISIBILITY_A, AUTHORIZATIONS_A);

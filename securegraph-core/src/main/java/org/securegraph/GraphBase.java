@@ -30,17 +30,17 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public Vertex addVertex(Visibility visibility, Authorizations authorizations) {
-        return prepareVertex(visibility, authorizations).save();
+        return prepareVertex(visibility).save(authorizations);
     }
 
     @Override
     public Vertex addVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
-        return prepareVertex(vertexId, visibility, authorizations).save();
+        return prepareVertex(vertexId, visibility).save(authorizations);
     }
 
     @Override
-    public VertexBuilder prepareVertex(Visibility visibility, Authorizations authorizations) {
-        return prepareVertex(getIdGenerator().nextId(), visibility, authorizations);
+    public VertexBuilder prepareVertex(Visibility visibility) {
+        return prepareVertex(getIdGenerator().nextId(), visibility);
     }
 
     @Override
@@ -98,17 +98,17 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public Edge addEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
-        return prepareEdge(outVertex, inVertex, label, visibility, authorizations).save();
+        return prepareEdge(outVertex, inVertex, label, visibility).save(authorizations);
     }
 
     @Override
     public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, visibility, authorizations).save();
+        return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save(authorizations);
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
-        return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility, authorizations);
+    public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+        return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility);
     }
 
     @Override
@@ -216,11 +216,11 @@ public abstract class GraphBase implements Graph {
     }
 
     protected void reindexVertices(Authorizations authorizations) {
-        this.searchIndex.addElements(this, new ToElementIterable<Vertex>(getVertices(authorizations)));
+        this.searchIndex.addElements(this, new ToElementIterable<Vertex>(getVertices(authorizations)), authorizations);
     }
 
     private void reindexEdges(Authorizations authorizations) {
-        this.searchIndex.addElements(this, new ToElementIterable<Edge>(getEdges(authorizations)));
+        this.searchIndex.addElements(this, new ToElementIterable<Edge>(getEdges(authorizations)), authorizations);
     }
 
     @Override

@@ -1,16 +1,18 @@
 package org.securegraph.accumulo;
 
+import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
 import org.securegraph.query.VertexQuery;
 import org.securegraph.util.JoinIterable;
 import org.securegraph.util.LookAheadIterable;
-import org.apache.hadoop.io.Text;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import static org.securegraph.util.IterableUtils.count;
 
 public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
@@ -87,6 +89,11 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     @Override
     public Iterable<Object> getEdgeIds(final Vertex otherVertex, final Direction direction, final String[] labels, final Authorizations authorizations) {
         return getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labels, authorizations);
+    }
+
+    @Override
+    public int getEdgeCount(Direction direction, Authorizations authorizations) {
+        return count(getEdgeIds(direction, authorizations));
     }
 
     public Iterable<Object> getEdgeIdsWithOtherVertexId(final Object otherVertexId, final Direction direction, final String[] labels, final Authorizations authorizations) {
@@ -204,8 +211,8 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     public ExistingElementMutation<Vertex> prepareMutation() {
         return new ExistingElementMutationImpl<Vertex>(this) {
             @Override
-            public Vertex save() {
-                saveExistingElementMutation(this);
+            public Vertex save(Authorizations authorizations) {
+                saveExistingElementMutation(this, authorizations);
                 return getElement();
             }
         };

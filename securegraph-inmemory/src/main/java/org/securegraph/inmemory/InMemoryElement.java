@@ -14,7 +14,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    public void removeProperty(String key, String name) {
+    public void removeProperty(String key, String name, Authorizations authorizations) {
         Property property = removePropertyInternal(key, name);
         if (property != null) {
             getGraph().removeProperty(this, property);
@@ -22,7 +22,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    public void removeProperty(String name) {
+    public void removeProperty(String name, Authorizations authorizations) {
         Iterable<Property> properties = removePropertyInternal(name);
         for (Property property : properties) {
             getGraph().removeProperty(this, property);
@@ -60,22 +60,22 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         return super.removePropertyInternal(key, name);
     }
 
-    protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation) {
+    protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation, Authorizations authorizations) {
         Iterable<Property> properties = mutation.getProperties();
         updatePropertiesInternal(properties);
-        getGraph().saveProperties(mutation.getElement(), properties);
+        getGraph().saveProperties(mutation.getElement(), properties, authorizations);
 
         if (mutation.getElement() instanceof Edge) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterEdgeVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
-            getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities());
+            getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
             getGraph().alterEdgePropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
         } else if (mutation.getElement() instanceof Vertex) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterVertexVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
-            getGraph().alterVertexPropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities());
+            getGraph().alterVertexPropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
             getGraph().alterVertexPropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
         } else {
             throw new IllegalStateException("Unexpected element type: " + mutation.getElement());

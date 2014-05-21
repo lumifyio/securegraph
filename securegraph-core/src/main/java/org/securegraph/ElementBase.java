@@ -220,28 +220,28 @@ public abstract class ElementBase<T extends Element> implements Element {
     public abstract ExistingElementMutation<T> prepareMutation();
 
     @Override
-    public abstract void removeProperty(String key, String name);
+    public abstract void removeProperty(String key, String name, Authorizations authorizations);
 
     @Override
-    public void addPropertyValue(String key, String name, Object value, Visibility visibility) {
-        prepareMutation().addPropertyValue(key, name, value, visibility).save();
+    public void addPropertyValue(String key, String name, Object value, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().addPropertyValue(key, name, value, visibility).save(authorizations);
     }
 
     @Override
-    public void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        prepareMutation().addPropertyValue(key, name, value, metadata, visibility).save();
+    public void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().addPropertyValue(key, name, value, metadata, visibility).save(authorizations);
     }
 
     @Override
-    public void setProperty(String name, Object value, Visibility visibility) {
-        prepareMutation().setProperty(name, value, visibility).save();
+    public void setProperty(String name, Object value, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().setProperty(name, value, visibility).save(authorizations);
     }
 
     @Override
-    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        prepareMutation().setProperty(name, value, metadata, visibility).save();
+    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().setProperty(name, value, metadata, visibility).save(authorizations);
     }
 
     @Override
-    public abstract void removeProperty(String name);
+    public abstract void removeProperty(String name, Authorizations authorizations);
 }

@@ -71,12 +71,12 @@ public class AccumuloGraphTest extends GraphTestBase {
     public void testStoringEmptyMetadata() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
         Map<String, Object> metadata = new HashMap<String, Object>();
-        v1.addPropertyValue("prop1", "prop1", "val1", metadata, VISIBILITY_EMPTY);
+        v1.addPropertyValue("prop1", "prop1", "val1", metadata, VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B);
 
         Vertex v2 = graph.addVertex("v2", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
         metadata = new HashMap<String, Object>();
         metadata.put("meta1", "metavalue1");
-        v2.addPropertyValue("prop1", "prop1", "val1", metadata, VISIBILITY_EMPTY);
+        v2.addPropertyValue("prop1", "prop1", "val1", metadata, VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_EMPTY);
         assertEquals(0, v1.getProperty("prop1", "prop1").getMetadata().size());

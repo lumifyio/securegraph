@@ -61,11 +61,11 @@ public class ElasticSearchNestedSearchIndexTest extends GraphTestBase {
         PropertyValue propSmall = new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), String.class);
         PropertyValue propLarge = new StreamingPropertyValue(new ByteArrayInputStream(expectedLargeValue.getBytes()), String.class);
         String largePropertyName = "propLarge/\\*!@#$%^&*()[]{}|";
-        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A)
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("propSmall", propSmall, VISIBILITY_A)
                 .setProperty(largePropertyName, propLarge, VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
-                .save();
+                .save(AUTHORIZATIONS_A_AND_B);
 
         String jsonString = getSearchIndex().createJsonForElement(v1);
         JSONObject json = new JSONObject(jsonString);

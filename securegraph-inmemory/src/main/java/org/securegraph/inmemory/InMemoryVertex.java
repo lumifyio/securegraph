@@ -8,6 +8,8 @@ import org.securegraph.query.VertexQuery;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
+import static org.securegraph.util.IterableUtils.count;
+
 public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     public InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
         super(graph, id, visibility, properties);
@@ -111,6 +113,11 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
+    public int getEdgeCount(Direction direction, Authorizations authorizations) {
+        return count(getEdgeIds(direction, authorizations));
+    }
+
+    @Override
     public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
             @Override
@@ -189,8 +196,8 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     public ExistingElementMutation<Vertex> prepareMutation() {
         return new ExistingElementMutationImpl<Vertex>(this) {
             @Override
-            public Vertex save() {
-                saveExistingElementMutation(this);
+            public Vertex save(Authorizations authorizations) {
+                saveExistingElementMutation(this, authorizations);
                 return getElement();
             }
         };

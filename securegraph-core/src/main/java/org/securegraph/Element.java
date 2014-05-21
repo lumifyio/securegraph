@@ -159,14 +159,14 @@ public interface Element {
      * @param key  The property key.
      * @param name The property name.
      */
-    void removeProperty(String key, String name);
+    void removeProperty(String key, String name, Authorizations authorizations);
 
     /**
      * Removes all properties with the given name that you have access to. Only properties which you have access to will be removed.
      *
      * @param name The name of the property to remove.
      */
-    void removeProperty(String name);
+    void removeProperty(String name, Authorizations authorizations);
 
     /**
      * Gets the graph that this element belongs to.
@@ -181,7 +181,7 @@ public interface Element {
      * @param value      The value of the property.
      * @param visibility The visibility to give this property.
      */
-    void addPropertyValue(String key, String name, Object value, Visibility visibility);
+    void addPropertyValue(String key, String name, Object value, Visibility visibility, Authorizations authorizations);
 
     /**
      * Adds or updates a property.
@@ -192,7 +192,7 @@ public interface Element {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations);
 
     /**
      * Sets or updates a property value. The property key will be set to a constant. This is a convenience method
@@ -204,7 +204,7 @@ public interface Element {
      * @param value      The value of the property.
      * @param visibility The visibility to give this property.
      */
-    void setProperty(String name, Object value, Visibility visibility);
+    void setProperty(String name, Object value, Visibility visibility, Authorizations authorizations);
 
     /**
      * Sets or updates a property value. The property key will be set to a constant. This is a convenience method
@@ -217,5 +217,5 @@ public interface Element {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations);
 }

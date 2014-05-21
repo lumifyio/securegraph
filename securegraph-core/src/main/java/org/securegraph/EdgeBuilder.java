@@ -21,7 +21,7 @@ public abstract class EdgeBuilder extends ElementBuilder<Edge> {
      * @return The newly created edge.
      */
     @Override
-    public abstract Edge save();
+    public abstract Edge save(Authorizations authorizations);
 
     protected Object getEdgeId() {
         return edgeId;

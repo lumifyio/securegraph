@@ -60,7 +60,7 @@ public class GraphRestore extends GraphToolBase {
                         element = restoreEdge(graph, json, authorizations);
                         break;
                     case 'D':
-                        restoreStreamingPropertyValue(in, graph, json, element);
+                        restoreStreamingPropertyValue(in, graph, json, element, authorizations);
                         break;
                     default:
                         throw new RuntimeException("Unexpected line: " + line);
@@ -93,9 +93,9 @@ public class GraphRestore extends GraphToolBase {
     private Vertex restoreVertex(Graph graph, JSONObject json, Authorizations authorizations) {
         Visibility visibility = jsonToVisibility(json);
         Object vertexId = jsonStringToObject(json.getString("id"));
-        VertexBuilder v = graph.prepareVertex(vertexId, visibility, authorizations);
+        VertexBuilder v = graph.prepareVertex(vertexId, visibility);
         jsonToProperties(json, v);
-        return v.save();
+        return v.save(authorizations);
     }
 
     private Edge restoreEdge(Graph graph, JSONObject json, Authorizations authorizations) {
@@ -106,9 +106,9 @@ public class GraphRestore extends GraphToolBase {
         String label = json.getString("label");
         Vertex outVertex = graph.getVertex(outVertexId, authorizations);
         Vertex inVertex = graph.getVertex(inVertexId, authorizations);
-        EdgeBuilder e = graph.prepareEdge(edgeId, outVertex, inVertex, label, visibility, authorizations);
+        EdgeBuilder e = graph.prepareEdge(edgeId, outVertex, inVertex, label, visibility);
         jsonToProperties(json, e);
-        return e.save();
+        return e.save(authorizations);
     }
 
     protected Visibility jsonToVisibility(JSONObject jsonObject) {
@@ -132,7 +132,7 @@ public class GraphRestore extends GraphToolBase {
         e.addPropertyValue(key, name, value, metadata, visibility);
     }
 
-    private void restoreStreamingPropertyValue(InputStream in, Graph graph, JSONObject propertyJson, Element element) throws ClassNotFoundException, IOException {
+    private void restoreStreamingPropertyValue(InputStream in, Graph graph, JSONObject propertyJson, Element element, Authorizations authorizations) throws ClassNotFoundException, IOException {
         String key = propertyJson.getString("key");
         String name = propertyJson.getString("name");
         Map<String, Object> metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
@@ -142,7 +142,7 @@ public class GraphRestore extends GraphToolBase {
         StreamingPropertyValue value = new StreamingPropertyValue(spvin, valueType);
         value.searchIndex(propertyJson.optBoolean("searchIndex", false));
         value.store(propertyJson.optBoolean("store", true));
-        element.addPropertyValue(key, name, value, metadata, visibility);
+        element.addPropertyValue(key, name, value, metadata, visibility, authorizations);
     }
 
     private Map<String, Object> jsonToPropertyMetadata(JSONObject metadataJson) {

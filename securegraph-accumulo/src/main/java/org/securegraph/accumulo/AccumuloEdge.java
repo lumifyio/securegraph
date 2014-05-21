@@ -1,9 +1,9 @@
 package org.securegraph.accumulo;
 
+import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
-import org.apache.hadoop.io.Text;
 
 public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
@@ -61,8 +61,8 @@ public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     public ExistingElementMutation<Edge> prepareMutation() {
         return new ExistingElementMutationImpl<Edge>(this) {
             @Override
-            public Edge save() {
-                saveExistingElementMutation(this);
+            public Edge save(Authorizations authorizations) {
+                saveExistingElementMutation(this, authorizations);
                 return getElement();
             }
         };

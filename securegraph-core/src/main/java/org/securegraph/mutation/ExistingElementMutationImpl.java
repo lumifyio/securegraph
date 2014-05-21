@@ -1,5 +1,6 @@
 package org.securegraph.mutation;
 
+import org.securegraph.Authorizations;
 import org.securegraph.Element;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
@@ -21,7 +22,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
         this.element = element;
     }
 
-    public abstract T save();
+    public abstract T save(Authorizations authorizations);
 
     public ElementMutation<T> setProperty(String name, Object value, Visibility visibility) {
         return setProperty(name, value, new HashMap<String, Object>(), visibility);

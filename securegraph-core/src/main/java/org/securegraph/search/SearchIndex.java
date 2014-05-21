@@ -7,11 +7,11 @@ import org.securegraph.query.VertexQuery;
 import java.io.IOException;
 
 public interface SearchIndex {
-    void addElement(Graph graph, Element element);
+    void addElement(Graph graph, Element element, Authorizations authorizations);
 
     void removeElement(Graph graph, Element element);
 
-    void addElements(Graph graph, Iterable<Element> elements);
+    void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations);
 
     GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations);
 

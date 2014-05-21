@@ -1,8 +1,9 @@
 package org.securegraph.blueprints;
 
+import com.tinkerpop.blueprints.Element;
+import org.securegraph.Authorizations;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
-import com.tinkerpop.blueprints.Element;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,11 +12,13 @@ import java.util.Set;
 public abstract class SecureGraphBlueprintsElement implements Element {
     private static final String DEFAULT_PROPERTY_ID = "";
     private final org.securegraph.Element element;
+    private final Authorizations authorizations;
     private final SecureGraphBlueprintsGraph graph;
 
-    protected SecureGraphBlueprintsElement(SecureGraphBlueprintsGraph graph, org.securegraph.Element element) {
+    protected SecureGraphBlueprintsElement(SecureGraphBlueprintsGraph graph, org.securegraph.Element element, Authorizations authorizations) {
         this.graph = graph;
         this.element = element;
+        this.authorizations = authorizations;
     }
 
     @Override
@@ -51,13 +54,13 @@ public abstract class SecureGraphBlueprintsElement implements Element {
             throw new IllegalArgumentException("Property Name cannot be empty.");
         }
         Visibility visibility = getGraph().getVisibilityProvider().getVisibilityForProperty(propertyName, value);
-        getSecureGraphElement().setProperty(propertyName, value, visibility);
+        getSecureGraphElement().setProperty(propertyName, value, visibility, authorizations);
     }
 
     @Override
     public <T> T removeProperty(String key) {
         T old = getProperty(key);
-        getSecureGraphElement().removeProperty(DEFAULT_PROPERTY_ID, key);
+        getSecureGraphElement().removeProperty(DEFAULT_PROPERTY_ID, key, authorizations);
         return old;
     }
 

@@ -18,9 +18,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * visibility so adding properties with the same name and different visibility strings is still permitted.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param name       The name of the property.
      * @param value      The value of the property.
@@ -37,9 +35,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * visibility so adding properties with the same name and different visibility strings is still permitted.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param name       The name of the property.
      * @param value      The value of the property.
@@ -54,9 +50,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * Adds or updates a property.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param key        The unique key given to the property allowing for multi-valued properties.
      * @param name       The name of the property.
@@ -71,9 +65,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * Adds or updates a property.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param key        The unique key given to the property allowing for multi-valued properties.
      * @param name       The name of the property.
@@ -91,7 +83,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      *
      * @return either the vertex or edge just saved.
      */
-    public abstract T save();
+    public abstract T save(Authorizations authorizations);
 
     public Iterable<Property> getProperties() {
         return properties;

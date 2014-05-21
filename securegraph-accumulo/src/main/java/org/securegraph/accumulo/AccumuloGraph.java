@@ -124,30 +124,30 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Authorizations authorizations) {
-        return prepareVertex(vertexId, vertexVisibility, authorizations).save();
+        return prepareVertex(vertexId, vertexVisibility).save(authorizations);
     }
 
     @Override
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
+    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
         return new VertexBuilder(vertexId, visibility) {
             @Override
-            public Vertex save() {
+            public Vertex save(Authorizations authorizations) {
                 AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties());
 
                 elementMutationBuilder.saveVertex(vertex);
 
-                getSearchIndex().addElement(AccumuloGraph.this, vertex);
+                getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
 
                 return vertex;
             }
         };
     }
 
-    void saveProperties(AccumuloElement element, Iterable<Property> properties) {
+    void saveProperties(AccumuloElement element, Iterable<Property> properties, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
@@ -160,17 +160,17 @@ public class AccumuloGraph extends GraphBase {
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
         }
-        getSearchIndex().addElement(this, element);
+        getSearchIndex().addElement(this, element, authorizations);
     }
 
-    void removeProperty(AccumuloElement element, Property property) {
+    void removeProperty(AccumuloElement element, Property property, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());
         elementMutationBuilder.addPropertyRemoveToMutation(m, property);
         addMutations(getWriterFromElementType(element), m);
 
-        getSearchIndex().addElement(this, element);
+        getSearchIndex().addElement(this, element, authorizations);
     }
 
     private String getRowPrefixForElement(AccumuloElement element) {
@@ -269,7 +269,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (outVertex == null) {
             throw new IllegalArgumentException("outVertex is required");
         }
@@ -282,7 +282,7 @@ public class AccumuloGraph extends GraphBase {
 
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
-            public Edge save() {
+            public Edge save(Authorizations authorizations) {
                 AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
                 elementMutationBuilder.saveEdge(edge);
 
@@ -293,7 +293,7 @@ public class AccumuloGraph extends GraphBase {
                     ((AccumuloVertex) getInVertex()).addInEdge(edge);
                 }
 
-                getSearchIndex().addElement(AccumuloGraph.this, edge);
+                getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
                 return edge;
             }
         };
@@ -301,7 +301,7 @@ public class AccumuloGraph extends GraphBase {
 
     @Override
     public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Authorizations authorizations) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility, authorizations).save();
+        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility).save(authorizations);
     }
 
     @Override

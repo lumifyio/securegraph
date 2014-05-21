@@ -1,8 +1,8 @@
 package org.securegraph.accumulo;
 
+import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutationImpl;
-import org.apache.hadoop.io.Text;
 
 import java.io.Serializable;
 
@@ -16,18 +16,18 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    public void removeProperty(String key, String name) {
+    public void removeProperty(String key, String name, Authorizations authorizations) {
         Property property = super.removePropertyInternal(key, name);
         if (property != null) {
-            getGraph().removeProperty(this, property);
+            getGraph().removeProperty(this, property, authorizations);
         }
     }
 
     @Override
-    public void removeProperty(String name) {
+    public void removeProperty(String name, Authorizations authorizations) {
         Iterable<Property> properties = super.removePropertyInternal(name);
         for (Property property : properties) {
-            getGraph().removeProperty(this, property);
+            getGraph().removeProperty(this, property, authorizations);
         }
     }
 
@@ -36,7 +36,7 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
         return (AccumuloGraph) super.getGraph();
     }
 
-    protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation) {
+    protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation, Authorizations authorizations) {
         // Order matters a lot here
 
         // metadata must be altered first because the lookup of a property can include visibility which will be altered by alterElementPropertyVisibilities
@@ -47,7 +47,7 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
 
         Iterable<Property> properties = mutation.getProperties();
         updatePropertiesInternal(properties);
-        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties);
+        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties, authorizations);
 
         if (mutation.getNewElementVisibility() != null) {
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());

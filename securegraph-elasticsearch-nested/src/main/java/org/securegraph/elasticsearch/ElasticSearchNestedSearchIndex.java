@@ -226,7 +226,7 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElement(Graph graph, Element element) {
+    public void addElement(Graph graph, Element element, Authorizations authorizations) {
         addPropertiesToIndex(element.getProperties());
 
         try {
@@ -495,14 +495,14 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElements(Graph graph, Iterable<Element> elements) {
+    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
         // TODO change this to use elastic search bulk import
         int count = 0;
         for (Element element : elements) {
             if (count % 1000 == 0) {
                 LOGGER.debug("adding elements... " + count);
             }
-            addElement(graph, element);
+            addElement(graph, element, authorizations);
             count++;
         }
         LOGGER.debug("added " + count + " elements");

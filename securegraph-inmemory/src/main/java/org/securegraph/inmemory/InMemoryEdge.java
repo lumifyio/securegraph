@@ -57,8 +57,8 @@ public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     public ExistingElementMutation<Edge> prepareMutation() {
         return new ExistingElementMutationImpl<Edge>(this) {
             @Override
-            public Edge save() {
-                saveExistingElementMutation(this);
+            public Edge save(Authorizations authorizations) {
+                saveExistingElementMutation(this, authorizations);
                 return getElement();
             }
         };

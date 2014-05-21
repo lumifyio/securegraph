@@ -4,7 +4,6 @@ import org.securegraph.id.IdGenerator;
 import org.securegraph.query.GraphQuery;
 
 import java.util.List;
-import java.util.Set;
 
 public interface Graph {
     /**
@@ -30,22 +29,20 @@ public interface Graph {
      * Prepare a vertex to be added to the graph. This method provides a way to build up a vertex with it's properties to be inserted
      * with a single operation. The id of the new vertex will be generated using an org.securegraph.id.IdGenerator.
      *
-     * @param visibility     The visibility to assign to the new vertex.
-     * @param authorizations The authorizations required to add and retrieve the new vertex.
+     * @param visibility The visibility to assign to the new vertex.
      * @return The vertex builder.
      */
-    VertexBuilder prepareVertex(Visibility visibility, Authorizations authorizations);
+    VertexBuilder prepareVertex(Visibility visibility);
 
     /**
      * Prepare a vertex to be added to the graph. This method provides a way to build up a vertex with it's properties to be inserted
      * with a single operation.
      *
-     * @param vertexId       The id to assign the new vertex.
-     * @param visibility     The visibility to assign to the new vertex.
-     * @param authorizations The authorizations required to add and retrieve the new vertex.
+     * @param vertexId   The id to assign the new vertex.
+     * @param visibility The visibility to assign to the new vertex.
      * @return The vertex builder.
      */
-    VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations);
+    VertexBuilder prepareVertex(Object vertexId, Visibility visibility);
 
     /**
      * Get a vertex from the graph.
@@ -124,28 +121,26 @@ public interface Graph {
      * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
      * with a single operation. The id of the new edge will be generated using an org.securegraph.id.IdGenerator.
      *
-     * @param outVertex      The source vertex. The "out" side of the edge.
-     * @param inVertex       The destination vertex. The "in" side of the edge.
-     * @param label          The label to assign to the edge. eg knows, works at, etc.
-     * @param visibility     The visibility to assign to the new edge.
-     * @param authorizations The authorizations required to add and retrieve the new edge.
+     * @param outVertex  The source vertex. The "out" side of the edge.
+     * @param inVertex   The destination vertex. The "in" side of the edge.
+     * @param label      The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility The visibility to assign to the new edge.
      * @return The edge builder.
      */
-    EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations);
+    EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility);
 
     /**
      * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
      * with a single operation.
      *
-     * @param edgeId         The id to assign the new edge.
-     * @param outVertex      The source vertex. The "out" side of the edge.
-     * @param inVertex       The destination vertex. The "in" side of the edge.
-     * @param label          The label to assign to the edge. eg knows, works at, etc.
-     * @param visibility     The visibility to assign to the new edge.
-     * @param authorizations The authorizations required to add and retrieve the new edge.
+     * @param edgeId     The id to assign the new edge.
+     * @param outVertex  The source vertex. The "out" side of the edge.
+     * @param inVertex   The destination vertex. The "in" side of the edge.
+     * @param label      The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility The visibility to assign to the new edge.
      * @return The edge builder.
      */
-    EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations);
+    EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility);
 
     /**
      * Get an edge from the graph.

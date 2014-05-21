@@ -17,7 +17,7 @@ public class DefaultSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElement(Graph graph, Element element) {
+    public void addElement(Graph graph, Element element, Authorizations authorizations) {
 
     }
 
@@ -27,9 +27,9 @@ public class DefaultSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElements(Graph graph, Iterable<Element> elements) {
+    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
         for (Element element : elements) {
-            addElement(graph, element);
+            addElement(graph, element, authorizations);
         }
     }
 
