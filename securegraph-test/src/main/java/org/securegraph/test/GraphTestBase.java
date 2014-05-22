@@ -1517,7 +1517,7 @@ public abstract class GraphTestBase {
         graph.flush();
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        v1.setProperty("prop1", "value1New", VISIBILITY_A, AUTHORIZATIONS_A);
+        v1.setProperty("prop1", "value1New", VISIBILITY_A, AUTHORIZATIONS_A_AND_B);
         graph.flush();
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
