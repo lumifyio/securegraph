@@ -8,6 +8,9 @@ import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.facet.FacetBuilders;
@@ -32,12 +35,24 @@ public class ElasticSearchGraphQuery extends GraphQueryBase implements QuerySupp
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQuery.class);
     private final TransportClient client;
     private String indexName;
+    private final double inEdgeBoost;
+    private final double outEdgeBoost;
     private List<Facet> facets = new ArrayList<Facet>();
 
-    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
+    public ElasticSearchGraphQuery(
+            TransportClient client,
+            String indexName,
+            Graph graph,
+            String queryString,
+            Map<String, PropertyDefinition> propertyDefinitions,
+            double inEdgeBoost,
+            double outEdgeBoost,
+            Authorizations authorizations) {
         super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
         this.indexName = indexName;
+        this.inEdgeBoost = inEdgeBoost;
+        this.outEdgeBoost = outEdgeBoost;
     }
 
     @Override
@@ -191,10 +206,20 @@ public class ElasticSearchGraphQuery extends GraphQueryBase implements QuerySupp
             }
         }
         QueryBuilder query = createQuery(getParameters().getQueryString());
+
+        ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
+                .scriptFunction("_score "
+                        + " * sqrt(inEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndex.IN_EDGE_COUNT_FIELD_NAME + "'].value))"
+                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndex.OUT_EDGE_COUNT_FIELD_NAME + "'].value))")
+                .param("inEdgeMultiplier", inEdgeBoost)
+                .param("outEdgeMultiplier", outEdgeBoost);
+
+        FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, scoreFunction);
+
         SearchRequestBuilder q = client
                 .prepareSearch(indexName)
                 .setTypes(ElasticSearchSearchIndex.ELEMENT_TYPE)
-                .setQuery(query)
+                .setQuery(functionScoreQuery)
                 .setPostFilter(FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])))
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());

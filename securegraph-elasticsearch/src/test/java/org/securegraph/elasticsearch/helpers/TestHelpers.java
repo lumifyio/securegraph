@@ -30,7 +30,7 @@ public class TestHelpers {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.ES_LOCATIONS, addr);
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.CONFIG_ES_LOCATIONS, addr);
         config.put(ElasticSearchSearchIndex.SETTING_CLUSTER_NAME, clusterName);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());

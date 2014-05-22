@@ -1265,6 +1265,11 @@ public abstract class GraphTestBase {
 
     @Test
     public void testVertexBoost() throws Exception {
+        if (!graph.isEdgeBoostSupported()) {
+            LOGGER.warn("Boost not supported");
+            return;
+        }
+
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
         Vertex v2 = graph.prepareVertex("v2", VISIBILITY_A)
@@ -1273,6 +1278,7 @@ public abstract class GraphTestBase {
                 .save(AUTHORIZATIONS_A_AND_B);
 
         graph.addEdge("e1", v3, v2, "link", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
         assertVertexIds(graph.query(AUTHORIZATIONS_A).vertices(), new String[]{"v2", "v3", "v1"});
     }

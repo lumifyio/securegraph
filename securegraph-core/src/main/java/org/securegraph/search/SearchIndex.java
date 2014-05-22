@@ -24,4 +24,6 @@ public interface SearchIndex {
     void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException;
 
     boolean isFieldBoostSupported();
+
+    boolean isEdgeBoostSupported();
 }

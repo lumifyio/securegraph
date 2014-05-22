@@ -362,6 +362,11 @@ public class ElasticSearchNestedSearchIndex implements SearchIndex {
         return false;
     }
 
+    @Override
+    public boolean isEdgeBoostSupported() {
+        return false;
+    }
+
     public void addPropertiesToIndex(Iterable<Property> properties) {
         try {
             for (Property property : properties) {

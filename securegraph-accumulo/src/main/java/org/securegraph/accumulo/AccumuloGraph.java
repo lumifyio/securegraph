@@ -300,11 +300,6 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Authorizations authorizations) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility).save(authorizations);
-    }
-
-    @Override
     public Iterable<Edge> getEdges(Authorizations authorizations) {
         return getEdgesInRange(null, null, authorizations);
     }

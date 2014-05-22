@@ -62,4 +62,9 @@ public class DefaultSearchIndex implements SearchIndex {
     public boolean isFieldBoostSupported() {
         return false;
     }
+
+    @Override
+    public boolean isEdgeBoostSupported() {
+        return false;
+    }
 }

@@ -31,9 +31,15 @@ import java.util.*;
 public class ElasticSearchSearchIndex implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndex.class);
     private static final String STORE_SOURCE_DATA = "storeSourceData";
-    public static final String ES_LOCATIONS = "locations";
-    public static final String INDEX_NAME = "indexName";
+    public static final String CONFIG_ES_LOCATIONS = "locations";
+    public static final String CONFIG_INDEX_NAME = "indexName";
     private static final String DEFAULT_INDEX_NAME = "securegraph";
+    public static final String CONFIG_IN_EDGE_BOOST = "inEdgeBoost";
+    private static final double DEFAULT_IN_EDGE_BOOST = 1.2;
+    public static final String CONFIG_OUT_EDGE_BOOST = "outEdgeBoost";
+    private static final double DEFAULT_OUT_EDGE_BOOST = 1.1;
+    public static final String CONFIG_USE_EDGE_BOOST = "useEdgeBoost";
+    private static final boolean DEFAULT_USE_EDGE_BOOST = true;
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String IN_EDGE_COUNT_FIELD_NAME = "__inEdgeCount";
@@ -47,20 +53,13 @@ public class ElasticSearchSearchIndex implements SearchIndex {
     private final boolean autoflush;
     private String indexName;
     private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
+    private String[] esLocations;
+    private double inEdgeBoost;
+    private double outEdgeBoost;
+    private boolean useEdgeBoost;
 
     public ElasticSearchSearchIndex(Map config) {
-        String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ES_LOCATIONS);
-        if (esLocationsString == null) {
-            throw new SecureGraphException(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ES_LOCATIONS + " is a required configuration parameter");
-        }
-        LOGGER.info("Using elastic search locations: " + esLocationsString);
-        String[] esLocations = esLocationsString.split(",");
-
-        indexName = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + INDEX_NAME);
-        if (indexName == null) {
-            indexName = DEFAULT_INDEX_NAME;
-        }
-        LOGGER.info("Using index: " + indexName);
+        readConfig(config);
 
         Object storeSourceDataConfig = config.get(STORE_SOURCE_DATA);
         boolean storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
@@ -94,6 +93,50 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
         ensureIndexCreated(storeSourceData);
         loadPropertyDefinitions();
+    }
+
+    private void readConfig(Map config) {
+        // Locations
+        String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_ES_LOCATIONS);
+        if (esLocationsString == null) {
+            throw new SecureGraphException(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_ES_LOCATIONS + " is a required configuration parameter");
+        }
+        LOGGER.info("Using elastic search locations: " + esLocationsString);
+        esLocations = esLocationsString.split(",");
+
+        // Index Name
+        indexName = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_NAME);
+        if (indexName == null) {
+            indexName = DEFAULT_INDEX_NAME;
+        }
+        LOGGER.info("Using index: " + indexName);
+
+        // In-Edge Boost
+        String inEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_IN_EDGE_BOOST);
+        if (inEdgeBoostString == null) {
+            inEdgeBoost = DEFAULT_IN_EDGE_BOOST;
+        } else {
+            inEdgeBoost = Double.parseDouble(inEdgeBoostString);
+        }
+        LOGGER.info("In Edge Boost: " + inEdgeBoost);
+
+        // Out-Edge Boost
+        String outEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_OUT_EDGE_BOOST);
+        if (outEdgeBoostString == null) {
+            outEdgeBoost = DEFAULT_OUT_EDGE_BOOST;
+        } else {
+            outEdgeBoost = Double.parseDouble(outEdgeBoostString);
+        }
+        LOGGER.info("Out Edge Boost: " + outEdgeBoost);
+
+        // Use Edge Boost
+        String useEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_USE_EDGE_BOOST);
+        if (useEdgeBoostString == null) {
+            useEdgeBoost = DEFAULT_USE_EDGE_BOOST;
+        } else {
+            useEdgeBoost = Boolean.parseBoolean(useEdgeBoostString);
+        }
+        LOGGER.info("Use edge boost: " + useEdgeBoost);
     }
 
     private void ensureIndexCreated(boolean storeSourceData) {
@@ -225,7 +268,14 @@ public class ElasticSearchSearchIndex implements SearchIndex {
                 client.admin().indices().prepareFlush(indexName).execute().actionGet();
             }
         } catch (Exception e) {
-            throw new SecureGraphException("Could not add document", e);
+            throw new SecureGraphException("Could not add element", e);
+        }
+
+        if (useEdgeBoost && element instanceof Edge) {
+            Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
+            addElement(graph, vOut, authorizations);
+            Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
+            addElement(graph, vIn, authorizations);
         }
     }
 
@@ -246,8 +296,12 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
         if (element instanceof Vertex) {
             jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_VERTEX);
-            jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, ((Vertex) element).getEdgeCount(Direction.IN, authorizations));
-            jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, ((Vertex) element).getEdgeCount(Direction.OUT, authorizations));
+            if (useEdgeBoost) {
+                int inEdgeCount = ((Vertex) element).getEdgeCount(Direction.IN, authorizations);
+                jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
+                int outEdgeCount = ((Vertex) element).getEdgeCount(Direction.OUT, authorizations);
+                jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
+            }
         } else if (element instanceof Edge) {
             jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_EDGE);
         } else {
@@ -342,6 +396,11 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
     @Override
     public boolean isFieldBoostSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isEdgeBoostSupported() {
         return true;
     }
 
@@ -496,7 +555,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchGraphQuery(client, indexName, graph, queryString, this.propertyDefinitions, authorizations);
+        return new ElasticSearchGraphQuery(client, indexName, graph, queryString, this.propertyDefinitions, inEdgeBoost, outEdgeBoost, authorizations);
     }
 
     @Override
