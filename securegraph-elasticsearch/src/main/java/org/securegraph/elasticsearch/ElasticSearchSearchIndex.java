@@ -367,7 +367,7 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             return element;
         }
 
-        LOGGER.debug("Reindexing element " + element.getId() + " required a re-query because of differing authorizations.");
+        LOGGER.debug("Reindexing element " + element.getId());
         existingElement.mergeProperties(element);
 
         return existingElement;
