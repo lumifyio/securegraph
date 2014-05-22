@@ -1508,9 +1508,27 @@ public abstract class GraphTestBase {
         assertTrue(graph.isVisibilityValid(VISIBILITY_EMPTY, AUTHORIZATIONS_A));
     }
 
+    @Test
+    public void testModifyVertexWithLowerAuthorizationThenOtherProperties() {
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .setProperty("prop2", "value2", VISIBILITY_B)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        v1.setProperty("prop1", "value1New", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("prop2", "value2")
+                .vertices();
+        assertVertexIds(vertices, new String[]{"v1"});
+    }
+
     protected void assertVertexIds(Iterable<Vertex> vertices, String[] ids) {
         List<Vertex> verticesList = toList(vertices);
-        assertEquals(ids.length, verticesList.size());
+        assertEquals("ids length mismatch", ids.length, verticesList.size());
         for (int i = 0; i < ids.length; i++) {
             assertEquals("at offset: " + i, ids[i], verticesList.get(i).getId());
         }
