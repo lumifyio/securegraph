@@ -253,7 +253,8 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         addPropertiesToIndex(element.getProperties());
 
         try {
-            XContentBuilder jsonBuilder = buildJsonContentFromElement(element, authorizations);
+            boolean mergeExisting = true;
+            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, element, mergeExisting, authorizations);
 
             IndexResponse response = client
                     .prepareIndex(indexName, ELEMENT_TYPE, element.getId().toString())
@@ -283,20 +284,22 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         }
     }
 
-    public String createJsonForElement(Element element, Authorizations authorizations) {
+    public String createJsonForElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) {
         try {
-            return buildJsonContentFromElement(element, authorizations).string();
+            return buildJsonContentFromElement(graph, element, mergeExisting, authorizations).string();
         } catch (Exception e) {
             throw new SecureGraphException("Could not create JSON for element", e);
         }
     }
 
-    private XContentBuilder buildJsonContentFromElement(Element element, Authorizations authorizations) throws IOException {
+    private XContentBuilder buildJsonContentFromElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
-        element = requeryWithAuthsAndMergedElement(element, authorizations);
+        if (mergeExisting) {
+            element = requeryWithAuthsAndMergedElement(graph, element, authorizations);
+        }
 
         if (element instanceof Vertex) {
             jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_VERTEX);
@@ -354,12 +357,12 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         return jsonBuilder;
     }
 
-    private Element requeryWithAuthsAndMergedElement(Element element, Authorizations authorizations) {
+    private Element requeryWithAuthsAndMergedElement(Graph graph, Element element, Authorizations authorizations) {
         Element existingElement;
         if (element instanceof Vertex) {
-            existingElement = element.getGraph().getVertex(element.getId(), authorizations);
+            existingElement = graph.getVertex(element.getId(), authorizations);
         } else if (element instanceof Edge) {
-            existingElement = element.getGraph().getEdge(element.getId(), authorizations);
+            existingElement = graph.getEdge(element.getId(), authorizations);
         } else {
             throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
         }
