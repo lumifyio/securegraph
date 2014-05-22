@@ -11,8 +11,8 @@ import org.securegraph.util.FilterIterable;
 import static org.securegraph.util.IterableUtils.count;
 
 public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
-    public InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
-        super(graph, id, visibility, properties);
+    public InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+        super(graph, id, visibility, properties, authorizations);
     }
 
     @Override

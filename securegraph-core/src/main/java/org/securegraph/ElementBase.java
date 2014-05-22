@@ -13,12 +13,14 @@ public abstract class ElementBase<T extends Element> implements Element {
     private Visibility visibility;
 
     private final TreeSet<Property> properties;
+    private final Authorizations authorizations;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
+    protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
         this.properties = new TreeSet<Property>();
+        this.authorizations = authorizations;
         updatePropertiesInternal(properties);
     }
 
@@ -244,4 +246,17 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public abstract void removeProperty(String name, Authorizations authorizations);
+
+    @Override
+    public Authorizations getAuthorizations() {
+        return authorizations;
+    }
+
+    @Override
+    public void mergeProperties(Element element) {
+        for (Property property : element.getProperties()) {
+            this.properties.remove(property);
+            this.properties.add(property);
+        }
+    }
 }

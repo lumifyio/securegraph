@@ -1,5 +1,6 @@
 package org.securegraph.accumulo;
 
+import org.securegraph.Authorizations;
 import org.securegraph.SecureGraphException;
 import org.securegraph.Vertex;
 import org.apache.accumulo.core.data.Key;
@@ -17,8 +18,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private final Map<Object, EdgeInfo> outEdges = new HashMap<Object, EdgeInfo>();
     private final Map<Object, EdgeInfo> inEdges = new HashMap<Object, EdgeInfo>();
 
-    public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
-        super(graph, row);
+    public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
+        super(graph, row, authorizations);
         this.graph = graph;
     }
 
@@ -63,7 +64,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.getVisibility(),
                 this.getProperties(),
                 this.inEdges,
-                this.outEdges);
+                this.outEdges,
+                this.getAuthorizations());
     }
 
 }

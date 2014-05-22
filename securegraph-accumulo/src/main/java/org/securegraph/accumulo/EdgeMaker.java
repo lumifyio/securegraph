@@ -1,10 +1,11 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.Edge;
-import org.securegraph.SecureGraphException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
+import org.securegraph.Authorizations;
+import org.securegraph.Edge;
+import org.securegraph.SecureGraphException;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -16,8 +17,8 @@ public class EdgeMaker extends ElementMaker<Edge> {
     private String outVertexId;
     private String label;
 
-    public EdgeMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
-        super(graph, row);
+    public EdgeMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
+        super(graph, row, authorizations);
         this.graph = graph;
     }
 
@@ -56,6 +57,14 @@ public class EdgeMaker extends ElementMaker<Edge> {
 
     @Override
     protected Edge makeElement() {
-        return new AccumuloEdge(this.graph, this.getId(), this.outVertexId, this.inVertexId, this.label, this.getVisibility(), this.getProperties());
+        return new AccumuloEdge(
+                this.graph,
+                this.getId(),
+                this.outVertexId,
+                this.inVertexId,
+                this.label,
+                this.getVisibility(),
+                this.getProperties(),
+                this.getAuthorizations());
     }
 }

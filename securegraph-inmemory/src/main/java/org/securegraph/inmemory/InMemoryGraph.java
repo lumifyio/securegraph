@@ -52,8 +52,22 @@ public class InMemoryGraph extends GraphBase {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                Iterable<Property> properties = getProperties();
-                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties);
+                Vertex existingVertex = getVertex(getVertexId(), authorizations);
+
+                Iterable<Property> properties;
+                if (existingVertex == null) {
+                    properties = getProperties();
+                } else {
+                    Iterable<Property> existingProperties = existingVertex.getProperties();
+                    Iterable<Property> newProperties = getProperties();
+                    properties = new TreeSet<Property>(toList(existingProperties));
+                    for (Property p : newProperties) {
+                        ((TreeSet<Property>) properties).remove(p);
+                        ((TreeSet<Property>) properties).add(p);
+                    }
+                }
+
+                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties, authorizations);
                 vertices.put(getVertexId(), vertex);
 
                 getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
@@ -107,7 +121,22 @@ public class InMemoryGraph extends GraphBase {
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+                Edge existingEdge = getEdge(getEdgeId(), authorizations);
+
+                Iterable<Property> properties;
+                if (existingEdge == null) {
+                    properties = getProperties();
+                } else {
+                    Iterable<Property> existingProperties = existingEdge.getProperties();
+                    Iterable<Property> newProperties = getProperties();
+                    properties = new TreeSet<Property>(toList(existingProperties));
+                    for (Property p : newProperties) {
+                        ((TreeSet<Property>) properties).remove(p);
+                        ((TreeSet<Property>) properties).add(p);
+                    }
+                }
+
+                InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), properties, authorizations);
                 edges.put(getEdgeId(), edge);
 
                 getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
@@ -221,14 +250,14 @@ public class InMemoryGraph extends GraphBase {
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
         List<Property> properties = filterProperties(edge.getProperties(), authorizations);
-        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties);
+        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, authorizations);
     }
 
     private Vertex filteredVertex(InMemoryVertex vertex, Authorizations authorizations) {
         Object vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
         List<Property> properties = filterProperties(vertex.getProperties(), authorizations);
-        return new InMemoryVertex(this, vertexId, visibility, properties);
+        return new InMemoryVertex(this, vertexId, visibility, properties, authorizations);
     }
 
     private List<Property> filterProperties(Iterable<Property> properties, Authorizations authorizations) {

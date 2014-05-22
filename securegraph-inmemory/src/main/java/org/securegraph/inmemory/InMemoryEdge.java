@@ -9,8 +9,8 @@ public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     private final Object inVertexId;
     private final String label;
 
-    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties) {
-        super(graph, edgeId, visibility, properties);
+    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+        super(graph, edgeId, visibility, properties, authorizations);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
         this.label = label;

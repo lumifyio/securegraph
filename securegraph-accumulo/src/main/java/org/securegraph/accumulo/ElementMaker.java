@@ -1,14 +1,15 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.Property;
-import org.securegraph.SecureGraphException;
-import org.securegraph.Visibility;
-import org.securegraph.property.MutableProperty;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RowDeletingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
+import org.securegraph.Authorizations;
+import org.securegraph.Property;
+import org.securegraph.SecureGraphException;
+import org.securegraph.Visibility;
+import org.securegraph.property.MutableProperty;
 
 import java.util.*;
 
@@ -20,12 +21,14 @@ public abstract class ElementMaker<T> {
     private final Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
     private final Map<String, Map<String, Object>> propertyMetadata = new HashMap<String, Map<String, Object>>();
     private final AccumuloGraph graph;
+    private final Authorizations authorizations;
     private String id;
     private Visibility visibility;
 
-    public ElementMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
+    public ElementMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
         this.graph = graph;
         this.row = row;
+        this.authorizations = authorizations;
     }
 
     public T make() {
@@ -168,5 +171,9 @@ public abstract class ElementMaker<T> {
             return ((StreamingPropertyValueRef) o).toStreamingPropertyValue(getGraph());
         }
         return o;
+    }
+
+    public Authorizations getAuthorizations() {
+        return authorizations;
     }
 }

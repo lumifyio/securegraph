@@ -136,7 +136,7 @@ public class AccumuloGraph extends GraphBase {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties());
+                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties(), authorizations);
 
                 elementMutationBuilder.saveVertex(vertex);
 
@@ -283,7 +283,7 @@ public class AccumuloGraph extends GraphBase {
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+                AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties(), authorizations);
                 elementMutationBuilder.saveEdge(edge);
 
                 if (getOutVertex() instanceof AccumuloVertex) {
@@ -430,7 +430,7 @@ public class AccumuloGraph extends GraphBase {
             protected Vertex convert(Map.Entry<Key, Value> wholeRow) {
                 try {
                     SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
-                    VertexMaker maker = new VertexMaker(graph, row.entrySet().iterator());
+                    VertexMaker maker = new VertexMaker(graph, row.entrySet().iterator(), authorizations);
                     return maker.make();
                 } catch (IOException ex) {
                     throw new SecureGraphException("Could not recreate row", ex);
@@ -483,7 +483,7 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
-                VertexMaker maker = new VertexMaker(AccumuloGraph.this, next);
+                VertexMaker maker = new VertexMaker(AccumuloGraph.this, next, authorizations);
                 return maker.make();
             }
 
@@ -639,7 +639,7 @@ public class AccumuloGraph extends GraphBase {
             protected Edge convert(Map.Entry<Key, Value> wholeRow) {
                 try {
                     SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
-                    EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator());
+                    EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator(), authorizations);
                     return maker.make();
                 } catch (IOException ex) {
                     throw new SecureGraphException("Could not recreate row", ex);
@@ -689,7 +689,7 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
-                EdgeMaker maker = new EdgeMaker(graph, next);
+                EdgeMaker maker = new EdgeMaker(graph, next, authorizations);
                 return maker.make();
             }
 

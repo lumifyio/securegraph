@@ -79,7 +79,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                AccumuloVertex vertex = new AccumuloVertex(null, getVertexId(), getVisibility(), getProperties());
+                AccumuloVertex vertex = new AccumuloVertex(null, getVertexId(), getVisibility(), getProperties(), authorizations);
                 elementMutationBuilder.saveVertex(vertex);
                 return vertex;
             }
@@ -98,7 +98,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties(), authorizations);
                 elementMutationBuilder.saveEdge(edge);
                 return edge;
             }

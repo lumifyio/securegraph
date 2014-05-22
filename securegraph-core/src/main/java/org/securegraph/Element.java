@@ -218,4 +218,16 @@ public interface Element {
      * @param visibility The visibility to give this property.
      */
     void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Gets the authorizations used to get this element.
+     */
+    Authorizations getAuthorizations();
+
+    /**
+     * Merge the given element's properties into this.
+     *
+     * @param element The element to merge properties from.
+     */
+    void mergeProperties(Element element);
 }

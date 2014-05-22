@@ -21,12 +21,12 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     private final Map<Object, EdgeInfo> inEdges;
     private final Map<Object, EdgeInfo> outEdges;
 
-    public AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties) {
-        this(graph, vertexId, vertexVisibility, properties, new HashMap<Object, EdgeInfo>(), new HashMap<Object, EdgeInfo>());
+    public AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties, Authorizations authorizations) {
+        this(graph, vertexId, vertexVisibility, properties, new HashMap<Object, EdgeInfo>(), new HashMap<Object, EdgeInfo>(), authorizations);
     }
 
-    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties, Map<Object, EdgeInfo> inEdges, Map<Object, EdgeInfo> outEdges) {
-        super(graph, vertexId, vertexVisibility, properties);
+    AccumuloVertex(AccumuloGraph graph, Object vertexId, Visibility vertexVisibility, Iterable<Property> properties, Map<Object, EdgeInfo> inEdges, Map<Object, EdgeInfo> outEdges, Authorizations authorizations) {
+        super(graph, vertexId, vertexVisibility, properties, authorizations);
         this.inEdges = inEdges;
         this.outEdges = outEdges;
     }

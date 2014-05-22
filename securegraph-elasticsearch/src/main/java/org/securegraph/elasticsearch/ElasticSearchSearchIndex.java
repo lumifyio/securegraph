@@ -242,6 +242,8 @@ public class ElasticSearchSearchIndex implements SearchIndex {
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
+        element = requeryWithAuthsAndMergedElement(element, authorizations);
+
         if (element instanceof Vertex) {
             jsonBuilder.field(ELEMENT_TYPE_FIELD_NAME, ELEMENT_TYPE_VERTEX);
             jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, ((Vertex) element).getEdgeCount(Direction.IN, authorizations));
@@ -292,6 +294,25 @@ public class ElasticSearchSearchIndex implements SearchIndex {
             jsonBuilder.field(property.getName(), propertyValue);
         }
         return jsonBuilder;
+    }
+
+    private Element requeryWithAuthsAndMergedElement(Element element, Authorizations authorizations) {
+        Element existingElement;
+        if (element instanceof Vertex) {
+            existingElement = element.getGraph().getVertex(element.getId(), authorizations);
+        } else if (element instanceof Edge) {
+            existingElement = element.getGraph().getEdge(element.getId(), authorizations);
+        } else {
+            throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
+        }
+        if (existingElement == null) {
+            return element;
+        }
+
+        LOGGER.debug("Reindexing element " + element.getId() + " required a re-query because of differing authorizations.");
+        existingElement.mergeProperties(element);
+
+        return existingElement;
     }
 
     @Override

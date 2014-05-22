@@ -13,8 +13,8 @@ public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     private final Object inVertexId;
     private final String label;
 
-    public AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties) {
-        super(graph, id, visibility, properties);
+    public AccumuloEdge(Graph graph, Object id, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+        super(graph, id, visibility, properties, authorizations);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
         this.label = label;
