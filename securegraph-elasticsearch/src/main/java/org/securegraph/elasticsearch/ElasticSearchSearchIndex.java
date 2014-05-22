@@ -273,9 +273,13 @@ public class ElasticSearchSearchIndex implements SearchIndex {
 
         if (useEdgeBoost && element instanceof Edge) {
             Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
-            addElement(graph, vOut, authorizations);
+            if (vOut != null) {
+                addElement(graph, vOut, authorizations);
+            }
             Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
-            addElement(graph, vIn, authorizations);
+            if (vIn != null) {
+                addElement(graph, vIn, authorizations);
+            }
         }
     }
 
