@@ -776,8 +776,19 @@ public abstract class GraphTestBase {
                     .vertices();
             List<Vertex> verticesList = toList(vertices);
             assertEquals(2, verticesList.size());
-            assertEquals("v2", verticesList.get(0).getId());
-            assertEquals("v1", verticesList.get(1).getId());
+            boolean foundV1 = false;
+            boolean foundV2 = false;
+            for (Vertex v : verticesList) {
+                if (v.getId().equals("v1")) {
+                    foundV1 = true;
+                } else if (v.getId().equals("v2")) {
+                    foundV2 = true;
+                } else {
+                    throw new RuntimeException("Invalid vertex id: " + v.getId());
+                }
+            }
+            assertTrue(foundV1);
+            assertTrue(foundV2);
         }
 
         vertices = graph.query(AUTHORIZATIONS_A)

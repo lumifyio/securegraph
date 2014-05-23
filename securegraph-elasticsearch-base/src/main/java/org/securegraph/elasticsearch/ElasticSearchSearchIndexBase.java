@@ -26,7 +26,7 @@ import java.util.*;
 
 public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
-    private static final String STORE_SOURCE_DATA = "storeSourceData";
+    public static final String STORE_SOURCE_DATA = "storeSourceData";
     public static final String CONFIG_ES_LOCATIONS = "locations";
     public static final String CONFIG_INDEX_NAME = "indexName";
     private static final String DEFAULT_INDEX_NAME = "securegraph";

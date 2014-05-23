@@ -168,7 +168,6 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
                 jsonBuilder.field(property.getName(), propertyValue);
             }
-            return null;
         }
 
         if (propertyValue instanceof DateOnly) {
