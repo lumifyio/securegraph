@@ -43,7 +43,7 @@ public enum Compare implements Predicate {
                 if (null == first) {
                     return second == null;
                 }
-                if (propertyDefinition != null && !propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
+                if (propertyDefinition != null && propertyDefinition.getTextIndexHints().size() > 0 && !propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
                     return false;
                 }
                 return compare(first, second) == 0;

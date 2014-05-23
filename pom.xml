@@ -195,13 +195,14 @@
         <module>securegraph-accumulo</module>
         <module>securegraph-accumulo-blueprints</module>
         <module>securegraph-blueprints-test</module>
+        <module>securegraph-elasticsearch-base</module>
         <module>securegraph-elasticsearch</module>
         <module>securegraph-inmemory</module>
         <module>securegraph-tools</module>
         <module>securegraph-accumulo-iterators</module>
         <module>securegraph-performance-test</module>
-        <module>securegraph-elasticsearch-nested</module>
         <module>securegraph-kryo-serializer</module>
+        <module>securegraph-elasticsearch-parentchild</module>
     </modules>
 
     <profiles>

@@ -8,8 +8,13 @@ public class DefaultGraphQueryIterableWithFacetedResults<T extends Element> exte
     private final Map<String, FacetedResult> facetedResults;
     private final long totalHits;
 
-    public DefaultGraphQueryIterableWithFacetedResults(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, Map<String, FacetedResult> facetedResults, long totalHits) {
-        super(parameters, iterable, evaluateQueryString);
+    public DefaultGraphQueryIterableWithFacetedResults(
+            QueryBase.Parameters parameters, Iterable<T> iterable,
+            boolean evaluateQueryString,
+            boolean evaluateHasContainers,
+            Map<String, FacetedResult> facetedResults,
+            long totalHits) {
+        super(parameters, iterable, evaluateQueryString, evaluateHasContainers);
         this.facetedResults = facetedResults;
         this.totalHits = totalHits;
     }

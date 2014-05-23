@@ -8,6 +8,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.securegraph.Graph;
 import org.securegraph.GraphConfiguration;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndex;
+import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
 import org.securegraph.inmemory.InMemoryGraph;
 import org.securegraph.inmemory.InMemoryGraphConfiguration;
 import org.slf4j.Logger;
@@ -30,8 +31,8 @@ public class TestHelpers {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.CONFIG_ES_LOCATIONS, addr);
-        config.put(ElasticSearchSearchIndex.SETTING_CLUSTER_NAME, clusterName);
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_ES_LOCATIONS, addr);
+        config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }

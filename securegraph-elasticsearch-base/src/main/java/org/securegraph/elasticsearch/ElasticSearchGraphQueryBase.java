@@ -3,19 +3,20 @@ package org.securegraph.elasticsearch;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.geo.builders.CircleBuilder;
-import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.nested.InternalNested;
-import org.elasticsearch.search.aggregations.bucket.nested.NestedBuilder;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.facet.Facets;
+import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
 import org.securegraph.*;
 import org.securegraph.query.*;
 import org.securegraph.type.GeoCircle;
@@ -30,23 +31,38 @@ import java.util.Map;
 
 import static org.securegraph.util.IterableUtils.toList;
 
-public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements QuerySupportingFacetedResults {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchNestedGraphQuery.class);
+public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase implements QuerySupportingFacetedResults {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQueryBase.class);
     private final TransportClient client;
+    private final boolean evaluateHasContainers;
     private String indexName;
+    private final double inEdgeBoost;
+    private final double outEdgeBoost;
     private List<Facet> facets = new ArrayList<Facet>();
 
-    public ElasticSearchNestedGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
+    protected ElasticSearchGraphQueryBase(
+            TransportClient client,
+            String indexName,
+            Graph graph,
+            String queryString,
+            Map<String, PropertyDefinition> propertyDefinitions,
+            double inEdgeBoost,
+            double outEdgeBoost,
+            boolean evaluateHasContainers,
+            Authorizations authorizations) {
         super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
         this.indexName = indexName;
+        this.inEdgeBoost = inEdgeBoost;
+        this.outEdgeBoost = outEdgeBoost;
+        this.evaluateHasContainers = evaluateHasContainers;
     }
 
     @Override
     public Iterable<Vertex> vertices() {
         long startTime = System.nanoTime();
-        SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_VERTEX);
-        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getAggregations());
+        SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
+        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getFacets());
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -64,14 +80,14 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
-        return new DefaultGraphQueryIterableWithFacetedResults<Vertex>(filterParameters, vertices, false, facetedResult, hits.getTotalHits());
+        return new DefaultGraphQueryIterableWithFacetedResults<Vertex>(filterParameters, vertices, false, evaluateHasContainers, facetedResult, hits.getTotalHits());
     }
 
     @Override
     public Iterable<Edge> edges() {
         long startTime = System.nanoTime();
-        SearchResponse response = getSearchResponse(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_EDGE);
-        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getAggregations());
+        SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
+        Map<String, FacetedResult> facetedResult = toFacetedResults(response.getFacets());
         final SearchHits hits = response.getHits();
         List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
             @Override
@@ -90,76 +106,66 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
-        return new DefaultGraphQueryIterableWithFacetedResults<Edge>(filterParameters, edges, false, facetedResult, hits.getTotalHits());
+        return new DefaultGraphQueryIterableWithFacetedResults<Edge>(filterParameters, edges, false, evaluateHasContainers, facetedResult, hits.getTotalHits());
     }
 
-    private Map<String, FacetedResult> toFacetedResults(Aggregations aggregations) {
+    private Map<String, FacetedResult> toFacetedResults(Facets facets) {
         Map<String, FacetedResult> facetedResults = new HashMap<String, FacetedResult>();
-        if (aggregations == null) {
+        if (facets == null || facets.facets() == null) {
             return facetedResults;
         }
-
-        for (Aggregation aggregation : aggregations) {
-            if (aggregation instanceof InternalNested) {
-                InternalNested internalNested = (InternalNested) aggregation;
-                for (Aggregation nestedAggregation : internalNested.getAggregations()) {
-                    if (nestedAggregation instanceof Terms) {
-                        String facetName = nestedAggregation.getName();
-                        facetedResults.put(facetName, new ElasticSearchTermsAggregationFacetedResult((Terms) nestedAggregation));
-                    }
-                }
-            }
+        for (org.elasticsearch.search.facet.Facet esFacet : facets.facets()) {
+            facetedResults.put(esFacet.getName(), toFacetedResult(esFacet));
         }
         return facetedResults;
     }
 
-    private SearchResponse getSearchResponse(String elementType) {
-        List<QueryBuilder> nestedQueries = new ArrayList<QueryBuilder>();
+    private FacetedResult toFacetedResult(org.elasticsearch.search.facet.Facet esFacet) {
+        if (esFacet instanceof TermsFacet) {
+            TermsFacet termsFacet = (TermsFacet) esFacet;
+            return new ElasticSearchTermsFacetFacetedResult(termsFacet);
+        } else {
+            throw new SecureGraphException("Invalid facet type: " + esFacet.getClass().getName());
+        }
+    }
 
+    private SearchResponse getSearchResponse(String elementType) {
+        List<FilterBuilder> filters = new ArrayList<FilterBuilder>();
+        filters.add(FilterBuilders.inFilter(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, elementType));
         for (HasContainer has : getParameters().getHasContainers()) {
             if (has.predicate instanceof Compare) {
                 Compare compare = (Compare) has.predicate;
                 Object value = has.value;
                 String key = has.key;
                 if (value instanceof String || value instanceof String[]) {
-                    key = key + ElasticSearchNestedSearchIndex.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
+                    key = key + ElasticSearchSearchIndexBase.EXACT_MATCH_PROPERTY_NAME_SUFFIX;
                 }
                 switch (compare) {
                     case EQUAL:
                         if (value instanceof DateOnly) {
                             DateOnly dateOnlyValue = ((DateOnly) value);
-                            RangeQueryBuilder dateOnlyQuery = QueryBuilders.rangeQuery(key).from(dateOnlyValue.toString()).to(dateOnlyValue.toString());
-                            nestedQueries.add(nestedPropertyQuery(dateOnlyQuery));
+                            filters.add(FilterBuilders.rangeFilter(key).from(dateOnlyValue.toString()).to(dateOnlyValue.toString()));
                         } else {
-                            TermQueryBuilder termQuery = QueryBuilders.termQuery(key, value);
-                            nestedQueries.add(nestedPropertyQuery(termQuery));
+                            filters.add(FilterBuilders.termFilter(key, value));
                         }
                         break;
                     case GREATER_THAN_EQUAL:
-                        RangeQueryBuilder gteQuery = QueryBuilders.rangeQuery(key).gte(value);
-                        nestedQueries.add(nestedPropertyQuery(gteQuery));
+                        filters.add(FilterBuilders.rangeFilter(key).gte(value));
                         break;
                     case GREATER_THAN:
-                        RangeQueryBuilder gtQuery = QueryBuilders.rangeQuery(key).gt(value);
-                        nestedQueries.add(nestedPropertyQuery(gtQuery));
+                        filters.add(FilterBuilders.rangeFilter(key).gt(value));
                         break;
                     case LESS_THAN_EQUAL:
-                        RangeQueryBuilder lteQuery = QueryBuilders.rangeQuery(key).lte(value);
-                        nestedQueries.add(nestedPropertyQuery(lteQuery));
+                        filters.add(FilterBuilders.rangeFilter(key).lte(value));
                         break;
                     case LESS_THAN:
-                        RangeQueryBuilder ltQuery = QueryBuilders.rangeQuery(key).lt(value);
-                        nestedQueries.add(nestedPropertyQuery(ltQuery));
+                        filters.add(FilterBuilders.rangeFilter(key).lt(value));
                         break;
                     case NOT_EQUAL:
-                        TermQueryBuilder termQuery = QueryBuilders.termQuery(key, value);
-                        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-                        boolQuery.mustNot(termQuery);
-                        nestedQueries.add(nestedPropertyQuery(boolQuery));
+                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(key, value)));
                         break;
                     case IN:
-                        TermsQueryBuilder inQuery = QueryBuilders.inQuery(key, (Object[]) has.value);
-                        nestedQueries.add(nestedPropertyQuery(inQuery));
+                        filters.add(FilterBuilders.inFilter(key, (Object[]) has.value));
                         break;
                     default:
                         throw new SecureGraphException("Unexpected Compare predicate " + has.predicate);
@@ -173,11 +179,9 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
                 switch (compare) {
                     case CONTAINS:
                         if (value instanceof String) {
-                            TermsQueryBuilder termsQuery = QueryBuilders.termsQuery(has.key, splitStringIntoTerms((String) value));
-                            nestedQueries.add(nestedPropertyQuery(termsQuery));
+                            filters.add(FilterBuilders.termsFilter(has.key, splitStringIntoTerms((String) value)));
                         } else {
-                            TermQueryBuilder termQuery = QueryBuilders.termQuery(has.key, value);
-                            nestedQueries.add(nestedPropertyQuery(termQuery));
+                            filters.add(FilterBuilders.termFilter(has.key, value));
                         }
                         break;
                     default:
@@ -192,9 +196,7 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
                             double lat = geoCircle.getLatitude();
                             double lon = geoCircle.getLongitude();
                             double distance = geoCircle.getRadius();
-                            CircleBuilder circleBuilder = ShapeBuilder.newCircleBuilder().center(lon, lat).radius(distance, DistanceUnit.KILOMETERS);
-                            GeoShapeQueryBuilder geoQuery = QueryBuilders.geoShapeQuery(has.key, circleBuilder);
-                            nestedQueries.add(nestedPropertyQuery(geoQuery));
+                            filters.add(FilterBuilders.geoDistanceFilter(has.key).point(lat, lon).distance(distance, DistanceUnit.KILOMETERS));
                         } else {
                             throw new SecureGraphException("Unexpected has value type " + has.value.getClass().getName());
                         }
@@ -206,58 +208,44 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
                 throw new SecureGraphException("Unexpected predicate type " + has.predicate.getClass().getName());
             }
         }
+        QueryBuilder query = createQuery(getParameters().getQueryString(), filters);
 
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
-        TermQueryBuilder elementTypeQuery = QueryBuilders.termQuery(ElasticSearchNestedSearchIndex.ELEMENT_TYPE_FIELD_NAME, elementType);
-        query.must(elementTypeQuery);
+        ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
+                .scriptFunction("_score "
+                        + " * sqrt(inEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME + "'].value))"
+                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME + "'].value))")
+                .param("inEdgeMultiplier", inEdgeBoost)
+                .param("outEdgeMultiplier", outEdgeBoost);
 
-        String queryString = getParameters().getQueryString();
-        if (queryString != null && !queryString.equals("")) {
-            QueryStringQueryBuilder queryStringQuery = QueryBuilders.queryString(getParameters().getQueryString());
-            query.must(queryStringQuery);
-        }
+        FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, scoreFunction);
 
-        for (QueryBuilder builder : nestedQueries) {
-            query.must(builder);
-        }
-
-        SearchRequestBuilder q = client
-                .prepareSearch(indexName)
-                .setTypes(ElasticSearchNestedSearchIndex.ELEMENT_TYPE)
-                .setQuery(query)
-                .setFrom((int) getParameters().getSkip())
-                .setSize((int) getParameters().getLimit());
-
-        NestedBuilder nestedAgg = AggregationBuilders.nested("properties")
-                .path(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME);
+        SearchRequestBuilder q = getSearchRequestBuilder(filters, functionScoreQuery);
 
         for (Facet facet : this.facets) {
             if (facet instanceof TermFacet) {
                 TermFacet termFacet = (TermFacet) facet;
-                TermsBuilder esAggs = AggregationBuilders.terms(termFacet.getName())
-                        .field(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME + "." + termFacet.getPropertyName())
-                        .shardSize(0)
-                        .size(0)
-                        .order(Terms.Order.term(true));
-                nestedAgg.subAggregation(esAggs);
+                TermsFacetBuilder esFacets = FacetBuilders.termsFacet(termFacet.getName())
+                        .field(termFacet.getPropertyName())
+                        .size(1000);
+                q.addFacet(esFacets);
             } else {
                 throw new SecureGraphException("Unsupported facet type: " + facet.getClass().getName());
             }
         }
 
-        q.addAggregation(nestedAgg);
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("query: " + q);
-        }
-
+        LOGGER.debug("query: " + q);
         return q.execute()
                 .actionGet();
     }
 
-    private NestedQueryBuilder nestedPropertyQuery(QueryBuilder propertyQuery) {
-        FilteredQueryBuilder filteredQuery = QueryBuilders.filteredQuery(propertyQuery, null);
-        return QueryBuilders.nestedQuery(ElasticSearchNestedSearchIndex.PROPERTY_NESTED_FIELD_NAME, filteredQuery);
+    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
+        return getClient()
+                .prepareSearch(getIndexName())
+                .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
+                .setQuery(functionScoreQuery)
+                .setPostFilter(FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])))
+                .setFrom((int) getParameters().getSkip())
+                .setSize((int) getParameters().getLimit());
     }
 
     private String[] splitStringIntoTerms(String value) {
@@ -268,8 +256,26 @@ public class ElasticSearchNestedGraphQuery extends GraphQueryBase implements Que
         return values;
     }
 
+    protected QueryBuilder createQuery(String queryString, List<FilterBuilder> filters) {
+        QueryBuilder query;
+        if (queryString == null) {
+            query = QueryBuilders.matchAllQuery();
+        } else {
+            query = QueryBuilders.queryString(queryString);
+        }
+        return query;
+    }
+
     @Override
     public void addFacet(Facet facet) {
         this.facets.add(facet);
+    }
+
+    public TransportClient getClient() {
+        return client;
+    }
+
+    public String getIndexName() {
+        return indexName;
     }
 }
