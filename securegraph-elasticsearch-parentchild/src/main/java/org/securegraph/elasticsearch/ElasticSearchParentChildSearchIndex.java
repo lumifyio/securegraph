@@ -223,4 +223,9 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
         getPropertyDefinitions().put(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.ALL));
     }
+
+    @Override
+    public boolean isEdgeBoostSupported() {
+        return false;
+    }
 }
