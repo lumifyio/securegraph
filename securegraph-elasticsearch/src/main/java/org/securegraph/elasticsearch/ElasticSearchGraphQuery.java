@@ -77,7 +77,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase implements QuerySupp
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
-        return new DefaultGraphQueryIterableWithFacetedResults<Vertex>(filterParameters, vertices, false, facetedResult);
+        return new DefaultGraphQueryIterableWithFacetedResults<Vertex>(filterParameters, vertices, false, facetedResult, hits.getTotalHits());
     }
 
     @Override
@@ -103,7 +103,7 @@ public class ElasticSearchGraphQuery extends GraphQueryBase implements QuerySupp
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
-        return new DefaultGraphQueryIterableWithFacetedResults<Edge>(filterParameters, edges, false, facetedResult);
+        return new DefaultGraphQueryIterableWithFacetedResults<Edge>(filterParameters, edges, false, facetedResult, hits.getTotalHits());
     }
 
     private Map<String, FacetedResult> toFacetedResults(Facets facets) {
