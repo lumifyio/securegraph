@@ -4,10 +4,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
@@ -243,9 +240,13 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase impleme
                 .prepareSearch(getIndexName())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
                 .setQuery(functionScoreQuery)
-                .setPostFilter(FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])))
+                .setPostFilter(getFilterBuilder(filters))
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
+    }
+
+    protected AndFilterBuilder getFilterBuilder(List<FilterBuilder> filters) {
+        return FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()]));
     }
 
     private String[] splitStringIntoTerms(String value) {
