@@ -65,21 +65,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
             for (Property property : element.getProperties()) {
                 try {
-                    XContentBuilder jsonBuilder = buildJsonContentFromProperty(graph, element, property, authorizations);
-                    if (jsonBuilder == null) {
-                        continue;
-                    }
-
-                    String id = element.getId().toString() + "_" + property.getName() + "_" + property.getKey();
-
-                    LOGGER.debug(jsonBuilder.string());
-                    IndexRequestBuilder builder = getClient().prepareIndex(getIndexName(), PROPERTY_TYPE, id);
-                    builder = builder.setParent(element.getId().toString());
-                    builder = builder.setSource(jsonBuilder);
-                    IndexResponse response = builder.execute().actionGet();
-                    if (response.getId() == null) {
-                        throw new SecureGraphException("Could not index document " + element.getId());
-                    }
+                    addPropertyDocument(graph, element, property, authorizations);
                 } catch (Exception ex) {
                     throw new SecureGraphException("Could not add property: " + property, ex);
                 }
@@ -101,6 +87,24 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             if (vIn != null) {
                 addElement(graph, vIn, authorizations);
             }
+        }
+    }
+
+    private void addPropertyDocument(Graph graph, Element element, Property property, Authorizations authorizations) throws IOException {
+        XContentBuilder jsonBuilder = buildJsonContentFromProperty(graph, element, property, authorizations);
+        if (jsonBuilder == null) {
+            return;
+        }
+
+        String id = element.getId().toString() + "_" + property.getName() + "_" + property.getKey();
+
+        LOGGER.debug(jsonBuilder.string());
+        IndexRequestBuilder builder = getClient().prepareIndex(getIndexName(), PROPERTY_TYPE, id);
+        builder = builder.setParent(element.getId().toString());
+        builder = builder.setSource(jsonBuilder);
+        IndexResponse response = builder.execute().actionGet();
+        if (response.getId() == null) {
+            throw new SecureGraphException("Could not index document " + element.getId());
         }
     }
 

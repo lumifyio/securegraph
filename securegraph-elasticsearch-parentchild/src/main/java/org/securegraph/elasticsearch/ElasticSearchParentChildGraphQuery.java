@@ -2,10 +2,7 @@ package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilteredQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
@@ -22,11 +19,20 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
     @Override
     protected QueryBuilder createQuery(String queryString, List<FilterBuilder> filters) {
         // TODO it would be nice if we don't have to randomly remove the first element
-        filters.remove(0); // the first filter is the element type.
-        QueryBuilder query = super.createQuery(queryString, filters);
-        FilterBuilder filterBuilder = getFilterBuilder(filters);
-        FilteredQueryBuilder filteredQueryBuilder = QueryBuilders.filteredQuery(query, filterBuilder);
-        return QueryBuilders.hasChildQuery(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE, filteredQueryBuilder);
+        FilterBuilder elementTypeFilter = filters.remove(0); // the first filter is the element type.
+        AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter(elementTypeFilter);
+
+        if ((queryString != null && queryString.length() > 0) || (filters.size() > 0)) {
+            QueryBuilder query = super.createQuery(queryString, filters);
+            FilterBuilder filterBuilder = getFilterBuilder(filters);
+            FilteredQueryBuilder filteredQueryBuilder = QueryBuilders.filteredQuery(query, filterBuilder);
+            andFilterBuilder.add(FilterBuilders.hasChildFilter(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE, filteredQueryBuilder));
+        }
+
+        return QueryBuilders.filteredQuery(
+                QueryBuilders.matchAllQuery(),
+                andFilterBuilder
+        );
     }
 
     @Override
