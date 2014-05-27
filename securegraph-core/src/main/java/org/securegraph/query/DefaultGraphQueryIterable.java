@@ -10,12 +10,18 @@ public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>
     private final Iterable<T> iterable;
     private final boolean evaluateQueryString;
     private final boolean evaluateHasContainers;
+    private final Long totalHits;
 
-    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, boolean evaluateHasContainers) {
+    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, boolean evaluateHasContainers, Long totalHits) {
         this.parameters = parameters;
         this.iterable = iterable;
         this.evaluateQueryString = evaluateQueryString;
         this.evaluateHasContainers = evaluateHasContainers;
+        this.totalHits = totalHits;
+    }
+
+    public Long getTotalHits() {
+        return totalHits;
     }
 
     @Override

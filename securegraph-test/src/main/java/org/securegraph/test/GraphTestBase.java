@@ -598,44 +598,6 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testFacetedResults() {
-        graph.prepareVertex("v1", VISIBILITY_A)
-                .setProperty("gender", "male", VISIBILITY_A)
-                .save(AUTHORIZATIONS_A_AND_B);
-        graph.prepareVertex("v2", VISIBILITY_A)
-                .setProperty("gender", "male", VISIBILITY_A)
-                .save(AUTHORIZATIONS_A_AND_B);
-        graph.prepareVertex("v3", VISIBILITY_A)
-                .setProperty("gender", "female", VISIBILITY_A)
-                .save(AUTHORIZATIONS_A_AND_B);
-        graph.prepareVertex("v4", VISIBILITY_A)
-                .save(AUTHORIZATIONS_A_AND_B);
-        graph.flush();
-
-        Query q = graph.query(AUTHORIZATIONS_A);
-        if (q instanceof QuerySupportingFacetedResults) {
-            ((QuerySupportingFacetedResults) q).addFacet(new TermFacet("f1", "gender"));
-            Iterable<Vertex> results = q.vertices();
-            assertEquals(4, count(results));
-            assertTrue("results was not of type IterableWithFacetedResults: " + results.getClass().getName(), results instanceof IterableWithFacetedResults);
-            FacetedResult facetedResult = ((IterableWithFacetedResults) results).getFacetedResult("f1");
-            assertNotNull("facetedResults was null for name 'f1'", facetedResult);
-            assertEquals(2, count(facetedResult.getTerms()));
-            for (FacetedTerm facetedTerm : facetedResult.getTerms()) {
-                if (facetedTerm.getTerm().equals("male")) {
-                    assertEquals(2, facetedTerm.getCount());
-                } else if (facetedTerm.getTerm().equals("female")) {
-                    assertEquals(1, facetedTerm.getCount());
-                } else {
-                    throw new RuntimeException("Unexpected FacetedTerm: " + facetedTerm.getTerm());
-                }
-            }
-        } else {
-            LOGGER.warn("query does not support faceted results: " + q.getClass().getName());
-        }
-    }
-
-    @Test
     public void testGraphQueryHas() {
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("age", 25, VISIBILITY_A)
