@@ -19,10 +19,13 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
     @Override
     protected QueryBuilder createQuery(String queryString, String elementType, List<FilterBuilder> filters) {
         FilterBuilder elementTypeFilter = createElementTypeFilter(elementType);
-        AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter(elementTypeFilter);
+        AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter(
+                elementTypeFilter,
+                new AuthorizationFilterBuilder(getParameters().getAuthorizations().getAuthorizations())
+        );
 
         QueryBuilder hasChildQuery;
-        if ((queryString != null && queryString.length() > 0) || (filters.size() > 0)) {
+        if ((queryString != null && queryString.length() > 0) || (filters.size() > 1)) { // if the only filter is the authorizations filter skip creating the child filter
             QueryBuilder query = super.createQuery(queryString, elementType, filters);
             FilterBuilder filterBuilder = getFilterBuilder(filters);
             final FilteredQueryBuilder filteredQueryBuilder = QueryBuilders.filteredQuery(query, filterBuilder);

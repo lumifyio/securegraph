@@ -128,6 +128,8 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
         }
 
+        jsonBuilder.field(VISIBILITY_FIELD_NAME, element.getVisibility().getVisibilityString());
+
         IndexResponse response = getClient()
                 .prepareIndex(getIndexName(), ELEMENT_TYPE, id)
                 .setSource(jsonBuilder.endObject())

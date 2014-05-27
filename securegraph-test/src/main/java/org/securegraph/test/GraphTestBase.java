@@ -692,6 +692,30 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGraphQueryVertexHasWithSecurityCantSeeVertex() {
+        graph.prepareVertex("v1", VISIBILITY_B)
+                .setProperty("age", 25, VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(0, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryVertexHasWithSecurityCantSeeProperty() {
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("age", 25, VISIBILITY_B)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(0, count(vertices));
+    }
+
+    @Test
     public void testGraphQueryEdgeHasWithSecurity() {
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
         Vertex v2 = graph.prepareVertex("v2", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
