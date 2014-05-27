@@ -99,8 +99,28 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     }
 
     private SearchResponse getSearchResponse(String elementType) {
+        List<FilterBuilder> filters = getFilters(elementType);
+        QueryBuilder query = createQuery(getParameters().getQueryString(), elementType, filters);
+
+        ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
+                .scriptFunction("_score "
+                        + " * sqrt(inEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME + "'].value))"
+                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME + "'].value))")
+                .param("inEdgeMultiplier", inEdgeBoost)
+                .param("outEdgeMultiplier", outEdgeBoost);
+
+        FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, scoreFunction);
+
+        SearchRequestBuilder q = getSearchRequestBuilder(filters, functionScoreQuery);
+
+        LOGGER.debug("query: " + q);
+        return q.execute()
+                .actionGet();
+    }
+
+    protected List<FilterBuilder> getFilters(String elementType) {
         List<FilterBuilder> filters = new ArrayList<FilterBuilder>();
-        filters.add(FilterBuilders.inFilter(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, elementType));
+        addElementTypeFilter(filters, elementType);
         for (HasContainer has : getParameters().getHasContainers()) {
             if (has.predicate instanceof Compare) {
                 Compare compare = (Compare) has.predicate;
@@ -177,22 +197,15 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
                 throw new SecureGraphException("Unexpected predicate type " + has.predicate.getClass().getName());
             }
         }
-        QueryBuilder query = createQuery(getParameters().getQueryString(), filters);
+        return filters;
+    }
 
-        ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
-                .scriptFunction("_score "
-                        + " * sqrt(inEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME + "'].value))"
-                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME + "'].value))")
-                .param("inEdgeMultiplier", inEdgeBoost)
-                .param("outEdgeMultiplier", outEdgeBoost);
+    protected void addElementTypeFilter(List<FilterBuilder> filters, String elementType) {
+        filters.add(createElementTypeFilter(elementType));
+    }
 
-        FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, scoreFunction);
-
-        SearchRequestBuilder q = getSearchRequestBuilder(filters, functionScoreQuery);
-
-        LOGGER.debug("query: " + q);
-        return q.execute()
-                .actionGet();
+    protected TermsFilterBuilder createElementTypeFilter(String elementType) {
+        return FilterBuilders.inFilter(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, elementType);
     }
 
     protected void addNotFilter(List<FilterBuilder> filters, String key, Object value) {
@@ -221,7 +234,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         return values;
     }
 
-    protected QueryBuilder createQuery(String queryString, List<FilterBuilder> filters) {
+    protected QueryBuilder createQuery(String queryString, String elementType, List<FilterBuilder> filters) {
         QueryBuilder query;
         if (queryString == null) {
             query = QueryBuilders.matchAllQuery();

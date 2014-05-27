@@ -17,14 +17,13 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
     }
 
     @Override
-    protected QueryBuilder createQuery(String queryString, List<FilterBuilder> filters) {
-        // TODO it would be nice if we don't have to randomly remove the first element
-        FilterBuilder elementTypeFilter = filters.remove(0); // the first filter is the element type.
+    protected QueryBuilder createQuery(String queryString, String elementType, List<FilterBuilder> filters) {
+        FilterBuilder elementTypeFilter = createElementTypeFilter(elementType);
         AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter(elementTypeFilter);
 
         QueryBuilder hasChildQuery;
         if ((queryString != null && queryString.length() > 0) || (filters.size() > 0)) {
-            QueryBuilder query = super.createQuery(queryString, filters);
+            QueryBuilder query = super.createQuery(queryString, elementType, filters);
             FilterBuilder filterBuilder = getFilterBuilder(filters);
             final FilteredQueryBuilder filteredQueryBuilder = QueryBuilders.filteredQuery(query, filterBuilder);
             hasChildQuery = new HasChildQueryBuilder(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE, filteredQueryBuilder).scoreType("avg");
@@ -36,6 +35,18 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
                 hasChildQuery,
                 andFilterBuilder
         );
+    }
+
+    @Override
+    protected List<FilterBuilder> getFilters(String elementType) {
+        List<FilterBuilder> filters = super.getFilters(elementType);
+        filters.add(new AuthorizationFilterBuilder(getParameters().getAuthorizations().getAuthorizations()));
+        return filters;
+    }
+
+    @Override
+    protected void addElementTypeFilter(List<FilterBuilder> filters, String elementType) {
+        // don't add the element type filter here because the child docs don't have element type only the parent type does
     }
 
     @Override

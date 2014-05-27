@@ -68,7 +68,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
     validAuthChars['/'] = true;
   }
 
-  static final boolean isValidAuthChar(byte b) {
+    static final boolean isValidAuthChar(byte b) {
     return validAuthChars[0xff & b];
   }
 
@@ -87,7 +87,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
   /**
    * Constructs an authorization object from a collection of string authorizations that have each already been encoded as UTF-8 bytes. Warning: This method does
    * not verify that each encoded string is valid UTF-8.
-   * 
+   *
    * @param authorizations
    *          collection of authorizations, as strings encoded in UTF-8
    * @throws IllegalArgumentException
@@ -103,7 +103,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
   /**
    * Constructs an authorization object from a list of string authorizations that have each already been encoded as UTF-8 bytes. Warning: This method does not
    * verify that each encoded string is valid UTF-8.
-   * 
+   *
    * @param authorizations
    *          list of authorizations, as strings encoded in UTF-8 and placed in buffers
    * @throws IllegalArgumentException
@@ -119,14 +119,14 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Constructs an empty set of authorizations.
-   * 
+   *
    * @see #Authorizations(String...)
    */
   public Authorizations() {}
 
   /**
    * Constructs an authorizations object from a set of human-readable authorizations.
-   * 
+   *
    * @param authorizations
    *          array of authorizations
    * @throws IllegalArgumentException
@@ -148,7 +148,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Gets the authorizations in sorted order. The returned list is not modifiable.
-   * 
+   *
    * @return authorizations, each as a string encoded in UTF-8
    * @see #Authorizations(Collection)
    */
@@ -164,7 +164,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Gets the authorizations in sorted order. The returned list is not modifiable.
-   * 
+   *
    * @return authorizations, each as a string encoded in UTF-8 and within a buffer
    */
   public List<ByteBuffer> getAuthorizationsBB() {
@@ -192,7 +192,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Checks whether this object contains the given authorization.
-   * 
+   *
    * @param auth
    *          authorization, as a string encoded in UTF-8
    * @return true if authorization is in this collection
@@ -203,7 +203,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Checks whether this object contains the given authorization. Warning: This method does not verify that the encoded string is valid UTF-8.
-   * 
+   *
    * @param auth
    *          authorization, as a string encoded in UTF-8
    * @return true if authorization is in this collection
@@ -215,7 +215,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Checks whether this object contains the given authorization.
-   * 
+   *
    * @param auth
    *          authorization
    * @return true if authorization is in this collection
@@ -249,7 +249,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Gets the size of this collection of authorizations.
-   * 
+   *
    * @return collection size
    */
   public int size() {
@@ -258,7 +258,7 @@ public class Authorizations implements Iterable<byte[]>, Serializable, Authoriza
 
   /**
    * Checks if this collection of authorizations is empty.
-   * 
+   *
    * @return true if this collection contains no authorizations
    */
   public boolean isEmpty() {

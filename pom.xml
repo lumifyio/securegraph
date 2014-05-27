@@ -73,6 +73,8 @@
         <maven.plugin.plugin.version>3.2</maven.plugin.plugin.version>
         <maven.plugin.release.version>2.4.2</maven.plugin.release.version>
         <maven.plugin.scm.version>1.8.1</maven.plugin.scm.version>
+
+        <elasticsearch.version>1.1.2</elasticsearch.version>
     </properties>
 
     <dependencyManagement>
@@ -203,6 +205,7 @@
         <module>securegraph-performance-test</module>
         <module>securegraph-kryo-serializer</module>
         <module>securegraph-elasticsearch-parentchild</module>
+        <module>securegraph-elasticsearch-plugin</module>
     </modules>
 
     <profiles>
