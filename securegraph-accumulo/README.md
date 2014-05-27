@@ -18,3 +18,11 @@ The graph is stored in a single table with the following schema.
 <tr><td>V/E[id]</td>                                      <td>PROP</td>       <td>[pname\x1fpid]</td>  <td>[pval]</td>      <td>Element property</td></tr>
 <tr><td>V/E[id]</td>                                      <td>PROPMETA</td>   <td>[pname\x1fpid]</td>  <td>[pmetadata]</td> <td>Element property metadata</td></tr>
 </table>
+
+StreamingPropertyValue
+----------------------
+
+Streaming property values are stored as references in the vertex and edge table using StreamingPropertyValueRef. 
+If the data is less than "maxStreamingPropertyValueTableDataSize" (default: 10MB) the data is stored as a row
+in the data table. If the data is larger than "maxStreamingPropertyValueTableDataSize" the data is stored in
+HDFS (see hdfs.dataDir configuration property).
