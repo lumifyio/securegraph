@@ -37,6 +37,7 @@ public class AccumuloGraph extends GraphBase {
     public static final Text DELETE_ROW_COLUMN_QUALIFIER = new Text("");
     public static final String VERTEX_AFTER_ROW_KEY_PREFIX = "W";
     public static final String EDGE_AFTER_ROW_KEY_PREFIX = "F";
+    private static final Object addIteratorLock = new Object();
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private final FileSystem fileSystem;
@@ -109,9 +110,11 @@ public class AccumuloGraph extends GraphBase {
 
     private static void ensureRowDeletingIteratorIsAttached(Connector connector, String tableName) {
         try {
-            IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
-            if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
-                connector.tableOperations().attachIterator(tableName, is);
+            synchronized (addIteratorLock) {
+                IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
+                if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
+                    connector.tableOperations().attachIterator(tableName, is);
+                }
             }
         } catch (Exception e) {
             throw new SecureGraphException("Could not attach RowDeletingIterator", e);
