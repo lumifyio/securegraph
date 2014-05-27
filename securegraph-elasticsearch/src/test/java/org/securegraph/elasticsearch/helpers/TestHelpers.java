@@ -26,13 +26,19 @@ public class TestHelpers {
     private static Node elasticSearchNode;
     private static String addr;
     private static String clusterName;
+    private static boolean TESTING = false;
 
     public static Graph createGraph() {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
+        if (TESTING) {
+            addr = "192.168.33.10";
+            config.put(ElasticSearchSearchIndexBase.STORE_SOURCE_DATA, "true");
+        } else {
+            config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
+        }
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_ES_LOCATIONS, addr);
-        config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }

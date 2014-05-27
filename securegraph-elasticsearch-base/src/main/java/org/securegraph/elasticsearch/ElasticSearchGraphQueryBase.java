@@ -159,7 +159,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase impleme
                         filters.add(FilterBuilders.rangeFilter(key).lt(value));
                         break;
                     case NOT_EQUAL:
-                        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(key, value)));
+                        addNotFilter(filters, key, value);
                         break;
                     case IN:
                         filters.add(FilterBuilders.inFilter(key, (Object[]) has.value));
@@ -176,7 +176,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase impleme
                 switch (compare) {
                     case CONTAINS:
                         if (value instanceof String) {
-                            filters.add(FilterBuilders.termsFilter(has.key, splitStringIntoTerms((String) value)));
+                            filters.add(FilterBuilders.termsFilter(has.key, splitStringIntoTerms((String) value)).execution("and"));
                         } else {
                             filters.add(FilterBuilders.termFilter(has.key, value));
                         }
@@ -233,6 +233,10 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase impleme
         LOGGER.debug("query: " + q);
         return q.execute()
                 .actionGet();
+    }
+
+    protected void addNotFilter(List<FilterBuilder> filters, String key, Object value) {
+        filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(key, value)));
     }
 
     protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
