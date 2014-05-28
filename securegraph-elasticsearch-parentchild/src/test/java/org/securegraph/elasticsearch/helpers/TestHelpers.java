@@ -34,7 +34,7 @@ public class TestHelpers {
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchParentChildSearchIndex.class.getName());
         if (TESTING) {
             addr = "192.168.33.10";
-            config.put(ElasticSearchSearchIndexBase.STORE_SOURCE_DATA, "true");
+            config.put(ElasticSearchSearchIndexBase.CONFIG_STORE_SOURCE_DATA, "true");
         } else {
             config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
         }

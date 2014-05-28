@@ -1,6 +1,7 @@
 package org.securegraph.elasticsearch;
 
 import org.apache.lucene.index.*;
+import org.apache.lucene.search.BitsFilteredDocIdSet;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.util.Bits;
@@ -26,24 +27,19 @@ public class AuthorizationsFilter extends Filter {
         AtomicReader reader = context.reader();
         Fields fields = reader.fields();
         Terms terms = fields.terms(VISIBILITY_FIELD_NAME);
-        if (terms == null) {
-            if (acceptDocs instanceof DocIdSet) {
-                return (DocIdSet) acceptDocs;
-            } else {
-                return wrap(acceptDocs);
+        OpenBitSet bitSet = null;
+        if (terms != null) {
+            bitSet = new OpenBitSet(reader.maxDoc());
+            TermsEnum iterator = terms.iterator(null);
+            BytesRef bytesRef;
+            VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
+            while ((bytesRef = iterator.next()) != null) {
+                if (isVisible(visibilityEvaluator, bytesRef)) {
+                    makeVisible(terms, iterator, bytesRef, bitSet, acceptDocs);
+                }
             }
         }
-
-        OpenBitSet bitSet = new OpenBitSet(reader.maxDoc());
-        TermsEnum iterator = terms.iterator(null);
-        BytesRef bytesRef;
-        VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
-        while ((bytesRef = iterator.next()) != null) {
-            if (isVisible(visibilityEvaluator, bytesRef)) {
-                makeVisible(terms, iterator, bytesRef, bitSet, acceptDocs);
-            }
-        }
-        return bitSet;
+        return BitsFilteredDocIdSet.wrap(bitSet, acceptDocs);
     }
 
     private void makeVisible(Terms terms, TermsEnum iterator, BytesRef bytesRef, OpenBitSet bitSet, Bits liveDocs) throws IOException {
@@ -67,9 +63,5 @@ public class AuthorizationsFilter extends Filter {
         byte[] buf = new byte[bytesRef.length];
         System.arraycopy(bytesRef.bytes, bytesRef.offset, buf, 0, bytesRef.length);
         return buf;
-    }
-
-    private DocIdSet wrap(Bits acceptDocs) throws IOException {
-        throw new IOException("not implemented");
     }
 }

@@ -26,7 +26,7 @@ import java.util.*;
 
 public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
-    public static final String STORE_SOURCE_DATA = "storeSourceData";
+    public static final String CONFIG_STORE_SOURCE_DATA = "storeSourceData";
     public static final String CONFIG_ES_LOCATIONS = "locations";
     public static final String CONFIG_INDEX_NAME = "indexName";
     private static final String DEFAULT_INDEX_NAME = "securegraph";
@@ -58,7 +58,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     protected ElasticSearchSearchIndexBase(Map config) {
         readConfig(config);
 
-        Object storeSourceDataConfig = config.get(STORE_SOURCE_DATA);
+        Object storeSourceDataConfig = config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_STORE_SOURCE_DATA);
         boolean storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
         LOGGER.info("Store source data: " + storeSourceData);
 
@@ -251,7 +251,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public abstract void addElement(Graph graph, Element element, Authorizations authorizations);
 
     @Override
-    public abstract void removeElement(Graph graph, Element element,Authorizations authorizations);
+    public abstract void removeElement(Graph graph, Element element, Authorizations authorizations);
 
     @Override
     public void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations) {
