@@ -734,6 +734,19 @@ public abstract class GraphTestBase {
         assertEquals(1, count(vertices));
     }
 
+
+    @Test
+    public void testGraphQueryVertexNoVisibility() {
+        graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                .setProperty("age", 25, VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+    }
+
     @Test
     public void testGraphQueryVertexHasWithSecurityCantSeeVertex() {
         graph.prepareVertex("v1", VISIBILITY_B)

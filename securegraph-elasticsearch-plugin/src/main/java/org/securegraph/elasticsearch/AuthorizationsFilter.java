@@ -7,6 +7,7 @@ import org.apache.lucene.search.Filter;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.OpenBitSet;
+import org.elasticsearch.common.lucene.docset.AllDocIdSet;
 import org.securegraph.inmemory.security.Authorizations;
 import org.securegraph.inmemory.security.ColumnVisibility;
 import org.securegraph.inmemory.security.VisibilityEvaluator;
@@ -27,22 +28,23 @@ public class AuthorizationsFilter extends Filter {
         AtomicReader reader = context.reader();
         Fields fields = reader.fields();
         Terms terms = fields.terms(VISIBILITY_FIELD_NAME);
-        OpenBitSet bitSet = null;
-        if (terms != null) {
-            bitSet = new OpenBitSet(reader.maxDoc());
+        if (terms == null) {
+            return new AllDocIdSet(context.reader().maxDoc());
+        } else {
+            OpenBitSet bitSet = new OpenBitSet(reader.maxDoc());
             TermsEnum iterator = terms.iterator(null);
             BytesRef bytesRef;
             VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
             while ((bytesRef = iterator.next()) != null) {
                 if (isVisible(visibilityEvaluator, bytesRef)) {
-                    makeVisible(terms, iterator, bytesRef, bitSet, acceptDocs);
+                    makeVisible(iterator, bitSet, acceptDocs);
                 }
             }
+            return BitsFilteredDocIdSet.wrap(bitSet, acceptDocs);
         }
-        return BitsFilteredDocIdSet.wrap(bitSet, acceptDocs);
     }
 
-    private void makeVisible(Terms terms, TermsEnum iterator, BytesRef bytesRef, OpenBitSet bitSet, Bits liveDocs) throws IOException {
+    private void makeVisible(TermsEnum iterator, OpenBitSet bitSet, Bits liveDocs) throws IOException {
         DocsEnum docsEnum = iterator.docs(liveDocs, null);
         int doc;
         while ((doc = docsEnum.nextDoc()) != DocsEnum.NO_MORE_DOCS) {
@@ -51,7 +53,11 @@ public class AuthorizationsFilter extends Filter {
     }
 
     private boolean isVisible(VisibilityEvaluator visibilityEvaluator, BytesRef bytesRef) throws IOException {
-        ColumnVisibility visibility = new ColumnVisibility(trim(bytesRef));
+        byte[] expression = trim(bytesRef);
+        if (expression.length == 0) {
+            return true;
+        }
+        ColumnVisibility visibility = new ColumnVisibility(expression);
         try {
             return visibilityEvaluator.evaluate(visibility);
         } catch (VisibilityParseException e) {
