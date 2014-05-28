@@ -629,11 +629,13 @@ public abstract class GraphTestBase {
     @Test
     public void testGraphQueryHas() {
         graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("text", "hello", VISIBILITY_A)
                 .setProperty("age", 25, VISIBILITY_A)
                 .setProperty("birthDate", new DateOnly(1989, 1, 5), VISIBILITY_A)
                 .setProperty("lastAccessed", createDate(2014, 2, 24, 13, 0, 5), VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
         graph.prepareVertex("v2", VISIBILITY_A)
+                .setProperty("text", "world", VISIBILITY_A)
                 .setProperty("age", 30, VISIBILITY_A)
                 .setProperty("birthDate", new DateOnly(1984, 1, 5), VISIBILITY_A)
                 .setProperty("lastAccessed", createDate(2014, 2, 25, 13, 0, 5), VISIBILITY_A)
@@ -641,6 +643,18 @@ public abstract class GraphTestBase {
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
                 .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .has("birthDate", Compare.EQUAL, createDate(1989, 1, 5))
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query("hello", AUTHORIZATIONS_A)
+                .has("age", Compare.EQUAL, 25)
+                .has("birthDate", Compare.EQUAL, createDate(1989, 1, 5))
                 .vertices();
         assertEquals(1, count(vertices));
 

@@ -24,27 +24,39 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
                 new AuthorizationFilterBuilder(getParameters().getAuthorizations().getAuthorizations())
         );
 
-        QueryBuilder hasChildQuery;
-        if ((queryString != null && queryString.length() > 0) || (filters.size() > 1)) { // if the only filter is the authorizations filter skip creating the child filter
-            QueryBuilder query = super.createQuery(queryString, elementType, filters);
-            FilterBuilder filterBuilder = getFilterBuilder(filters);
-            final FilteredQueryBuilder filteredQueryBuilder = QueryBuilders.filteredQuery(query, filterBuilder);
-            hasChildQuery = new HasChildQueryBuilder(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE, filteredQueryBuilder).scoreType("avg");
+        AuthorizationFilterBuilder authorizationFilterBuilder = new AuthorizationFilterBuilder(getParameters().getAuthorizations().getAuthorizations());
+
+        QueryBuilder childQuery;
+        if ((queryString != null && queryString.length() > 0) || (filters.size() > 0)) {
+            BoolQueryBuilder boolChildQuery;
+            childQuery = boolChildQuery = QueryBuilders.boolQuery();
+
+            if (queryString != null && queryString.length() > 0) {
+                boolChildQuery.must(
+                        new HasChildQueryBuilder(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE,
+                                super.createQuery(queryString, elementType, filters)
+                        ).scoreType("avg")
+                );
+            }
+
+            for (FilterBuilder filterBuilder : filters) {
+                boolChildQuery.must(
+                        new HasChildQueryBuilder(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE,
+                                QueryBuilders.filteredQuery(
+                                        QueryBuilders.matchAllQuery(),
+                                        FilterBuilders.andFilter(authorizationFilterBuilder, filterBuilder)
+                                )
+                        ).scoreType("avg")
+                );
+            }
         } else {
-            hasChildQuery = QueryBuilders.matchAllQuery();
+            childQuery = QueryBuilders.matchAllQuery();
         }
 
         return QueryBuilders.filteredQuery(
-                hasChildQuery,
+                childQuery,
                 andFilterBuilder
         );
-    }
-
-    @Override
-    protected List<FilterBuilder> getFilters(String elementType) {
-        List<FilterBuilder> filters = super.getFilters(elementType);
-        filters.add(new AuthorizationFilterBuilder(getParameters().getAuthorizations().getAuthorizations()));
-        return filters;
     }
 
     @Override
@@ -64,7 +76,11 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
 
     @Override
     protected void addNotFilter(List<FilterBuilder> filters, String key, Object value) {
-        filters.add(FilterBuilders.existsFilter(key));
-        super.addNotFilter(filters, key, value);
+        filters.add(
+                FilterBuilders.andFilter(
+                        FilterBuilders.existsFilter(key),
+                        FilterBuilders.notFilter(FilterBuilders.inFilter(key, value))
+                )
+        );
     }
 }
