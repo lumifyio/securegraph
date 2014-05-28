@@ -34,7 +34,10 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
             if (queryString != null && queryString.length() > 0) {
                 boolChildQuery.must(
                         new HasChildQueryBuilder(ElasticSearchParentChildSearchIndex.PROPERTY_TYPE,
-                                super.createQuery(queryString, elementType, filters)
+                                QueryBuilders.filteredQuery(
+                                        super.createQuery(queryString, elementType, filters),
+                                        authorizationFilterBuilder
+                                )
                         ).scoreType("avg")
                 );
             }

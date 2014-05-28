@@ -236,7 +236,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
 
     protected QueryBuilder createQuery(String queryString, String elementType, List<FilterBuilder> filters) {
         QueryBuilder query;
-        if (queryString == null) {
+        if (queryString == null || queryString.equals("*")) {
             query = QueryBuilders.matchAllQuery();
         } else {
             query = QueryBuilders.queryString(queryString);
