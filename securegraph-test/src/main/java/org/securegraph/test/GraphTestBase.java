@@ -318,6 +318,27 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testRemoveElement() {
+        Vertex v = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        v.prepareMutation()
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertNotNull(v);
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop1", "value1").vertices()));
+
+        graph.removeVertex(v, AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertNull(v);
+        assertEquals(0, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop1", "value1").vertices()));
+    }
+
+    @Test
     public void testAddVertexWithVisibility() {
         graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addVertex("v2", VISIBILITY_B, AUTHORIZATIONS_A);
@@ -1364,10 +1385,14 @@ public abstract class GraphTestBase {
         v1.prepareMutation()
                 .alterPropertyVisibility("prop1", VISIBILITY_B)
                 .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertNull(v1.getProperty("prop1"));
         assertNotNull(v1.getProperty("prop2"));
+
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop1", "value1").vertices()));
+        assertEquals(0, count(graph.query(AUTHORIZATIONS_A).has("prop1", "value1").vertices()));
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
         assertNotNull(v1.getProperty("prop1"));

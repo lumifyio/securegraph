@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchIndexBase {
@@ -66,22 +65,19 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     private void deleteChildDocuments(Element element) {
         String parentId = element.getId().toString();
-        DeleteByQueryResponse response = getClient().deleteByQuery(
-                getClient()
-                        .prepareDeleteByQuery(getIndexName())
-                        .setTypes(ELEMENT_TYPE)
-                        .setQuery(
-                                QueryBuilders.termQuery("_parent", ELEMENT_TYPE + "#" + parentId)
-                        )
-                        .request()
-        ).actionGet();
+        DeleteByQueryResponse response = getClient()
+                .prepareDeleteByQuery(getIndexName())
+                .setTypes(PROPERTY_TYPE)
+                .setQuery(
+                        QueryBuilders.termQuery("_parent", ELEMENT_TYPE + "#" + parentId)
+                )
+                .execute()
+                .actionGet();
         if (response.status() != RestStatus.OK) {
-            throw new SecureGraphException("Could not remove child elements " + element.getId());
+            throw new SecureGraphException("Could not remove child elements " + element.getId() + " (status: " + response.status() + ")");
         }
         if (LOGGER.isDebugEnabled()) {
-            Iterator<IndexDeleteByQueryResponse> it = response.iterator();
-            while (it.hasNext()) {
-                IndexDeleteByQueryResponse r = it.next();
+            for (IndexDeleteByQueryResponse r : response) {
                 LOGGER.debug("deleted child document " + r.toString());
             }
         }
