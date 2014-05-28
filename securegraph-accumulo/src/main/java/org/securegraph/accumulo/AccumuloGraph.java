@@ -173,7 +173,7 @@ public class AccumuloGraph extends GraphBase {
         elementMutationBuilder.addPropertyRemoveToMutation(m, property);
         addMutations(getWriterFromElementType(element), m);
 
-        getSearchIndex().addElement(this, element, authorizations);
+        getSearchIndex().removeProperty(this, element, property, authorizations);
     }
 
     private String getRowPrefixForElement(AccumuloElement element) {
@@ -261,7 +261,7 @@ public class AccumuloGraph extends GraphBase {
             throw new IllegalArgumentException("vertex cannot be null");
         }
 
-        getSearchIndex().removeElement(this, vertex);
+        getSearchIndex().removeElement(this, vertex, authorizations);
 
         // Remove all edges that this vertex participates.
         for (Edge edge : vertex.getEdges(Direction.BOTH, authorizations)) {
@@ -311,7 +311,7 @@ public class AccumuloGraph extends GraphBase {
     public void removeEdge(Edge edge, Authorizations authorizations) {
         checkNotNull(edge);
 
-        getSearchIndex().removeElement(this, edge);
+        getSearchIndex().removeElement(this, edge, authorizations);
 
         Vertex out = edge.getVertex(Direction.OUT, authorizations);
         checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());

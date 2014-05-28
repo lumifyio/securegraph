@@ -17,7 +17,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     public void removeProperty(String key, String name, Authorizations authorizations) {
         Property property = removePropertyInternal(key, name);
         if (property != null) {
-            getGraph().removeProperty(this, property);
+            getGraph().removeProperty(this, property, authorizations);
         }
     }
 
@@ -25,7 +25,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     public void removeProperty(String name, Authorizations authorizations) {
         Iterable<Property> properties = removePropertyInternal(name);
         for (Property property : properties) {
-            getGraph().removeProperty(this, property);
+            getGraph().removeProperty(this, property, authorizations);
         }
     }
 

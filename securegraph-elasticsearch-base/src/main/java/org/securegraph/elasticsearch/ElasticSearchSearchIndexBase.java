@@ -251,8 +251,11 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public abstract void addElement(Graph graph, Element element, Authorizations authorizations);
 
     @Override
-    public void removeElement(Graph graph, Element element) {
-        // TODO write me
+    public abstract void removeElement(Graph graph, Element element,Authorizations authorizations);
+
+    @Override
+    public void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations) {
+        addElement(graph, element, authorizations);
     }
 
     @Override

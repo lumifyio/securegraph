@@ -109,7 +109,7 @@ public class InMemoryGraph extends GraphBase {
         }
 
         this.vertices.remove(vertex.getId());
-        getSearchIndex().removeElement(this, vertex);
+        getSearchIndex().removeElement(this, vertex, authorizations);
     }
 
     @Override
@@ -178,7 +178,7 @@ public class InMemoryGraph extends GraphBase {
         checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
 
         this.edges.remove(edge.getId());
-        getSearchIndex().removeElement(this, edge);
+        getSearchIndex().removeElement(this, edge, authorizations);
     }
 
     public Iterable<Edge> getEdgesFromVertex(final Object vertexId, final Authorizations authorizations) {
@@ -230,7 +230,7 @@ public class InMemoryGraph extends GraphBase {
         getSearchIndex().addElement(this, element, authorizations);
     }
 
-    public void removeProperty(Element element, Property property) {
+    public void removeProperty(Element element, Property property, Authorizations authorizations) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
             vertex.removePropertyInternal(property.getKey(), property.getName());
@@ -240,7 +240,7 @@ public class InMemoryGraph extends GraphBase {
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
-        getSearchIndex().removeElement(this, element);
+        getSearchIndex().removeProperty(this, element, property, authorizations);
     }
 
     private Edge filteredEdge(InMemoryEdge edge, Authorizations authorizations) {

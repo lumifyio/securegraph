@@ -22,7 +22,12 @@ public class DefaultSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void removeElement(Graph graph, Element element) {
+    public void removeElement(Graph graph, Element element, Authorizations authorizations) {
+
+    }
+
+    @Override
+    public void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations) {
 
     }
 

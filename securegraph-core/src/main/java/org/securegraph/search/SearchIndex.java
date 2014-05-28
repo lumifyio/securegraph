@@ -9,7 +9,9 @@ import java.io.IOException;
 public interface SearchIndex {
     void addElement(Graph graph, Element element, Authorizations authorizations);
 
-    void removeElement(Graph graph, Element element);
+    void removeElement(Graph graph, Element element, Authorizations authorizations);
+
+    void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations);
 
     void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations);
 

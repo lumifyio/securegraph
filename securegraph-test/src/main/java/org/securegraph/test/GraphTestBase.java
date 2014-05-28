@@ -11,7 +11,10 @@ import org.securegraph.*;
 import org.securegraph.mutation.ElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.query.*;
+import org.securegraph.query.Compare;
+import org.securegraph.query.DefaultGraphQuery;
+import org.securegraph.query.GeoCompare;
+import org.securegraph.query.TextPredicate;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
@@ -299,11 +302,16 @@ public abstract class GraphTestBase {
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         v.removeProperty("prop1", AUTHORIZATIONS_A_AND_B);
+        graph.flush();
         assertEquals(1, count(v.getProperties()));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(1, count(v.getProperties()));
 
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop2", "value2a").vertices()));
+        assertEquals(0, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop1", "value1a").vertices()));
+
         v.removeProperty("propid2a", "prop2", AUTHORIZATIONS_A_AND_B);
+        graph.flush();
         assertEquals(0, count(v.getProperties()));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(0, count(v.getProperties()));

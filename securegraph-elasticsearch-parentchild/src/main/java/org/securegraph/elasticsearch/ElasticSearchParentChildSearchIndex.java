@@ -1,10 +1,15 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
+import org.elasticsearch.action.deletebyquery.IndexDeleteByQueryResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
 import org.securegraph.*;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.GraphQuery;
@@ -16,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchIndexBase {
@@ -50,6 +56,62 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 .execute()
                 .actionGet();
         LOGGER.debug(response.toString());
+    }
+
+    @Override
+    public void removeElement(Graph graph, Element element, Authorizations authorizations) {
+        deleteChildDocuments(element);
+        deleteParentDocument(element);
+    }
+
+    private void deleteChildDocuments(Element element) {
+        String parentId = element.getId().toString();
+        DeleteByQueryResponse response = getClient().deleteByQuery(
+                getClient()
+                        .prepareDeleteByQuery(getIndexName())
+                        .setTypes(ELEMENT_TYPE)
+                        .setQuery(
+                                QueryBuilders.termQuery("_parent", ELEMENT_TYPE + "#" + parentId)
+                        )
+                        .request()
+        ).actionGet();
+        if (response.status() != RestStatus.OK) {
+            throw new SecureGraphException("Could not remove child elements " + element.getId());
+        }
+        if (LOGGER.isDebugEnabled()) {
+            Iterator<IndexDeleteByQueryResponse> it = response.iterator();
+            while (it.hasNext()) {
+                IndexDeleteByQueryResponse r = it.next();
+                LOGGER.debug("deleted child document " + r.toString());
+            }
+        }
+    }
+
+    private void deleteParentDocument(Element element) {
+        String id = element.getId().toString();
+        LOGGER.debug("deleting parent document " + id);
+        DeleteResponse deleteResponse = getClient().delete(
+                getClient()
+                        .prepareDelete(getIndexName(), ELEMENT_TYPE, id)
+                        .request()
+        ).actionGet();
+        if (!deleteResponse.isFound()) {
+            throw new SecureGraphException("Could not remove element " + element.getId());
+        }
+    }
+
+    @Override
+    public void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations) {
+        String id = getChildDocId(element, property);
+        DeleteResponse deleteResponse = getClient().delete(
+                getClient()
+                        .prepareDelete(getIndexName(), PROPERTY_TYPE, id)
+                        .request()
+        ).actionGet();
+        if (!deleteResponse.isFound()) {
+            throw new SecureGraphException("Could not remove property " + element.getId() + " " + property.toString());
+        }
+        LOGGER.debug("deleted property " + element.getId() + " " + property.toString());
     }
 
     @Override
@@ -96,7 +158,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             return;
         }
 
-        String id = element.getId().toString() + "_" + property.getName() + "_" + property.getKey();
+        String id = getChildDocId(element, property);
 
         LOGGER.debug(jsonBuilder.string());
         IndexRequestBuilder builder = getClient().prepareIndex(getIndexName(), PROPERTY_TYPE, id);
@@ -106,6 +168,10 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         if (response.getId() == null) {
             throw new SecureGraphException("Could not index document " + element.getId());
         }
+    }
+
+    private String getChildDocId(Element element, Property property) {
+        return element.getId().toString() + "_" + property.getName() + "_" + property.getKey();
     }
 
     private void addParentDocument(Graph graph, Element element, Authorizations authorizations) throws IOException {

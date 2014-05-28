@@ -1,6 +1,7 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -57,6 +58,20 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
             if (vIn != null) {
                 addElement(graph, vIn, authorizations);
             }
+        }
+    }
+
+    @Override
+    public void removeElement(Graph graph, Element element, Authorizations authorizations) {
+        String id = element.getId().toString();
+        LOGGER.debug("deleting document " + id);
+        DeleteResponse deleteResponse = getClient().delete(
+                getClient()
+                        .prepareDelete(getIndexName(), ELEMENT_TYPE, id)
+                        .request()
+        ).actionGet();
+        if (!deleteResponse.isFound()) {
+            throw new SecureGraphException("Could not remove element " + element.getId());
         }
     }
 
