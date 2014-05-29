@@ -5,7 +5,7 @@ import org.securegraph.Property;
 
 import java.util.Iterator;
 
-public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {
+public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>, IterableWithTotalHits<T> {
     private final QueryBase.Parameters parameters;
     private final Iterable<T> iterable;
     private final boolean evaluateQueryString;

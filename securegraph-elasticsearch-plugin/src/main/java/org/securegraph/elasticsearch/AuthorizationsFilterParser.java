@@ -1,6 +1,8 @@
 package org.securegraph.elasticsearch;
 
+import org.apache.lucene.search.FieldValueFilter;
 import org.apache.lucene.search.Filter;
+import org.elasticsearch.common.lucene.search.OrFilter;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.query.FilterParser;
 import org.elasticsearch.index.query.QueryParseContext;
@@ -28,16 +30,21 @@ public class AuthorizationsFilterParser implements FilterParser {
             throw new QueryParsingException(parseContext.index(), "authorizations must be an array.");
         }
 
-        List<String> authorizations = new ArrayList<String>();
+        List<String> authorizationStrings = new ArrayList<String>();
         while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
             if (token != XContentParser.Token.VALUE_STRING) {
                 throw new QueryParsingException(parseContext.index(), "authorizations must be an array of strings.");
             }
 
             String authorization = parser.text();
-            authorizations.add(authorization);
+            authorizationStrings.add(authorization);
         }
 
-        return new AuthorizationsFilter(new Authorizations(authorizations.toArray(new String[authorizations.size()])));
+        Authorizations authorizations = new Authorizations(authorizationStrings.toArray(new String[authorizationStrings.size()]));
+
+        List<Filter> filters = new ArrayList<Filter>();
+        filters.add(new FieldValueFilter(AuthorizationsFilter.VISIBILITY_FIELD_NAME, true));
+        filters.add(new AuthorizationsFilter(authorizations));
+        return new OrFilter(filters);
     }
 }
