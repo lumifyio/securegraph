@@ -58,7 +58,7 @@ public class AccumuloGraphTest extends GraphTestBase {
         dropGraph(connector, AccumuloGraph.getDataTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
         dropGraph(connector, AccumuloGraph.getVerticesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
         dropGraph(connector, AccumuloGraph.getEdgesTableName(AccumuloGraphConfiguration.DEFAULT_TABLE_NAME_PREFIX));
-        connector.securityOperations().changeUserAuthorizations(AccumuloGraphConfiguration.DEFAULT_ACCUMULO_USERNAME, new org.apache.accumulo.core.security.Authorizations("a", "b", "c"));
+        connector.securityOperations().changeUserAuthorizations(AccumuloGraphConfiguration.DEFAULT_ACCUMULO_USERNAME, new org.apache.accumulo.core.security.Authorizations("a", "b", "c", "MIXEDCASE_a"));
         super.before();
     }
 
