@@ -29,7 +29,7 @@ public class AuthorizationsFilter extends Filter {
         Fields fields = reader.fields();
         Terms terms = fields.terms(VISIBILITY_FIELD_NAME);
         if (terms == null) {
-            return new AllDocIdSet(context.reader().maxDoc());
+            return null;
         } else {
             OpenBitSet bitSet = new OpenBitSet(reader.maxDoc());
             TermsEnum iterator = terms.iterator(null);

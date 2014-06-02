@@ -40,7 +40,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
                 .startObject("_source").field("enabled", storeSourceData).endObject()
                 .startObject("properties")
-                .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "no").field("store", "true").endObject()
+                .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "not_analyzed").field("store", "true").endObject()
                 .endObject()
                 .endObject()
                 .endObject();
@@ -60,7 +60,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     @Override
     protected void createIndexAddFieldsToElementType(XContentBuilder builder) throws IOException {
         super.createIndexAddFieldsToElementType(builder);
-        builder.startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "no").field("store", "true").endObject();
+        builder.startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "not_analyzed").field("store", "true").endObject();
     }
 
     @Override
