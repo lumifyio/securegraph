@@ -40,7 +40,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
                 .startObject("_source").field("enabled", storeSourceData).endObject()
                 .startObject("properties")
-                .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("store", "true").endObject()
+                .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "no").field("store", "true").endObject()
                 .endObject()
                 .endObject()
                 .endObject();
@@ -55,6 +55,12 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 .execute()
                 .actionGet();
         LOGGER.debug(response.toString());
+    }
+
+    @Override
+    protected void createIndexAddFieldsToElementType(XContentBuilder builder) throws IOException {
+        super.createIndexAddFieldsToElementType(builder);
+        builder.startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "no").field("store", "true").endObject();
     }
 
     @Override
@@ -268,7 +274,8 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 .startObject(PROPERTY_TYPE)
                 .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
                 .startObject("properties")
-                .startObject(propertyName);
+                .startObject(propertyName)
+                .field("store", isStoreSourceData());
 
         addTypeToMapping(mapping, propertyName, dataType, analyzed, boost);
 

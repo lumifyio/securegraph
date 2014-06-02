@@ -48,6 +48,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     private final TransportClient client;
     private final boolean autoflush;
+    private final boolean storeSourceData;
     private String indexName;
     private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
     private String[] esLocations;
@@ -59,7 +60,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         readConfig(config);
 
         Object storeSourceDataConfig = config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_STORE_SOURCE_DATA);
-        boolean storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
+        storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
         LOGGER.info("Store source data: " + storeSourceData);
 
         // TODO convert this to use a proper config object
@@ -150,19 +151,24 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     }
 
     protected void createIndex(boolean storeSourceData) throws IOException {
-        XContentBuilder mapping = XContentFactory.jsonBuilder()
+        XContentBuilder builder = XContentFactory.jsonBuilder()
                 .startObject()
                 .startObject(ELEMENT_TYPE)
                 .startObject("_source").field("enabled", storeSourceData).endObject()
-                .startObject("properties")
-                .startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").field("store", "true").endObject()
-                .startObject(IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
-                .startObject(OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
-                .endObject()
+                .startObject("properties");
+        createIndexAddFieldsToElementType(builder);
+        XContentBuilder mapping = builder.endObject()
                 .endObject()
                 .endObject();
         CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).addMapping(ELEMENT_TYPE, mapping).execute().actionGet();
         LOGGER.debug(createResponse.toString());
+    }
+
+    protected void createIndexAddFieldsToElementType(XContentBuilder builder) throws IOException {
+        builder
+                .startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").field("store", "true").endObject()
+                .startObject(IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
+                .startObject(OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject();
     }
 
     private void loadPropertyDefinitions() {
@@ -440,5 +446,9 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         if (boost != null) {
             mapping.field("boost", boost.doubleValue());
         }
+    }
+
+    protected boolean isStoreSourceData() {
+        return storeSourceData;
     }
 }
