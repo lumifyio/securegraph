@@ -11,7 +11,10 @@ import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.securegraph.*;
-import org.securegraph.query.*;
+import org.securegraph.query.Compare;
+import org.securegraph.query.GeoCompare;
+import org.securegraph.query.GraphQueryBase;
+import org.securegraph.query.TextPredicate;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.util.ConvertingIterable;
 import org.slf4j.Logger;
@@ -61,8 +64,9 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
             }
         });
         long endTime = System.nanoTime();
+        long searchTime = endTime - startTime;
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + ((endTime - startTime) / 1000 / 1000) + "ms)");
+            LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + (searchTime / 1000 / 1000) + "ms)");
         }
 
         // since ES doesn't support security we will rely on the graph to provide vertex filtering
@@ -70,7 +74,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
-        return new DefaultGraphQueryIterable<Vertex>(filterParameters, vertices, false, evaluateHasContainers, hits.getTotalHits());
+        return new ElasticSearchGraphQueryIterable<Vertex>(filterParameters, vertices, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
     }
 
     @Override
@@ -85,6 +89,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
             }
         });
         long endTime = System.nanoTime();
+        long searchTime = endTime - startTime;
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("elastic search results " + ids.size() + " of " + hits.getTotalHits() + " (time: " + ((endTime - startTime) / 1000 / 1000) + "ms)");
         }
@@ -95,7 +100,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
-        return new DefaultGraphQueryIterable<Edge>(filterParameters, edges, false, evaluateHasContainers, hits.getTotalHits());
+        return new ElasticSearchGraphQueryIterable<Edge>(filterParameters, edges, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
     }
 
     private SearchResponse getSearchResponse(String elementType) {

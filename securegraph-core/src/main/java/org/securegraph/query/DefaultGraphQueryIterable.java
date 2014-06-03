@@ -5,23 +5,17 @@ import org.securegraph.Property;
 
 import java.util.Iterator;
 
-public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>, IterableWithTotalHits<T> {
+public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T> {
     private final QueryBase.Parameters parameters;
     private final Iterable<T> iterable;
     private final boolean evaluateQueryString;
     private final boolean evaluateHasContainers;
-    private final Long totalHits;
 
-    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, boolean evaluateHasContainers, Long totalHits) {
+    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, boolean evaluateHasContainers) {
         this.parameters = parameters;
         this.iterable = iterable;
         this.evaluateQueryString = evaluateQueryString;
         this.evaluateHasContainers = evaluateHasContainers;
-        this.totalHits = totalHits;
-    }
-
-    public Long getTotalHits() {
-        return totalHits;
     }
 
     @Override
