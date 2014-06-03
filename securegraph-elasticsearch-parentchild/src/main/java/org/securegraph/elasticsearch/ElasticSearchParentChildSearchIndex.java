@@ -211,7 +211,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
         String id = getChildDocId(element, property);
 
-        LOGGER.debug(jsonBuilder.string());
+        //LOGGER.debug(jsonBuilder.string());
         IndexRequestBuilder builder = getClient().prepareIndex(getIndexName(), PROPERTY_TYPE, id);
         builder = builder.setParent(element.getId().toString());
         builder = builder.setSource(jsonBuilder);
