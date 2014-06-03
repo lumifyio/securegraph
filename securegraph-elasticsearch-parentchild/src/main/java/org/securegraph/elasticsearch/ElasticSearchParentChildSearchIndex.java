@@ -1,11 +1,12 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.deletebyquery.IndexDeleteByQueryResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -26,6 +27,7 @@ import java.util.Map;
 public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchIndexBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchParentChildSearchIndex.class);
     public static final String PROPERTY_TYPE = "property";
+    public static final int BATCH_SIZE = 1000;
 
     public ElasticSearchParentChildSearchIndex(Map config) {
         super(config);
@@ -121,19 +123,11 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         addPropertiesToIndex(element.getProperties());
 
         try {
-            try {
-                addParentDocument(graph, element, authorizations);
-            } catch (Exception ex) {
-                throw new SecureGraphException("Could not add parent document", ex);
-            }
+            BulkRequest bulkRequest = new BulkRequest();
 
-            for (Property property : element.getProperties()) {
-                try {
-                    addPropertyDocument(graph, element, property, authorizations);
-                } catch (Exception ex) {
-                    throw new SecureGraphException("Could not add property: " + property, ex);
-                }
-            }
+            addElementToBulkRequest(bulkRequest, graph, element, authorizations);
+
+            doBulkRequest(bulkRequest);
 
             if (isAutoflush()) {
                 flush();
@@ -154,10 +148,65 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
     }
 
-    private void addPropertyDocument(Graph graph, Element element, Property property, Authorizations authorizations) throws IOException {
+    @Override
+    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
+        int totalCount = 0;
+        int count = 0;
+        BulkRequest bulkRequest = new BulkRequest();
+        for (Element element : elements) {
+            if (count >= BATCH_SIZE) {
+                LOGGER.debug("adding elements... " + totalCount);
+                doBulkRequest(bulkRequest);
+                bulkRequest = new BulkRequest();
+                count = 0;
+            }
+            addElementToBulkRequest(bulkRequest, graph, element, authorizations);
+            count++;
+            totalCount++;
+
+            if (isUseEdgeBoost() && element instanceof Edge) {
+                Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
+                if (vOut != null) {
+                    addElementToBulkRequest(bulkRequest, graph, vOut, authorizations);
+                    count++;
+                    totalCount++;
+                }
+                Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
+                if (vIn != null) {
+                    addElementToBulkRequest(bulkRequest, graph, vIn, authorizations);
+                    count++;
+                    totalCount++;
+                }
+            }
+        }
+        if (count > 0) {
+            doBulkRequest(bulkRequest);
+        }
+        LOGGER.debug("added " + totalCount + " elements");
+
+        if (isAutoflush()) {
+            flush();
+        }
+    }
+
+    private void addElementToBulkRequest(BulkRequest bulkRequest, Graph graph, Element element, Authorizations authorizations) {
+        try {
+            bulkRequest.add(getParentDocumentRequest(graph, element, authorizations));
+            for (Property property : element.getProperties()) {
+                IndexRequest propertyIndexRequest = getPropertyDocumentRequest(graph, element, property, authorizations);
+                if (propertyIndexRequest != null) {
+                    bulkRequest.add(propertyIndexRequest);
+                }
+            }
+        } catch (IOException ex) {
+            throw new SecureGraphException("Could not add element to bulk request", ex);
+        }
+    }
+
+    private IndexRequest getPropertyDocumentRequest(Graph graph, Element element, Property property, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder = buildJsonContentFromProperty(graph, element, property, authorizations);
         if (jsonBuilder == null) {
-            return;
+            return null;
         }
 
         String id = getChildDocId(element, property);
@@ -166,17 +215,14 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         IndexRequestBuilder builder = getClient().prepareIndex(getIndexName(), PROPERTY_TYPE, id);
         builder = builder.setParent(element.getId().toString());
         builder = builder.setSource(jsonBuilder);
-        IndexResponse response = builder.execute().actionGet();
-        if (response.getId() == null) {
-            throw new SecureGraphException("Could not index document " + element.getId());
-        }
+        return builder.request();
     }
 
     private String getChildDocId(Element element, Property property) {
         return element.getId().toString() + "_" + property.getName() + "_" + property.getKey();
     }
 
-    private void addParentDocument(Graph graph, Element element, Authorizations authorizations) throws IOException {
+    private IndexRequest getParentDocumentRequest(Graph graph, Element element, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
@@ -198,14 +244,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
         jsonBuilder.field(VISIBILITY_FIELD_NAME, element.getVisibility().getVisibilityString());
 
-        IndexResponse response = getClient()
-                .prepareIndex(getIndexName(), ELEMENT_TYPE, id)
-                .setSource(jsonBuilder.endObject())
-                .execute()
-                .actionGet();
-        if (response.getId() == null) {
-            throw new SecureGraphException("Could not index document " + element.getId());
-        }
+        return new IndexRequest(getIndexName(), ELEMENT_TYPE, id).source(jsonBuilder);
     }
 
     private XContentBuilder buildJsonContentFromProperty(Graph graph, Element element, Property property, Authorizations authorizations) throws IOException {

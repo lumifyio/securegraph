@@ -2,6 +2,9 @@ package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
@@ -450,5 +453,17 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
 
     protected boolean isStoreSourceData() {
         return storeSourceData;
+    }
+
+    protected void doBulkRequest(BulkRequest bulkRequest) {
+        BulkResponse response = getClient().bulk(bulkRequest).actionGet();
+        if (response.hasFailures()) {
+            for (BulkItemResponse bulkResponse : response) {
+                if (bulkResponse.isFailed()) {
+                    LOGGER.error("Failed to index " + bulkResponse.getId());
+                }
+            }
+            throw new SecureGraphException("Could not add element.");
+        }
     }
 }

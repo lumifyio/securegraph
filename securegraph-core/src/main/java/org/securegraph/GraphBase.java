@@ -39,6 +39,15 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public Iterable<Vertex> addVertices(Iterable<ElementBuilder<Vertex>> vertices, Authorizations authorizations) {
+        List<Vertex> addedVertices = new ArrayList<Vertex>();
+        for (ElementBuilder<Vertex> vertexBuilder : vertices) {
+            addedVertices.add(vertexBuilder.save(authorizations));
+        }
+        return addedVertices;
+    }
+
+    @Override
     public VertexBuilder prepareVertex(Visibility visibility) {
         return prepareVertex(getIdGenerator().nextId(), visibility);
     }

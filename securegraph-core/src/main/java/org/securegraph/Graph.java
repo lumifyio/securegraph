@@ -26,6 +26,15 @@ public interface Graph {
     Vertex addVertex(Object vertexId, Visibility visibility, Authorizations authorizations);
 
     /**
+     * Adds the vertices to the graph.
+     *
+     * @param vertices       The vertices to add.
+     * @param authorizations The authorizations required to add and retrieve the new vertex.
+     * @return The vertices.
+     */
+    Iterable<Vertex> addVertices(Iterable<ElementBuilder<Vertex>> vertices, Authorizations authorizations);
+
+    /**
      * Prepare a vertex to be added to the graph. This method provides a way to build up a vertex with it's properties to be inserted
      * with a single operation. The id of the new vertex will be generated using an org.securegraph.id.IdGenerator.
      *

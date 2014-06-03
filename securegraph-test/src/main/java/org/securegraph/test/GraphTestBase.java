@@ -18,6 +18,7 @@ import org.securegraph.query.TextPredicate;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
+import org.securegraph.util.ToElementIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -359,6 +360,21 @@ public abstract class GraphTestBase {
 
         Iterable<Vertex> allVertices = graph.getVertices(AUTHORIZATIONS_A_AND_B);
         assertEquals(2, count(allVertices));
+    }
+
+    @Test
+    public void testAddMultipleVertices() {
+        List<ElementBuilder<Vertex>> elements = new ArrayList<ElementBuilder<Vertex>>();
+        elements.add(graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("prop1", "v1", VISIBILITY_A));
+        elements.add(graph.prepareVertex("v2", VISIBILITY_A)
+                .setProperty("prop1", "v2", VISIBILITY_A));
+        Iterable<Vertex> vertices = graph.addVertices(elements, AUTHORIZATIONS_A_AND_B);
+        assertVertexIds(vertices, new String[]{"v1", "v2"});
+
+        if (graph instanceof GraphBase) {
+            ((GraphBase) graph).getSearchIndex().addElements(graph, new ToElementIterable(vertices), AUTHORIZATIONS_A_AND_B);
+        }
     }
 
     @Test
