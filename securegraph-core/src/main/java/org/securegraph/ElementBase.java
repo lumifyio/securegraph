@@ -71,11 +71,13 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public Property getProperty(String name) {
-        Iterator<Property> propertiesWithName = getProperties(name).iterator();
-        if (propertiesWithName.hasNext()) {
-            return propertiesWithName.next();
+        synchronized (properties) {
+            Iterator<Property> propertiesWithName = getProperties(name).iterator();
+            if (propertiesWithName.hasNext()) {
+                return propertiesWithName.next();
+            }
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -85,28 +87,32 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public Object getPropertyValue(String name, int index) {
-        Iterator<Object> values = getPropertyValues(name).iterator();
-        while (values.hasNext() && index >= 0) {
-            Object v = values.next();
-            if (index == 0) {
-                return v;
+        synchronized (properties) {
+            Iterator<Object> values = getPropertyValues(name).iterator();
+            while (values.hasNext() && index >= 0) {
+                Object v = values.next();
+                if (index == 0) {
+                    return v;
+                }
+                index--;
             }
-            index--;
+            return null;
         }
-        return null;
     }
 
     @Override
     public Object getPropertyValue(Object key, String name, int index) {
-        Iterator<Object> values = getPropertyValues(key, name).iterator();
-        while (values.hasNext() && index >= 0) {
-            Object v = values.next();
-            if (index == 0) {
-                return v;
+        synchronized (properties) {
+            Iterator<Object> values = getPropertyValues(key, name).iterator();
+            while (values.hasNext() && index >= 0) {
+                Object v = values.next();
+                if (index == 0) {
+                    return v;
+                }
+                index--;
             }
-            index--;
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -156,40 +162,46 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     // this method differs setProperties in that it only updates the in memory representation of the properties
     protected void updatePropertiesInternal(Iterable<Property> properties) {
-        for (Property property : properties) {
-            if (property.getKey() == null) {
-                throw new IllegalArgumentException("key is required for property");
+        synchronized (properties) {
+            for (Property property : properties) {
+                if (property.getKey() == null) {
+                    throw new IllegalArgumentException("key is required for property");
+                }
+                Object propertyValue = property.getValue();
+                if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
+                    continue;
+                }
+                this.properties.remove(property);
+                this.properties.add(property);
             }
-            Object propertyValue = property.getValue();
-            if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
-                continue;
-            }
-            this.properties.remove(property);
-            this.properties.add(property);
         }
     }
 
     protected Property removePropertyInternal(Object key, String name) {
-        Property property = getProperty(key, name);
-        if (property != null) {
-            this.properties.remove(property);
+        synchronized (properties) {
+            Property property = getProperty(key, name);
+            if (property != null) {
+                this.properties.remove(property);
+            }
+            return property;
         }
-        return property;
     }
 
     protected Iterable<Property> removePropertyInternal(String name) {
-        List<Property> removedProperties = new ArrayList<Property>();
-        for (Property p : this.properties) {
-            if (p.getName().equals(name)) {
-                removedProperties.add(p);
+        synchronized (properties) {
+            List<Property> removedProperties = new ArrayList<Property>();
+            for (Property p : this.properties) {
+                if (p.getName().equals(name)) {
+                    removedProperties.add(p);
+                }
             }
-        }
 
-        for (Property p : removedProperties) {
-            this.properties.remove(p);
-        }
+            for (Property p : removedProperties) {
+                this.properties.remove(p);
+            }
 
-        return removedProperties;
+            return removedProperties;
+        }
     }
 
     public Graph getGraph() {
@@ -254,9 +266,11 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public void mergeProperties(Element element) {
-        for (Property property : element.getProperties()) {
-            this.properties.remove(property);
-            this.properties.add(property);
+        synchronized (properties) {
+            for (Property property : element.getProperties()) {
+                this.properties.remove(property);
+                this.properties.add(property);
+            }
         }
     }
 }
