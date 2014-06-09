@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.securegraph.util.Preconditions.checkNotNull;
+
 public abstract class ElementBuilder<T extends Element> implements ElementMutation<T> {
     private final List<Property> properties = new ArrayList<Property>();
 
@@ -74,6 +76,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * @param visibility The visibility to give this property.
      */
     public ElementBuilder<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        checkNotNull(value, "property value cannot be null for property: " + name + ":" + key);
         this.properties.add(new MutableProperty(key, name, value, metadata, visibility));
         return this;
     }

@@ -220,6 +220,18 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testNullPropertyValue() {
+        try {
+            graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                    .setProperty("prop1", null, VISIBILITY_A)
+                    .save(AUTHORIZATIONS_A_AND_B);
+            throw new SecureGraphException("expected null check");
+        } catch (NullPointerException ex) {
+            assertTrue(ex.getMessage().contains("prop1"));
+        }
+    }
+
+    @Test
     public void testAddVertexWithPropertiesWithTwoDifferentVisibilities() {
         Vertex v = graph.prepareVertex("v1", VISIBILITY_EMPTY)
                 .setProperty("prop1", "value1a", VISIBILITY_A)

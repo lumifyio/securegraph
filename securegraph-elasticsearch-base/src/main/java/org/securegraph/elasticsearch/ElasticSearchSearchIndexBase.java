@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 
+import static org.securegraph.util.Preconditions.checkNotNull;
+
 public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
     public static final String CONFIG_STORE_SOURCE_DATA = "storeSourceData";
@@ -363,6 +365,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             addPropertyToIndex(propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
             addPropertyToIndex(propertyName, dataType, true);
         } else {
+            checkNotNull(propertyValue, "property value cannot be null for property: " + propertyName);
             dataType = propertyValue.getClass();
             addPropertyToIndex(propertyName, dataType, true);
         }
