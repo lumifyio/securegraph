@@ -11,9 +11,9 @@ DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 (
   cd ${DIR}/../..
-  bundle_filename=$(ls secure-graph.*.bundle | tail -1)
-  unlink secure-graph.bundle
-  ln -s ${bundle_filename} secure-graph.bundle
+  bundle_filename=$(ls securegraph.*.bundle | tail -1)
+  unlink securegraph.bundle
+  ln -s ${bundle_filename} securegraph.bundle
 
   cd ${DIR}/..
   git pull
