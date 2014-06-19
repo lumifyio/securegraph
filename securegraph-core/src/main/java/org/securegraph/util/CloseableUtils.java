@@ -10,6 +10,9 @@ public class CloseableUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(CloseableUtils.class);
 
     public static void closeQuietly(Closeable closeable) {
+        if (closeable == null) {
+            return;
+        }
         try {
             closeable.close();
         } catch (IOException ex) {
