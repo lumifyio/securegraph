@@ -20,7 +20,7 @@ import org.securegraph.mutation.AlterPropertyVisibility;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.search.SearchIndex;
-import org.securegraph.util.ClosableIterable;
+import org.securegraph.util.CloseableIterable;
 import org.securegraph.util.EmptyClosableIterable;
 import org.securegraph.util.LookAheadIterable;
 
@@ -303,7 +303,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Edge> getEdges(Authorizations authorizations) {
+    public CloseableIterable<Edge> getEdges(Authorizations authorizations) {
         return getEdgesInRange(null, null, authorizations);
     }
 
@@ -404,7 +404,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public ClosableIterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
+    public CloseableIterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
@@ -451,7 +451,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private ClosableIterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
@@ -470,7 +470,7 @@ public class AccumuloGraph extends GraphBase {
         return getVerticesInRange(range, authorizations);
     }
 
-    private ClosableIterable<Vertex> getVerticesInRange(final Range range, final Authorizations authorizations) {
+    private CloseableIterable<Vertex> getVerticesInRange(final Range range, final Authorizations authorizations) {
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
             public Scanner scanner;
 
@@ -613,7 +613,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public ClosableIterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
+    public CloseableIterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
@@ -660,7 +660,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private ClosableIterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
 
         final Key startKey;

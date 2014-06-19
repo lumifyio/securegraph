@@ -2,7 +2,7 @@ package org.securegraph.util;
 
 import java.util.Iterator;
 
-public abstract class LookAheadIterable<TSource, TDest> implements ClosableIterable<TDest> {
+public abstract class LookAheadIterable<TSource, TDest> implements CloseableIterable<TDest> {
     private boolean doneCalled;
 
     @Override

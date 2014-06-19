@@ -1,5 +1,6 @@
 package org.securegraph.util;
 
+import java.io.Closeable;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -13,9 +14,7 @@ public class IterableUtils {
         for (T o : iterable) {
             results.add(o);
         }
-        if (iterable instanceof ClosableIterable) {
-            ((ClosableIterable) iterable).close();
-        }
+        close(iterable);
         return results;
     }
 
@@ -28,9 +27,7 @@ public class IterableUtils {
         for (T o : iterable) {
             results.add(o);
         }
-        if (iterable instanceof ClosableIterable) {
-            ((ClosableIterable) iterable).close();
-        }
+        close(iterable);
         return results;
     }
 
@@ -46,9 +43,7 @@ public class IterableUtils {
         for (T ignore : iterable) {
             count++;
         }
-        if (iterable instanceof ClosableIterable) {
-            ((ClosableIterable) iterable).close();
-        }
+        close(iterable);
         return count;
     }
 
@@ -87,16 +82,18 @@ public class IterableUtils {
         T result = i.next();
 
         if (i.hasNext()) {
-            if (it instanceof ClosableIterable) {
-                ((ClosableIterable) it).close();
-            }
+            close(it);
             throw new IllegalStateException("More than 1 item found.");
         }
 
-        if (it instanceof ClosableIterable) {
-            ((ClosableIterable) it).close();
-        }
+        close(it);
         return result;
+    }
+
+    private static <T> void close(Iterable<? extends T> it) {
+        if (it instanceof Closeable) {
+            CloseableUtils.closeQuietly((Closeable) it);
+        }
     }
 
     public static <T> T singleOrDefault(final Iterable<? extends T> it, T defaultValue) {
@@ -108,15 +105,11 @@ public class IterableUtils {
         T result = i.next();
 
         if (i.hasNext()) {
-            if (it instanceof ClosableIterable) {
-                ((ClosableIterable) it).close();
-            }
+            close(it);
             throw new IllegalStateException("More than 1 item found.");
         }
 
-        if (it instanceof ClosableIterable) {
-            ((ClosableIterable) it).close();
-        }
+        close(it);
         return result;
     }
 }
