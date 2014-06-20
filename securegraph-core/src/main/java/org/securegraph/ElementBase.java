@@ -5,21 +5,25 @@ import org.securegraph.property.PropertyValue;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public abstract class ElementBase<T extends Element> implements Element {
     private final Graph graph;
     private final Object id;
     private Visibility visibility;
 
-    private final TreeSet<Property> properties;
+    private final ConcurrentSkipListSet<Property> properties;
     private final Authorizations authorizations;
 
     protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
-        this.properties = new TreeSet<Property>();
+        this.properties = new ConcurrentSkipListSet<Property>();
         this.authorizations = authorizations;
         updatePropertiesInternal(properties);
     }
@@ -71,13 +75,11 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public Property getProperty(String name) {
-        synchronized (properties) {
-            Iterator<Property> propertiesWithName = getProperties(name).iterator();
-            if (propertiesWithName.hasNext()) {
-                return propertiesWithName.next();
-            }
-            return null;
+        Iterator<Property> propertiesWithName = getProperties(name).iterator();
+        if (propertiesWithName.hasNext()) {
+            return propertiesWithName.next();
         }
+        return null;
     }
 
     @Override
@@ -87,32 +89,28 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public Object getPropertyValue(String name, int index) {
-        synchronized (properties) {
-            Iterator<Object> values = getPropertyValues(name).iterator();
-            while (values.hasNext() && index >= 0) {
-                Object v = values.next();
-                if (index == 0) {
-                    return v;
-                }
-                index--;
+        Iterator<Object> values = getPropertyValues(name).iterator();
+        while (values.hasNext() && index >= 0) {
+            Object v = values.next();
+            if (index == 0) {
+                return v;
             }
-            return null;
+            index--;
         }
+        return null;
     }
 
     @Override
     public Object getPropertyValue(Object key, String name, int index) {
-        synchronized (properties) {
-            Iterator<Object> values = getPropertyValues(key, name).iterator();
-            while (values.hasNext() && index >= 0) {
-                Object v = values.next();
-                if (index == 0) {
-                    return v;
-                }
-                index--;
+        Iterator<Object> values = getPropertyValues(key, name).iterator();
+        while (values.hasNext() && index >= 0) {
+            Object v = values.next();
+            if (index == 0) {
+                return v;
             }
-            return null;
+            index--;
         }
+        return null;
     }
 
     @Override
@@ -162,46 +160,40 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     // this method differs setProperties in that it only updates the in memory representation of the properties
     protected void updatePropertiesInternal(Iterable<Property> properties) {
-        synchronized (properties) {
-            for (Property property : properties) {
-                if (property.getKey() == null) {
-                    throw new IllegalArgumentException("key is required for property");
-                }
-                Object propertyValue = property.getValue();
-                if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
-                    continue;
-                }
-                this.properties.remove(property);
-                this.properties.add(property);
+        for (Property property : properties) {
+            if (property.getKey() == null) {
+                throw new IllegalArgumentException("key is required for property");
             }
+            Object propertyValue = property.getValue();
+            if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
+                continue;
+            }
+            this.properties.remove(property);
+            this.properties.add(property);
         }
     }
 
     protected Property removePropertyInternal(Object key, String name) {
-        synchronized (properties) {
-            Property property = getProperty(key, name);
-            if (property != null) {
-                this.properties.remove(property);
-            }
-            return property;
+        Property property = getProperty(key, name);
+        if (property != null) {
+            this.properties.remove(property);
         }
+        return property;
     }
 
     protected Iterable<Property> removePropertyInternal(String name) {
-        synchronized (properties) {
-            List<Property> removedProperties = new ArrayList<Property>();
-            for (Property p : this.properties) {
-                if (p.getName().equals(name)) {
-                    removedProperties.add(p);
-                }
+        List<Property> removedProperties = new ArrayList<Property>();
+        for (Property p : this.properties) {
+            if (p.getName().equals(name)) {
+                removedProperties.add(p);
             }
-
-            for (Property p : removedProperties) {
-                this.properties.remove(p);
-            }
-
-            return removedProperties;
         }
+
+        for (Property p : removedProperties) {
+            this.properties.remove(p);
+        }
+
+        return removedProperties;
     }
 
     public Graph getGraph() {
@@ -266,11 +258,9 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     @Override
     public void mergeProperties(Element element) {
-        synchronized (properties) {
-            for (Property property : element.getProperties()) {
-                this.properties.remove(property);
-                this.properties.add(property);
-            }
+        for (Property property : element.getProperties()) {
+            this.properties.remove(property);
+            this.properties.add(property);
         }
     }
 }

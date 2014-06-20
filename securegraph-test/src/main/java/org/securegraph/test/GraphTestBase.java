@@ -232,6 +232,23 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testConcurrentModificationOfProperties() {
+        Vertex v = graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .setProperty("prop2", "value2", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        int i = 0;
+        for (Property p : v.getProperties()) {
+            p.toString();
+            if (i == 0) {
+                v.setProperty("prop3", "value3", VISIBILITY_A, AUTHORIZATIONS_A_AND_B);
+            }
+            i++;
+        }
+    }
+
+    @Test
     public void testAddVertexWithPropertiesWithTwoDifferentVisibilities() {
         Vertex v = graph.prepareVertex("v1", VISIBILITY_EMPTY)
                 .setProperty("prop1", "value1a", VISIBILITY_A)
