@@ -1,10 +1,12 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
@@ -177,6 +179,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     }
 
     private void loadPropertyDefinitions() {
+        this.propertyDefinitions.clear();
         Map<String, String> propertyTypes = getPropertyTypesFromServer();
         for (Map.Entry<String, String> property : propertyTypes.entrySet()) {
             String propertyName = property.getKey();
@@ -468,5 +471,18 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             }
             throw new SecureGraphException("Could not add element.");
         }
+    }
+
+    @Override
+    public void clearData() {
+        try {
+            DeleteIndexRequest deleteRequest = new DeleteIndexRequest(getIndexName());
+            getClient().admin().indices().delete(deleteRequest).actionGet();
+        } catch (Exception ex) {
+            throw new SecureGraphException("Could not delete index " + getIndexName(), ex);
+        }
+
+        ensureIndexCreated(storeSourceData);
+        loadPropertyDefinitions();
     }
 }

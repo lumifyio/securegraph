@@ -279,4 +279,9 @@ public interface Graph {
      * Determine if edge boost is supported. That is can you change the vertex boost based on incoming and outgoing edge counts.
      */
     boolean isEdgeBoostSupported();
+
+    /**
+     * Clears all data from the graph.
+     */
+    void clearData();
 }

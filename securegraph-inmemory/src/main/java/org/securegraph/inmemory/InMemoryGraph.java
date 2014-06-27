@@ -331,4 +331,11 @@ public class InMemoryGraph extends GraphBase {
     public boolean isVisibilityValid(Visibility visibility, Authorizations authorizations) {
         return authorizations.canRead(visibility);
     }
+
+    @Override
+    public void clearData() {
+        this.vertices.clear();
+        this.edges.clear();
+        getSearchIndex().clearData();
+    }
 }

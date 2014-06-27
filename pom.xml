@@ -205,6 +205,7 @@
         <module>securegraph-kryo-serializer</module>
         <module>securegraph-elasticsearch-parentchild</module>
         <module>securegraph-elasticsearch-plugin</module>
+        <module>securegraph-examples</module>
     </modules>
 
     <profiles>

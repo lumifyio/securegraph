@@ -28,4 +28,6 @@ public interface SearchIndex {
     boolean isFieldBoostSupported();
 
     boolean isEdgeBoostSupported();
+
+    void clearData();
 }

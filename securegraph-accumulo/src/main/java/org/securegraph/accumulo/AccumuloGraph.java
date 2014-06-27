@@ -887,4 +887,16 @@ public class AccumuloGraph extends GraphBase {
     public boolean isVisibilityValid(Visibility visibility, Authorizations authorizations) {
         return authorizations.canRead(visibility);
     }
+
+    @Override
+    public void clearData() {
+        try {
+            this.connector.tableOperations().deleteRows(getDataTableName(), null, null);
+            this.connector.tableOperations().deleteRows(getEdgesTableName(), null, null);
+            this.connector.tableOperations().deleteRows(getVerticesTableName(), null, null);
+            getSearchIndex().clearData();
+        } catch (Exception ex) {
+            throw new SecureGraphException("Could not delete rows", ex);
+        }
+    }
 }
