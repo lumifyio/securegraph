@@ -2,13 +2,13 @@ package org.securegraph.examples;
 
 import com.altamiracorp.miniweb.App;
 import com.altamiracorp.miniweb.HandlerChain;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
 import org.securegraph.Visibility;
-import org.securegraph.query.GraphQuery;
-import org.securegraph.query.GraphQueryWithHistogram;
+import org.securegraph.query.*;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -114,19 +114,45 @@ public class Histogram extends ExampleBase {
             String field = getRequiredParameter(request, "field");
             String interval = getRequiredParameter(request, "interval");
 
-            GraphQuery query = _this.getGraph()
-                    .query(q, authorizations);
+            Query query = _this.getGraph()
+                    .query(q, authorizations)
+                    .limit(0);
+            String HISTOGRAM_NAME = "hist";
             if (query instanceof GraphQueryWithHistogram) {
-                ((GraphQueryWithHistogram) query).addHistogram("hist", field, interval);
+                ((GraphQueryWithHistogram) query).addHistogram(HISTOGRAM_NAME, field, interval);
             } else {
                 throw new RuntimeException("query " + query.getClass().getName() + " does not support histograms");
             }
             Iterable<Vertex> vertices = query.vertices();
 
+            if (!(vertices instanceof IterableWithHistogramResults)) {
+                throw new RuntimeException("query results " + query.getClass().getName() + " does not support histograms");
+            }
+            HistogramResult histogramResult = ((IterableWithHistogramResults) vertices).getHistogramResults(HISTOGRAM_NAME);
+
             JSONObject json = new JSONObject();
-            json.put("vertices", verticesToJson(vertices));
+            json.put("histogramResult", histogramResultToJson(histogramResult));
 
             response.getOutputStream().write(json.toString(2).getBytes());
+        }
+
+        private JSONObject histogramResultToJson(HistogramResult histogramResult) {
+            JSONObject json = new JSONObject();
+
+            JSONArray bucketsJson = new JSONArray();
+            for (HistogramBucket bucket : histogramResult.getBuckets()) {
+                JSONObject bucketJson = new JSONObject();
+                Object key = bucket.getKey();
+                if (key instanceof Date) {
+                    key = ((Date) key).getTime();
+                }
+                bucketJson.put("key", key);
+                bucketJson.put("count", bucket.getCount());
+                bucketsJson.put(bucketJson);
+            }
+            json.put("buckets", bucketsJson);
+
+            return json;
         }
     }
 }

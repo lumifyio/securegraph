@@ -77,6 +77,10 @@ public abstract class QueryBase implements Query {
         return parameters;
     }
 
+    protected Map<String, PropertyDefinition> getPropertyDefinitions() {
+        return propertyDefinitions;
+    }
+
     public static class HasContainer {
         public String key;
         public Object value;

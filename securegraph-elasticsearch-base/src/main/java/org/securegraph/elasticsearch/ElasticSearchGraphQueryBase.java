@@ -74,7 +74,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
-        return new ElasticSearchGraphQueryIterable<Vertex>(filterParameters, vertices, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
+        return createIterable(response, filterParameters, vertices, evaluateHasContainers, searchTime, hits);
     }
 
     @Override
@@ -100,7 +100,11 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         filterParameters.setSkip(0); // ES already did a skip
         Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
-        return new ElasticSearchGraphQueryIterable<Edge>(filterParameters, edges, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
+        return createIterable(response, filterParameters, edges, evaluateHasContainers, searchTime, hits);
+    }
+
+    protected <T extends Element> ElasticSearchGraphQueryIterable<T> createIterable(SearchResponse response, Parameters filterParameters, Iterable<T> elements, boolean evaluateHasContainers, long searchTime, SearchHits hits) {
+        return new ElasticSearchGraphQueryIterable<T>(response, filterParameters, elements, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
     }
 
     private SearchResponse getSearchResponse(String elementType) {
