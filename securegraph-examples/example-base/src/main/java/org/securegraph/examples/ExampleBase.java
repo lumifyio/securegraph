@@ -56,6 +56,9 @@ public abstract class ExampleBase {
     }
 
     protected static Authorizations createAuthorizations(String... auths) {
+        if (auths.length == 1 && auths[0].length() == 0) {
+            return new AccumuloAuthorizations();
+        }
         return new AccumuloAuthorizations(auths);
     }
 

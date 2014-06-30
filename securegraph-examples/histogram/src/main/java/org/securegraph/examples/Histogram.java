@@ -7,12 +7,14 @@ import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
 import org.securegraph.Visibility;
-import org.securegraph.type.GeoPoint;
+import org.securegraph.query.GraphQuery;
+import org.securegraph.query.GraphQueryWithHistogram;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Date;
 import java.util.Random;
 
 import static org.securegraph.util.IterableUtils.count;
@@ -65,10 +67,9 @@ public class Histogram extends ExampleBase {
                     LOGGER.debug("populating data " + i + "/" + VERTICES_TO_CREATE);
                 }
                 Visibility visibility = new Visibility(v);
-                double lat = random.nextDouble();
-                double lon = random.nextDouble();
                 getGraph().prepareVertex(visibility)
-                        .setProperty("geolocation", new GeoPoint(lat, lon), visibility)
+                        .setProperty("age", random.nextInt(100), visibility)
+                        .setProperty("publishedDate", new Date(1404159116647L + random.nextInt(1000000)), visibility)
                         .save(authorizations);
                 i++;
             }
@@ -84,8 +85,11 @@ public class Histogram extends ExampleBase {
     }
 
     private void defineTypes() {
-        getGraph().defineProperty("geolocation")
-                .dataType(GeoPoint.class)
+        getGraph().defineProperty("age")
+                .dataType(Integer.class)
+                .define();
+        getGraph().defineProperty("publishedDate")
+                .dataType(Date.class)
                 .define();
         getGraph().flush();
     }
@@ -103,12 +107,21 @@ public class Histogram extends ExampleBase {
 
         @Override
         public void handle(HttpServletRequest request, HttpServletResponse response, HandlerChain handlerChain) throws Exception {
-            String authorizations = getRequiredParameter(request, "authorizations");
-            String query = getRequiredParameter(request, "q");
+            String authorizationsString = getRequiredParameter(request, "authorizations");
+            Authorizations authorizations = createAuthorizations(authorizationsString.split(","));
 
-            Iterable<Vertex> vertices = _this.getGraph()
-                    .query(query, createAuthorizations(authorizations.split(",")))
-                    .vertices();
+            String q = getRequiredParameter(request, "q");
+            String field = getRequiredParameter(request, "field");
+            String interval = getRequiredParameter(request, "interval");
+
+            GraphQuery query = _this.getGraph()
+                    .query(q, authorizations);
+            if (query instanceof GraphQueryWithHistogram) {
+                ((GraphQueryWithHistogram) query).addHistogram("hist", field, interval);
+            } else {
+                throw new RuntimeException("query " + query.getClass().getName() + " does not support histograms");
+            }
+            Iterable<Vertex> vertices = query.vertices();
 
             JSONObject json = new JSONObject();
             json.put("vertices", verticesToJson(vertices));

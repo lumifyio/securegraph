@@ -1,8 +1,53 @@
 <html>
 <head>
     <title>SecureGraph: Examples: Histogram</title>
+    <script type="text/javascript" src="/jquery.js"></script>
+    <style>
+        h4 {
+            margin-bottom: 0;
+        }
+    </style>
 </head>
 <body>
 <h1>SecureGraph: Examples: Histogram</h1>
+
+<h4>Query</h4>
+<input id="q" value="*">
+
+<h4>Authorizations</h4>
+<input id="authorizations" value="a,b,c,d">
+
+<h4>Field</h4>
+<select id="field">
+    <option value="age">Age</option>
+    <option value="publishedDate">Published Date</option>
+</select>
+
+<h4>Interval</h4>
+<input id="interval">
+
+<br><br>
+<button onclick="run()">Run</button>
+
+<h3>Results</h3>
+
+<div id="results"></div>
+
+<script type="text/javascript">
+    function run() {
+        $.get("/search", {
+            q: $('#q').val(),
+            authorizations: $('#authorizations').val(),
+            field: $('#field').val(),
+            interval: $('#interval').val()
+        }, function (results) {
+            console.log(results);
+        }).fail(function (err) {
+            console.log(err);
+            $('#results').html("Failed!");
+        });
+    }
+</script>
+
 </body>
 </html>
