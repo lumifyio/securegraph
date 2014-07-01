@@ -42,7 +42,7 @@ public abstract class GraphTestBase {
     public final Authorizations AUTHORIZATIONS_A;
     public final Authorizations AUTHORIZATIONS_B;
     public final Authorizations AUTHORIZATIONS_C;
-    public final Authorizations AUTHORIZATIONS_MIXEDCASE_a;
+    public final Authorizations AUTHORIZATIONS_MIXEDCASE_a_AND_B;
     public final Authorizations AUTHORIZATIONS_A_AND_B;
     public final Authorizations AUTHORIZATIONS_EMPTY;
     public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
@@ -60,7 +60,7 @@ public abstract class GraphTestBase {
         AUTHORIZATIONS_B = createAuthorizations("b");
         AUTHORIZATIONS_C = createAuthorizations("c");
         AUTHORIZATIONS_A_AND_B = createAuthorizations("a", "b");
-        AUTHORIZATIONS_MIXEDCASE_a = createAuthorizations("MIXEDCASE_a");
+        AUTHORIZATIONS_MIXEDCASE_a_AND_B = createAuthorizations("MIXEDCASE_a", "b");
         AUTHORIZATIONS_EMPTY = createAuthorizations();
     }
 
@@ -780,6 +780,57 @@ public abstract class GraphTestBase {
                 .has("age", Compare.EQUAL, 25)
                 .vertices();
         assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_B)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(0, count(vertices)); // need auth A to see the v2 node itself
+
+        vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(2, count(vertices));
+    }
+
+    @Test
+    public void testGraphQueryVertexHasWithSecurityGranularity() {
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("age", 25, VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.prepareVertex("v2", VISIBILITY_A)
+                .setProperty("age", 25, VISIBILITY_B)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A)
+                .vertices();
+        boolean hasAgeVisA = false;
+        boolean hasAgeVisB = false;
+        for (Vertex v : vertices) {
+            Property prop = v.getProperty("age");
+            if (prop == null) {
+                continue;
+            }
+            if ((Integer) prop.getValue() == 25) {
+                if (prop.getVisibility().equals(VISIBILITY_A)) {
+                    hasAgeVisA = true;
+                } else if (prop.getVisibility().equals(VISIBILITY_B)) {
+                    hasAgeVisB = true;
+                }
+            }
+        }
+        if (graph.getSearchIndexSecurityGranularity() == SearchIndexSecurityGranularity.DOCUMENT) {
+            assertEquals(1, count(vertices));
+            assertTrue("has a", hasAgeVisA);
+            assertFalse("has b", hasAgeVisB);
+        } else if (graph.getSearchIndexSecurityGranularity() == SearchIndexSecurityGranularity.PROPERTY) {
+            assertEquals(2, count(vertices));
+            assertTrue("has a", hasAgeVisA);
+            assertFalse("has b", hasAgeVisB);
+        }
+
+        vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .vertices();
+        assertEquals(2, count(vertices));
     }
 
     @Test
@@ -791,7 +842,7 @@ public abstract class GraphTestBase {
                 .setProperty("age", 25, VISIBILITY_B)
                 .save(AUTHORIZATIONS_A_AND_B);
 
-        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_MIXEDCASE_a)
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_MIXEDCASE_a_AND_B)
                 .has("age", Compare.EQUAL, 25)
                 .vertices();
         assertEquals(1, count(vertices));

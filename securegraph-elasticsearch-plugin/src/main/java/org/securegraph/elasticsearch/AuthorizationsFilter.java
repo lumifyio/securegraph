@@ -7,7 +7,6 @@ import org.apache.lucene.search.Filter;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.OpenBitSet;
-import org.elasticsearch.common.lucene.docset.AllDocIdSet;
 import org.securegraph.inmemory.security.Authorizations;
 import org.securegraph.inmemory.security.ColumnVisibility;
 import org.securegraph.inmemory.security.VisibilityEvaluator;
@@ -36,19 +35,21 @@ public class AuthorizationsFilter extends Filter {
             BytesRef bytesRef;
             VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
             while ((bytesRef = iterator.next()) != null) {
-                if (isVisible(visibilityEvaluator, bytesRef)) {
-                    makeVisible(iterator, bitSet, acceptDocs);
-                }
+                makeVisible(iterator, bitSet, acceptDocs, isVisible(visibilityEvaluator, bytesRef));
             }
             return BitsFilteredDocIdSet.wrap(bitSet, acceptDocs);
         }
     }
 
-    private void makeVisible(TermsEnum iterator, OpenBitSet bitSet, Bits liveDocs) throws IOException {
+    private void makeVisible(TermsEnum iterator, OpenBitSet bitSet, Bits liveDocs, boolean visible) throws IOException {
         DocsEnum docsEnum = iterator.docs(liveDocs, null);
         int doc;
         while ((doc = docsEnum.nextDoc()) != DocsEnum.NO_MORE_DOCS) {
-            bitSet.set(doc);
+            if (visible) {
+                bitSet.set(doc);
+            } else {
+                bitSet.clear(doc);
+            }
         }
     }
 

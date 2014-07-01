@@ -273,4 +273,9 @@ public abstract class GraphBase implements Graph {
     public boolean isEdgeBoostSupported() {
         return getSearchIndex().isEdgeBoostSupported();
     }
+
+    @Override
+    public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
+        return getSearchIndex().getSearchIndexSecurityGranularity();
+    }
 }

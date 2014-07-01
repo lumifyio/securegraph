@@ -21,7 +21,7 @@
             <directory>${project.build.directory}/</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>elasticsearch-securegraph-${elasticsearch.version}.jar</include>
+                <include>elasticsearch-securegraph-${jar.version}.jar</include>
             </includes>
         </fileSet>
     </fileSets>

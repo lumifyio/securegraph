@@ -72,4 +72,9 @@ public class DefaultSearchIndex implements SearchIndex {
     public boolean isEdgeBoostSupported() {
         return false;
     }
+
+    @Override
+    public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
+        return SearchIndexSecurityGranularity.PROPERTY;
+    }
 }

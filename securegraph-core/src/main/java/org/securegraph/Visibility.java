@@ -1,5 +1,7 @@
 package org.securegraph;
 
+import java.util.Set;
+
 public class Visibility implements Comparable<Visibility> {
     private final String visibilityString;
 
@@ -33,5 +35,23 @@ public class Visibility implements Comparable<Visibility> {
     @Override
     public int compareTo(Visibility o) {
         return getVisibilityString().compareTo(o.getVisibilityString());
+    }
+
+    public static Visibility and(Set<String> visibilityStrings) {
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+        for (String visibilityString : visibilityStrings) {
+            if (visibilityString == null || visibilityString.length() == 0) {
+                continue;
+            }
+            if (!first) {
+                result.append('&');
+            }
+            result.append('(');
+            result.append(visibilityString);
+            result.append(')');
+            first = false;
+        }
+        return new Visibility(result.toString());
     }
 }

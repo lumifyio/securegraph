@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
@@ -106,7 +108,12 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
             throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
         }
 
+        Set<String> visibilityStrings = new HashSet<String>();
+        visibilityStrings.add(element.getVisibility().getVisibilityString());
+
         for (Property property : element.getProperties()) {
+            visibilityStrings.add(property.getVisibility().getVisibilityString());
+
             Object propertyValue = property.getValue();
             if (propertyValue != null && shouldIgnoreType(propertyValue.getClass())) {
                 continue;
@@ -145,6 +152,13 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
             jsonBuilder.field(property.getName(), propertyValue);
         }
+
+        String visibilityString = Visibility.and(visibilityStrings).getVisibilityString();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("element \"" + element.getId() + "\" visibilityString \"" + visibilityString + "\"");
+        }
+        jsonBuilder.field(VISIBILITY_FIELD_NAME, visibilityString);
+
         return jsonBuilder;
     }
 
@@ -208,5 +222,10 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
         return new ElasticSearchGraphQuery(getClient(), getIndexName(), graph, queryString, getPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
+    }
+
+    @Override
+    public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
+        return SearchIndexSecurityGranularity.DOCUMENT;
     }
 }
