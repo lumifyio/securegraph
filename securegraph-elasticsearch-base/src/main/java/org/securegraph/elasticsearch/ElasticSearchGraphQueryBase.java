@@ -222,11 +222,11 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     }
 
     protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
+        AndFilterBuilder filterBuilder = getFilterBuilder(filters);
         return getClient()
                 .prepareSearch(getIndexName())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
-                .setQuery(functionScoreQuery)
-                .setPostFilter(getFilterBuilder(filters))
+                .setQuery(QueryBuilders.filteredQuery(functionScoreQuery, filterBuilder))
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
     }
