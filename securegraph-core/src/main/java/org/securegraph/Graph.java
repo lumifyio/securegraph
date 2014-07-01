@@ -284,4 +284,9 @@ public interface Graph {
      * Clears all data from the graph.
      */
     void clearData();
+
+    /**
+     * Gets the granularity of the search index {@link org.securegraph.SearchIndexSecurityGranularity}
+     */
+    SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
 }

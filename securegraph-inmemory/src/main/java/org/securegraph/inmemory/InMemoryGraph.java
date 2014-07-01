@@ -81,7 +81,7 @@ public class InMemoryGraph extends GraphBase {
     public Iterable<Vertex> getVertices(final Authorizations authorizations) throws SecureGraphException {
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
-            protected boolean isIncluded(InMemoryVertex src, Vertex edge) {
+            protected boolean isIncluded(InMemoryVertex src, Vertex vertex) {
                 return canRead(src.getVisibility(), authorizations);
             }
 

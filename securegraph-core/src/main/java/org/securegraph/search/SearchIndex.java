@@ -30,4 +30,6 @@ public interface SearchIndex {
     boolean isEdgeBoostSupported();
 
     void clearData();
+
+    SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
 }
