@@ -18,11 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
+import java.util.zip.GZIPInputStream;
 
 public abstract class ExampleBase {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ExampleBase.class);
@@ -42,7 +43,7 @@ public abstract class ExampleBase {
         populateData();
     }
 
-    protected void populateData() {
+    protected void populateData() throws IOException {
 
     }
 
@@ -180,5 +181,45 @@ public abstract class ExampleBase {
             json.put(entry.getKey(), entry.getValue());
         }
         return json;
+    }
+
+    protected void loadBabyNamesDataSet(int numberOfVerticesToCreate, String[] visibilities) throws IOException {
+        LOGGER.debug("populating data count: " + numberOfVerticesToCreate);
+        Authorizations authorizations = createAuthorizations();
+        Random random = new Random(1000);
+
+        File file = new File("../baby-names.txt.gz");
+        BufferedReader br = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
+        try {
+            int i = 0;
+            String line;
+            while (i < numberOfVerticesToCreate && (line = br.readLine()) != null) {
+                if (i % 1000 == 0) {
+                    LOGGER.debug("populating data " + i + "/" + numberOfVerticesToCreate);
+                }
+                String[] lineParts = line.split(",");
+                if (lineParts.length != 4) {
+                    continue;
+                }
+                int year = Integer.parseInt(lineParts[0]);
+                String name = lineParts[1];
+                int sex = lineParts[2].trim().equals("M") ? 1 : 0;
+                int count = Integer.parseInt(lineParts[3]);
+                Visibility visibility = new Visibility(visibilities[i % visibilities.length]);
+                GregorianCalendar c = new GregorianCalendar();
+                c.set(year, random.nextInt(12), random.nextInt(30));
+                getGraph().prepareVertex(visibility)
+                        .setProperty("year", c.getTime(), visibility)
+                        .setProperty("name", name, visibility)
+                        .setProperty("sex", sex, visibility)
+                        .setProperty("count", count, visibility)
+                        .save(authorizations);
+                i++;
+            }
+        } finally {
+            br.close();
+        }
+        getGraph().flush();
+        LOGGER.debug("populated data");
     }
 }

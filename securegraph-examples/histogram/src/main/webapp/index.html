@@ -24,8 +24,9 @@
 
 <h4>Field</h4>
 <select id="field">
-    <option value="age">Age</option>
-    <option value="publishedDate">Published Date</option>
+    <option value="year">Year</option>
+    <option value="sex">Sex</option>
+    <option value="count">Count</option>
 </select>
 
 <h4>Interval</h4>
@@ -74,7 +75,7 @@
         var html = '';
         buckets.forEach(function (b) {
             var width = (500 * (b.count / maxCount)) + 50;
-            var text = $('#field').val() == 'publishedDate' ? new Date(b.key).toISOString() : b.key;
+            var text = $('#field').val() == 'year' ? new Date(b.key).toISOString() : b.key;
             text += ' (' + b.count + ')';
             html += '<div style="background-color: #ff0000; width: ' + width + 'px">' + text + '</div>';
         });

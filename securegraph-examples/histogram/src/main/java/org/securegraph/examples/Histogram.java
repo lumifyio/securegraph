@@ -7,15 +7,14 @@ import org.json.JSONObject;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
-import org.securegraph.Visibility;
 import org.securegraph.query.*;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Date;
-import java.util.Random;
 
 import static org.securegraph.util.IterableUtils.count;
 
@@ -46,52 +45,24 @@ public class Histogram extends ExampleBase {
     }
 
     @Override
-    protected void populateData() {
+    protected void populateData() throws IOException {
         if (count(getGraph().getVertices(createAuthorizations(VISIBILITIES))) >= VERTICES_TO_CREATE) {
             LOGGER.debug("skipping create data. data already exists");
             return;
         }
 
-        defineTypes();
         addAuthorizations();
         populateVertices();
     }
 
-    private void populateVertices() {
-        LOGGER.debug("populating data count: " + VERTICES_TO_CREATE);
-        Authorizations authorizations = createAuthorizations();
-        Random random = new Random(1000);
-        for (int i = 0; i < VERTICES_TO_CREATE; ) {
-            for (String v : VISIBILITIES) {
-                if (i % 1000 == 0) {
-                    LOGGER.debug("populating data " + i + "/" + VERTICES_TO_CREATE);
-                }
-                Visibility visibility = new Visibility(v);
-                getGraph().prepareVertex(visibility)
-                        .setProperty("age", random.nextInt(100), visibility)
-                        .setProperty("publishedDate", new Date(1404159116647L + random.nextInt(1000000)), visibility)
-                        .save(authorizations);
-                i++;
-            }
-        }
-        getGraph().flush();
-        LOGGER.debug("populated data");
+    private void populateVertices() throws IOException {
+        loadBabyNamesDataSet(VERTICES_TO_CREATE, VISIBILITIES);
     }
 
     private void addAuthorizations() {
         for (String v : VISIBILITIES) {
             addAuthorizationToUser(v);
         }
-    }
-
-    private void defineTypes() {
-        getGraph().defineProperty("age")
-                .dataType(Integer.class)
-                .define();
-        getGraph().defineProperty("publishedDate")
-                .dataType(Date.class)
-                .define();
-        getGraph().flush();
     }
 
     public static class Router extends RouterBase {
