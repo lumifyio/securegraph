@@ -131,6 +131,9 @@ public class Histogram extends ExampleBase {
             HistogramResult histogramResult = ((IterableWithHistogramResults) vertices).getHistogramResults(HISTOGRAM_NAME);
 
             JSONObject json = new JSONObject();
+            if (vertices instanceof IterableWithTotalHits) {
+                json.put("totalHits", ((IterableWithTotalHits) vertices).getTotalHits());
+            }
             json.put("histogramResult", histogramResultToJson(histogramResult));
 
             response.getOutputStream().write(json.toString(2).getBytes());
