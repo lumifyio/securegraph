@@ -154,9 +154,6 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         }
 
         String visibilityString = Visibility.and(visibilityStrings).getVisibilityString();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("element \"" + element.getId() + "\" visibilityString \"" + visibilityString + "\"");
-        }
         jsonBuilder.field(VISIBILITY_FIELD_NAME, visibilityString);
 
         return jsonBuilder;

@@ -6,7 +6,6 @@ import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;

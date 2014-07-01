@@ -201,7 +201,6 @@
         <module>securegraph-inmemory</module>
         <module>securegraph-tools</module>
         <module>securegraph-accumulo-iterators</module>
-        <module>securegraph-performance-test</module>
         <module>securegraph-kryo-serializer</module>
         <module>securegraph-elasticsearch-parentchild</module>
         <module>securegraph-elasticsearch-plugin</module>

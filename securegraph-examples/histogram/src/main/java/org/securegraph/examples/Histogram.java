@@ -8,6 +8,8 @@ import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
 import org.securegraph.query.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -19,11 +21,13 @@ import java.util.Date;
 import static org.securegraph.util.IterableUtils.count;
 
 public class Histogram extends ExampleBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Histogram.class);
     private static Histogram _this;
     private static final String VISIBILITIES[] = new String[]{"a", "b", "c", "d"};
-    private static final int VERTICES_TO_CREATE = 10000;
+    private static final int VERTICES_TO_CREATE = 3000;
 
     public static void main(String[] args) throws Exception {
+        LOGGER.debug("begin " + Histogram.class.getName());
         _this = new Histogram();
         _this.run(args);
     }
@@ -56,7 +60,8 @@ public class Histogram extends ExampleBase {
     }
 
     private void populateVertices() throws IOException {
-        loadBabyNamesDataSet(VERTICES_TO_CREATE, VISIBILITIES);
+        //loadBabyNamesDataSet(VERTICES_TO_CREATE, VISIBILITIES);
+        loadImdbDataSet(VERTICES_TO_CREATE, VISIBILITIES);
     }
 
     private void addAuthorizations() {
