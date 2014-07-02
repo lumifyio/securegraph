@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
+import org.securegraph.examples.dataset.ImdbDataset;
 import org.securegraph.query.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +61,8 @@ public class Histogram extends ExampleBase {
     }
 
     private void populateVertices() throws IOException {
-        //loadBabyNamesDataSet(VERTICES_TO_CREATE, VISIBILITIES);
-        loadImdbDataSet(VERTICES_TO_CREATE, VISIBILITIES);
+        //BabyNamesDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
+        ImdbDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
     }
 
     private void addAuthorizations() {

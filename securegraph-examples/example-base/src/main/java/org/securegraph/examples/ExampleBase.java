@@ -18,14 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
-import java.io.*;
-import java.util.*;
-import java.util.zip.GZIPInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Properties;
 
 public abstract class ExampleBase {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ExampleBase.class);
-    public static final String CATEGORY_ID_PREFIX = "CATEGORY_";
-    public static final Object MOVIE_ID_PREFIX = "MOVIE_";
 
     @Parameter(names = "-port", description = "Port to run server on")
     private int port = 7777;
@@ -180,100 +180,5 @@ public abstract class ExampleBase {
             json.put(entry.getKey(), entry.getValue());
         }
         return json;
-    }
-
-    protected void loadBabyNamesDataSet(int numberOfVerticesToCreate, String[] visibilities) throws IOException {
-        LOGGER.debug("populating data count: " + numberOfVerticesToCreate);
-        Authorizations authorizations = createAuthorizations();
-
-        File file = new File("../baby-names.txt.gz");
-        BufferedReader br = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))));
-        try {
-            int i = 0;
-            String line;
-            while (i < numberOfVerticesToCreate && (line = br.readLine()) != null) {
-                if (i % 1000 == 0) {
-                    LOGGER.debug("populating data " + i + "/" + numberOfVerticesToCreate);
-                }
-                String[] lineParts = line.split(",");
-                if (lineParts.length != 4) {
-                    continue;
-                }
-                int year = Integer.parseInt(lineParts[0]);
-                String name = lineParts[1];
-                int sex = lineParts[2].trim().equals("M") ? 1 : 0;
-                int count = Integer.parseInt(lineParts[3]);
-                Visibility visibility = new Visibility(visibilities[i % visibilities.length]);
-                GregorianCalendar c = new GregorianCalendar();
-                c.set(year, Calendar.JANUARY, 1, 1, 1, 1);
-                c.set(Calendar.MILLISECOND, 0);
-                getGraph().prepareVertex(visibility)
-                        .setProperty("year", c.getTime(), visibility)
-                        .setProperty("name", name, visibility)
-                        .setProperty("sex", sex, visibility)
-                        .setProperty("count", count, visibility)
-                        .save(authorizations);
-                i++;
-            }
-        } finally {
-            br.close();
-        }
-        getGraph().flush();
-        LOGGER.debug("populated data");
-    }
-
-    protected void loadImdbDataSet(int numberOfVerticesToCreate, String[] visibilities) throws FileNotFoundException {
-        Authorizations authorizations = createAuthorizations();
-        InputStream in = new FileInputStream(new File("../imdb.csv"));
-        Map<String, Vertex> categoryCache = new HashMap<String, Vertex>();
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            for (int i = 0; i < numberOfVerticesToCreate; i++) {
-                String line = reader.readLine();
-                if (line == null) {
-                    throw new RuntimeException("Not enough lines in file. Needed " + numberOfVerticesToCreate + " found " + i);
-                }
-                String[] parts = line.split("\t");
-                String title = parts[0];
-                int year = Integer.parseInt(parts[1]);
-                double rating = Double.parseDouble(parts[2]);
-                String[] categoriesArray;
-                if (parts.length < 5) {
-                    categoriesArray = new String[0];
-                } else {
-                    categoriesArray = parts[4].split(",");
-                }
-
-                GregorianCalendar c = new GregorianCalendar();
-                c.set(year, Calendar.JANUARY, 1, 1, 1, 1);
-                c.set(Calendar.MILLISECOND, 0);
-                Visibility visibility = new Visibility(visibilities[i % visibilities.length]);
-                Vertex movieVertex = graph.prepareVertex(MOVIE_ID_PREFIX + title, visibility)
-                        .setProperty("title", title, visibility)
-                        .setProperty("year", c.getTime(), visibility)
-                        .setProperty("rating", rating, visibility)
-                        .save(authorizations);
-                for (String category : categoriesArray) {
-                    visibility = new Visibility("");
-                    Vertex categoryVertex = categoryCache.get(category);
-                    if (categoryVertex == null) {
-                        categoryVertex = graph.prepareVertex(CATEGORY_ID_PREFIX + category, visibility)
-                                .setProperty("title", category, visibility)
-                                .save(authorizations);
-                        categoryCache.put(category, categoryVertex);
-                    }
-                    graph.addEdge(categoryVertex.getId() + "->" + movieVertex.getId(), categoryVertex, movieVertex, "hasMovie", visibility, authorizations);
-                }
-            }
-            graph.flush();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create vertices", e);
-        } finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                // do nothing
-            }
-        }
     }
 }
