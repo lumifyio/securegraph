@@ -91,21 +91,10 @@ public class Histogram extends ExampleBase {
             String field = getRequiredParameter(request, "field");
             String interval = getRequiredParameter(request, "interval");
 
-            Query query = _this.getGraph()
-                    .query(q, authorizations)
-                    .limit(0);
             String HISTOGRAM_NAME = "hist";
-            if (query instanceof GraphQueryWithHistogram) {
-                ((GraphQueryWithHistogram) query).addHistogram(HISTOGRAM_NAME, field, interval);
-            } else {
-                throw new RuntimeException("query " + query.getClass().getName() + " does not support histograms");
-            }
-            Iterable<Vertex> vertices = query.vertices();
 
-            if (!(vertices instanceof IterableWithHistogramResults)) {
-                throw new RuntimeException("query results " + query.getClass().getName() + " does not support histograms");
-            }
-            HistogramResult histogramResult = ((IterableWithHistogramResults) vertices).getHistogramResults(HISTOGRAM_NAME);
+            Iterable<Vertex> vertices = queryForVertices(HISTOGRAM_NAME, q, field, interval, authorizations);
+            HistogramResult histogramResult = getHistogramResult(vertices, HISTOGRAM_NAME);
 
             JSONObject json = new JSONObject();
             if (vertices instanceof IterableWithTotalHits) {
@@ -114,6 +103,25 @@ public class Histogram extends ExampleBase {
             json.put("histogramResult", histogramResultToJson(histogramResult));
 
             response.getOutputStream().write(json.toString(2).getBytes());
+        }
+
+        private static Iterable<Vertex> queryForVertices(String histogramName, String q, String field, String interval, Authorizations authorizations) {
+            Query query = _this.getGraph()
+                    .query(q, authorizations)
+                    .limit(0);
+            if (query instanceof GraphQueryWithHistogram) {
+                ((GraphQueryWithHistogram) query).addHistogram(histogramName, field, interval);
+            } else {
+                throw new RuntimeException("query " + query.getClass().getName() + " does not support histograms");
+            }
+            return query.vertices();
+        }
+
+        private static HistogramResult getHistogramResult(Iterable<Vertex> vertices, String histogramName) {
+            if (!(vertices instanceof IterableWithHistogramResults)) {
+                throw new RuntimeException("query results " + vertices.getClass().getName() + " does not support histograms");
+            }
+            return ((IterableWithHistogramResults) vertices).getHistogramResults(histogramName);
         }
 
         private JSONObject histogramResultToJson(HistogramResult histogramResult) {
