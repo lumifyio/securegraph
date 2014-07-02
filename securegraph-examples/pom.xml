@@ -15,7 +15,7 @@
 
     <modules>
         <module>example-base</module>
-        <module>histogram</module>
+        <module>aggregations</module>
     </modules>
 
 

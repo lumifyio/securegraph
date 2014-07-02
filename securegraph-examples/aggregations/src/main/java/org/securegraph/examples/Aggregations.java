@@ -21,15 +21,15 @@ import java.util.Date;
 
 import static org.securegraph.util.IterableUtils.count;
 
-public class Histogram extends ExampleBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Histogram.class);
-    private static Histogram _this;
+public class Aggregations extends ExampleBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Aggregations.class);
+    private static Aggregations _this;
     private static final String VISIBILITIES[] = new String[]{"a", "b", "c", "d"};
     private static final int VERTICES_TO_CREATE = 3000;
 
     public static void main(String[] args) throws Exception {
-        LOGGER.debug("begin " + Histogram.class.getName());
-        _this = new Histogram();
+        LOGGER.debug("begin " + Aggregations.class.getName());
+        _this = new Aggregations();
         _this.run(args);
     }
 
