@@ -7,7 +7,7 @@ import org.json.JSONObject;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
-import org.securegraph.examples.dataset.ImdbDataset;
+import org.securegraph.examples.dataset.BabyNamesDataset;
 import org.securegraph.query.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,8 +61,8 @@ public class Histogram extends ExampleBase {
     }
 
     private void populateVertices() throws IOException {
-        //BabyNamesDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
-        ImdbDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
+        BabyNamesDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
+        //ImdbDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
     }
 
     private void addAuthorizations() {
@@ -80,6 +80,11 @@ public class Histogram extends ExampleBase {
         }
     }
 
+    public static enum QueryType {
+        HISTOGRAM,
+        TERMS
+    }
+
     public static class Search extends HandlerBase {
 
         @Override
@@ -90,38 +95,49 @@ public class Histogram extends ExampleBase {
             String q = getRequiredParameter(request, "q");
             String field = getRequiredParameter(request, "field");
             String interval = getRequiredParameter(request, "interval");
+            QueryType queryType = getQueryType(request, "querytype");
 
-            String HISTOGRAM_NAME = "hist";
+            String AGGREGATION_NAME = "agg";
 
-            Iterable<Vertex> vertices = queryForVertices(HISTOGRAM_NAME, q, field, interval, authorizations);
-            HistogramResult histogramResult = getHistogramResult(vertices, HISTOGRAM_NAME);
+            Iterable<Vertex> vertices = queryForVertices(AGGREGATION_NAME, q, field, interval, queryType, authorizations);
 
             JSONObject json = new JSONObject();
             if (vertices instanceof IterableWithTotalHits) {
                 json.put("totalHits", ((IterableWithTotalHits) vertices).getTotalHits());
             }
-            json.put("histogramResult", histogramResultToJson(histogramResult));
+            if (queryType == QueryType.HISTOGRAM) {
+                json.put("histogramResult", histogramResultToJson(getHistogramResult(vertices, AGGREGATION_NAME)));
+            } else if (queryType == QueryType.TERMS) {
+                json.put("termsResult", termsResultToJson(getTermsResult(vertices, AGGREGATION_NAME)));
+            }
 
             response.getOutputStream().write(json.toString(2).getBytes());
         }
 
-        private static Iterable<Vertex> queryForVertices(String histogramName, String q, String field, String interval, Authorizations authorizations) {
+        private QueryType getQueryType(HttpServletRequest request, String parameterName) {
+            String queryType = getRequiredParameter(request, parameterName);
+            return QueryType.valueOf(queryType);
+        }
+
+        private static Iterable<Vertex> queryForVertices(String histogramName, String q, String field, String interval, QueryType queryType, Authorizations authorizations) {
             Query query = _this.getGraph()
                     .query(q, authorizations)
                     .limit(0);
-            if (query instanceof GraphQueryWithHistogram) {
-                ((GraphQueryWithHistogram) query).addHistogram(histogramName, field, interval);
+            if (queryType == QueryType.TERMS && query instanceof GraphQueryWithTermsAggregation) {
+                ((GraphQueryWithTermsAggregation) query).addTermsAggregation(histogramName, field);
+            } else if (queryType == QueryType.HISTOGRAM && query instanceof GraphQueryWithHistogramAggregation) {
+                ((GraphQueryWithHistogramAggregation) query).addHistogramAggregation(histogramName, field, interval);
             } else {
-                throw new RuntimeException("query " + query.getClass().getName() + " does not support histograms");
+                throw new RuntimeException("query " + query.getClass().getName() + " does not support " + queryType);
             }
             return query.vertices();
         }
 
-        private static HistogramResult getHistogramResult(Iterable<Vertex> vertices, String histogramName) {
+        private static HistogramResult getHistogramResult(Iterable<Vertex> vertices, String aggregationName) {
             if (!(vertices instanceof IterableWithHistogramResults)) {
                 throw new RuntimeException("query results " + vertices.getClass().getName() + " does not support histograms");
             }
-            return ((IterableWithHistogramResults) vertices).getHistogramResults(histogramName);
+            return ((IterableWithHistogramResults) vertices).getHistogramResults(aggregationName);
         }
 
         private JSONObject histogramResultToJson(HistogramResult histogramResult) {
@@ -129,6 +145,32 @@ public class Histogram extends ExampleBase {
 
             JSONArray bucketsJson = new JSONArray();
             for (HistogramBucket bucket : histogramResult.getBuckets()) {
+                JSONObject bucketJson = new JSONObject();
+                Object key = bucket.getKey();
+                if (key instanceof Date) {
+                    key = ((Date) key).getTime();
+                }
+                bucketJson.put("key", key);
+                bucketJson.put("count", bucket.getCount());
+                bucketsJson.put(bucketJson);
+            }
+            json.put("buckets", bucketsJson);
+
+            return json;
+        }
+
+        private static TermsResult getTermsResult(Iterable<Vertex> vertices, String aggregationName) {
+            if (!(vertices instanceof IterableWithTermsResults)) {
+                throw new RuntimeException("query results " + vertices.getClass().getName() + " does not support terms");
+            }
+            return ((IterableWithTermsResults) vertices).getTermsResults(aggregationName);
+        }
+
+        private JSONObject termsResultToJson(TermsResult termsResult) {
+            JSONObject json = new JSONObject();
+
+            JSONArray bucketsJson = new JSONArray();
+            for (TermsBucket bucket : termsResult.getBuckets()) {
                 JSONObject bucketJson = new JSONObject();
                 Object key = bucket.getKey();
                 if (key instanceof Date) {

@@ -6,6 +6,7 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.securegraph.Element;
 import org.securegraph.SecureGraphException;
 import org.securegraph.query.*;
@@ -19,7 +20,8 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
         IterableWithTotalHits<T>,
         IterableWithSearchTime<T>,
         IterableWithScores<T>,
-        IterableWithHistogramResults<T> {
+        IterableWithHistogramResults<T>,
+        IterableWithTermsResults<T> {
     private final SearchResponse searchResponse;
     private final long totalHits;
     private final long searchTimeInNanoSeconds;
@@ -71,5 +73,23 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
             throw new SecureGraphException("Aggregation is not a histogram: " + agg.getClass().getName());
         }
         return new HistogramResult(buckets);
+    }
+
+    @Override
+    public TermsResult getTermsResults(String name) {
+        List<TermsBucket> buckets = new ArrayList<TermsBucket>();
+        Aggregation agg = this.searchResponse.getAggregations().get(name);
+        if (agg == null) {
+            return null;
+        }
+        if (agg instanceof Terms) {
+            Terms h = (Terms) agg;
+            for (Terms.Bucket b : h.getBuckets()) {
+                buckets.add(new TermsBucket(b.getKey(), b.getDocCount()));
+            }
+        } else {
+            throw new SecureGraphException("Aggregation is not a terms: " + agg.getClass().getName());
+        }
+        return new TermsResult(buckets);
     }
 }
