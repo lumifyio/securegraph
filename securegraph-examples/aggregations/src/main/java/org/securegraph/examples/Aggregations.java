@@ -5,9 +5,7 @@ import com.altamiracorp.miniweb.HandlerChain;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.securegraph.Authorizations;
-import org.securegraph.Graph;
 import org.securegraph.Vertex;
-import org.securegraph.examples.dataset.BabyNamesDataset;
 import org.securegraph.query.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,16 +14,11 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Date;
-
-import static org.securegraph.util.IterableUtils.count;
 
 public class Aggregations extends ExampleBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(Aggregations.class);
     private static Aggregations _this;
-    private static final String VISIBILITIES[] = new String[]{"a", "b", "c", "d"};
-    private static final int VERTICES_TO_CREATE = 3000;
 
     public static void main(String[] args) throws Exception {
         LOGGER.debug("begin " + Aggregations.class.getName());
@@ -36,39 +29,6 @@ public class Aggregations extends ExampleBase {
     @Override
     protected Class<? extends Servlet> getServletClass() {
         return Router.class;
-    }
-
-    @Override
-    protected void clearGraph(Graph graph) {
-        int count = count(graph.getVertices(createAuthorizations(VISIBILITIES)));
-        if (count >= VERTICES_TO_CREATE) {
-            LOGGER.debug("skipping clear graph. data already exists. count: " + count);
-            return;
-        }
-        LOGGER.debug("clearing " + count + " vertices");
-        super.clearGraph(graph);
-    }
-
-    @Override
-    protected void populateData() throws IOException {
-        if (count(getGraph().getVertices(createAuthorizations(VISIBILITIES))) >= VERTICES_TO_CREATE) {
-            LOGGER.debug("skipping create data. data already exists");
-            return;
-        }
-
-        addAuthorizations();
-        populateVertices();
-    }
-
-    private void populateVertices() throws IOException {
-        BabyNamesDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
-        //ImdbDataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
-    }
-
-    private void addAuthorizations() {
-        for (String v : VISIBILITIES) {
-            addAuthorizationToUser(v);
-        }
     }
 
     public static class Router extends RouterBase {

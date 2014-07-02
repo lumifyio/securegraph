@@ -11,11 +11,11 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ImdbDataset {
+public class ImdbDataset extends Dataset {
     public static final String CATEGORY_ID_PREFIX = "CATEGORY_";
     public static final Object MOVIE_ID_PREFIX = "MOVIE_";
 
-    public static void load(Graph graph, int numberOfVerticesToCreate, String[] visibilities, Authorizations authorizations) throws FileNotFoundException {
+    public void load(Graph graph, int numberOfVerticesToCreate, String[] visibilities, Authorizations authorizations) throws FileNotFoundException {
         InputStream in = new FileInputStream(new File("../imdb.csv"));
         Map<String, Vertex> categoryCache = new HashMap<String, Vertex>();
         try {

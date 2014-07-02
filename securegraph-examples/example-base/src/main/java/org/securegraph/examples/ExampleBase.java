@@ -13,6 +13,10 @@ import org.json.JSONObject;
 import org.securegraph.*;
 import org.securegraph.accumulo.AccumuloAuthorizations;
 import org.securegraph.accumulo.AccumuloGraph;
+import org.securegraph.examples.dataset.BabyNamesDataset;
+import org.securegraph.examples.dataset.Dataset;
+import org.securegraph.examples.dataset.GeoNamesDataset;
+import org.securegraph.examples.dataset.ImdbDataset;
 import org.securegraph.util.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +28,22 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.securegraph.util.IterableUtils.count;
+
 public abstract class ExampleBase {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ExampleBase.class);
+    private static final String VISIBILITIES[] = new String[]{"a", "b", "c", "d"};
+    private static final int VERTICES_TO_CREATE = 3000;
+    private Dataset dataset;
 
     @Parameter(names = "-port", description = "Port to run server on")
     private int port = 7777;
+
+    @Parameter(names = "-clear", description = "Clear before running")
+    private boolean clear = false;
+
+    @Parameter(names = "-dataset", description = "Name of the dataset")
+    private String datasetName = null;
 
     private Server server;
     private Graph graph;
@@ -38,16 +53,53 @@ public abstract class ExampleBase {
 
         this.server = runJetty(port);
         this.graph = openGraph(getGraphConfig());
+
+        if (datasetName == null) {
+            throw new RuntimeException("must specify a dataset");
+        } else if (datasetName.equals("GeoNamesDataset")) {
+            dataset = new GeoNamesDataset();
+        } else if (datasetName.equals("BabyNamesDataset")) {
+            dataset = new BabyNamesDataset();
+        } else if (datasetName.equals("ImdbDataset")) {
+            dataset = new ImdbDataset();
+        } else {
+            throw new RuntimeException("Unknown dataset name");
+        }
+
         clearGraph(this.graph);
         populateData();
     }
 
-    protected void populateData() throws IOException {
-
+    protected void clearGraph(Graph graph) {
+        if (!clear) {
+            int count = count(graph.getVertices(createAuthorizations(VISIBILITIES)));
+            if (count >= VERTICES_TO_CREATE) {
+                LOGGER.debug("skipping clear graph. data already exists. count: " + count);
+                return;
+            }
+        }
+        LOGGER.debug("clearing vertices");
+        graph.clearData();
     }
 
-    protected void clearGraph(Graph graph) {
-        graph.clearData();
+    protected void populateData() throws IOException {
+        if (count(getGraph().getVertices(createAuthorizations(VISIBILITIES))) >= VERTICES_TO_CREATE) {
+            LOGGER.debug("skipping create data. data already exists");
+            return;
+        }
+
+        addAuthorizations();
+        populateVertices();
+    }
+
+    private void populateVertices() throws IOException {
+        dataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
+    }
+
+    private void addAuthorizations() {
+        for (String v : VISIBILITIES) {
+            addAuthorizationToUser(v);
+        }
     }
 
     protected void stop() throws Exception {
