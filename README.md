@@ -15,7 +15,7 @@ Maven
 
 ```
 <properties>
-    <securegraph.version>0.6.0</securegraph.version>
+    <securegraph.version>0.7.0</securegraph.version>
 </properties>
 ```
 
