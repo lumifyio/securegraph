@@ -1,16 +1,16 @@
 package org.securegraph.query;
 
 public class TermsQueryItem {
-    private final String name;
+    private final String aggregationName;
     private final String fieldName;
 
-    public TermsQueryItem(String name, String fieldName) {
-        this.name = name;
+    public TermsQueryItem(String aggregationName, String fieldName) {
+        this.aggregationName = aggregationName;
         this.fieldName = fieldName;
     }
 
-    public String getName() {
-        return name;
+    public String getAggregationName() {
+        return aggregationName;
     }
 
     public String getFieldName() {

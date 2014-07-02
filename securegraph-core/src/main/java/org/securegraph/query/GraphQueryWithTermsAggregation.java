@@ -1,5 +1,5 @@
 package org.securegraph.query;
 
 public interface GraphQueryWithTermsAggregation extends GraphQuery {
-    GraphQueryWithTermsAggregation addTermsAggregation(String histogramName, String field);
+    GraphQueryWithTermsAggregation addTermsAggregation(String aggregationName, String field);
 }

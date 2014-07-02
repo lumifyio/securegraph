@@ -18,7 +18,8 @@
 
 <h4>Query Type</h4>
 <input type="radio" name="querytype" value="HISTOGRAM" checked>Histogram<br>
-<input type="radio" name="querytype" value="TERMS">Terms
+<input type="radio" name="querytype" value="TERMS">Terms<br>
+<input type="radio" name="querytype" value="GEOHASH">Geohash
 
 <h4>Query</h4>
 <input id="q" value="*">
@@ -33,10 +34,14 @@
     <option value="rating">Rating (IMDB)</option>
     <option value="sex">Sex (BabyNames)</option>
     <option value="population">Population (GeoNames)</option>
+    <option value="geoLocation">GeoLocation (GeoNames)</option>
 </select>
 
-<h4>Interval</h4>
+<h4>Interval (Histogram)</h4>
 <input id="interval" value="5">
+
+<h4>Precision (Geohash)</h4>
+<input id="precision" value="5">
 
 <br><br>
 <button onclick="run()">Run</button>
@@ -56,12 +61,13 @@
             authorizations: $('#authorizations').val(),
             field: $('#field').val(),
             interval: $('#interval').val(),
+            precision: $('#precision').val(),
             querytype: $('input:radio[name=querytype]:checked').val()
         }, function (results) {
             results = JSON.parse(results);
             console.log(results);
             $('#totalHits').html(results.totalHits || 'No provided');
-            var html = bucketsToHtml((results.histogramResult || results.termsResult).buckets);
+            var html = bucketsToHtml((results.histogramResult || results.termsResult || results.geohashResult).buckets);
             $('#results').html(html);
         }).fail(function (err) {
             console.log(err);
@@ -82,7 +88,14 @@
         var html = '';
         buckets.forEach(function (b) {
             var width = (500 * (b.count / maxCount)) + 50;
-            var text = $('#field').val() == 'year' ? new Date(b.key).toISOString() : b.key;
+            var text;
+            if (b.geoPoint) {
+                text = b.geoPoint.latitude + ', ' + b.geoPoint.longitude;
+            } else if ($('#field').val() == 'year') {
+                text = new Date(b.key).toISOString();
+            } else {
+                text = b.key;
+            }
             text += ' (' + b.count + ')';
             html += '<div style="background-color: #ff0000; width: ' + width + 'px">' + text + '</div>';
         });

@@ -4,12 +4,14 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.bucket.geogrid.GeoHashGrid;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.securegraph.Element;
 import org.securegraph.SecureGraphException;
 import org.securegraph.query.*;
+import org.securegraph.type.GeoPoint;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +23,8 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
         IterableWithSearchTime<T>,
         IterableWithScores<T>,
         IterableWithHistogramResults<T>,
-        IterableWithTermsResults<T> {
+        IterableWithTermsResults<T>,
+        IterableWithGeohashResults<T> {
     private final SearchResponse searchResponse;
     private final long totalHits;
     private final long searchTimeInNanoSeconds;
@@ -91,5 +94,24 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
             throw new SecureGraphException("Aggregation is not a terms: " + agg.getClass().getName());
         }
         return new TermsResult(buckets);
+    }
+
+    @Override
+    public GeohashResult getGeohashResults(String name) {
+        List<GeohashBucket> buckets = new ArrayList<GeohashBucket>();
+        Aggregation agg = this.searchResponse.getAggregations().get(name);
+        if (agg == null) {
+            return null;
+        }
+        if (agg instanceof GeoHashGrid) {
+            GeoHashGrid h = (GeoHashGrid) agg;
+            for (GeoHashGrid.Bucket b : h.getBuckets()) {
+                org.elasticsearch.common.geo.GeoPoint g = b.getKeyAsGeoPoint();
+                buckets.add(new GeohashBucket(b.getKey(), b.getDocCount(), new GeoPoint(g.getLat(), g.getLon())));
+            }
+        } else {
+            throw new SecureGraphException("Aggregation is not a geohash: " + agg.getClass().getName());
+        }
+        return new GeohashResult(buckets);
     }
 }

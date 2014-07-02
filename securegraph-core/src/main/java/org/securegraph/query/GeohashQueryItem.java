@@ -1,14 +1,14 @@
 package org.securegraph.query;
 
-public class HistogramQueryItem {
+public class GeohashQueryItem {
     private final String aggregationName;
     private final String fieldName;
-    private final String interval;
+    private final int precision;
 
-    public HistogramQueryItem(String aggregationName, String fieldName, String interval) {
+    public GeohashQueryItem(String aggregationName, String fieldName, int precision) {
         this.aggregationName = aggregationName;
         this.fieldName = fieldName;
-        this.interval = interval;
+        this.precision = precision;
     }
 
     public String getAggregationName() {
@@ -19,7 +19,7 @@ public class HistogramQueryItem {
         return fieldName;
     }
 
-    public String getInterval() {
-        return interval;
+    public int getPrecision() {
+        return precision;
     }
 }
