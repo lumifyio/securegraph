@@ -1,8 +1,9 @@
 package org.securegraph.query;
 
 import org.securegraph.type.GeoPoint;
+import org.securegraph.type.GeoRect;
 
-public class GeohashBucket {
+public abstract class GeohashBucket {
     public final String key;
     public final long count;
     private final GeoPoint geoPoint;
@@ -24,4 +25,6 @@ public class GeohashBucket {
     public GeoPoint getGeoPoint() {
         return geoPoint;
     }
+
+    public abstract GeoRect getGeoCell();
 }

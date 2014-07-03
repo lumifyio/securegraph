@@ -57,7 +57,7 @@ public class GeoPoint implements Serializable, GeoShape, Comparable<GeoPoint> {
 
     @Override
     public String toString() {
-        return "GeoPoint[" + getLatitude() + ", " + getLongitude() + "]";
+        return "(" + getLatitude() + ", " + getLongitude() + ")";
     }
 
     @Override

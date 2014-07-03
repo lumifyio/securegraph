@@ -33,7 +33,6 @@ import static org.securegraph.util.IterableUtils.count;
 public abstract class ExampleBase {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ExampleBase.class);
     private static final String VISIBILITIES[] = new String[]{"a", "b", "c", "d"};
-    private static final int VERTICES_TO_CREATE = 3000;
     private Dataset dataset;
 
     @Parameter(names = "-port", description = "Port to run server on")
@@ -44,6 +43,9 @@ public abstract class ExampleBase {
 
     @Parameter(names = "-dataset", description = "Name of the dataset")
     private String datasetName = null;
+
+    @Parameter(names = "-count", description = "Number of vertices to create")
+    private int verticesToCreate = 3000;
 
     private Server server;
     private Graph graph;
@@ -73,7 +75,7 @@ public abstract class ExampleBase {
     protected void clearGraph(Graph graph) {
         if (!clear) {
             int count = count(graph.getVertices(createAuthorizations(VISIBILITIES)));
-            if (count >= VERTICES_TO_CREATE) {
+            if (count >= verticesToCreate) {
                 LOGGER.debug("skipping clear graph. data already exists. count: " + count);
                 return;
             }
@@ -83,7 +85,7 @@ public abstract class ExampleBase {
     }
 
     protected void populateData() throws IOException {
-        if (count(getGraph().getVertices(createAuthorizations(VISIBILITIES))) >= VERTICES_TO_CREATE) {
+        if (count(getGraph().getVertices(createAuthorizations(VISIBILITIES))) >= verticesToCreate) {
             LOGGER.debug("skipping create data. data already exists");
             return;
         }
@@ -93,7 +95,7 @@ public abstract class ExampleBase {
     }
 
     private void populateVertices() throws IOException {
-        dataset.load(getGraph(), VERTICES_TO_CREATE, VISIBILITIES, createAuthorizations());
+        dataset.load(getGraph(), verticesToCreate, VISIBILITIES, createAuthorizations());
     }
 
     private void addAuthorizations() {

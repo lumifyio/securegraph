@@ -10,4 +10,12 @@ public class GeohashResult {
     public Iterable<GeohashBucket> getBuckets() {
         return buckets;
     }
+
+    public long getMaxCount() {
+        long max = Long.MIN_VALUE;
+        for (GeohashBucket b : getBuckets()) {
+            max = Math.max(max, b.getCount());
+        }
+        return max;
+    }
 }

@@ -50,6 +50,8 @@
 
 <div id="totalHits"></div>
 
+<img id="worldmap">
+
 <h3>Results</h3>
 
 <div id="results"></div>
@@ -67,6 +69,12 @@
             results = JSON.parse(results);
             console.log(results);
             $('#totalHits').html(results.totalHits || 'No provided');
+            if (results.geohashResult) {
+                $('#worldmap').attr('src', '/worldmap.png?authorizations=' + encodeURIComponent($('#authorizations').val()) + '&q=' + encodeURIComponent($('#q').val()) + '&field=' + $('#field').val() + '&precision=' + $('#precision').val());
+                $('#worldmap').show();
+            } else {
+                $('#worldmap').hide();
+            }
             var html = bucketsToHtml((results.histogramResult || results.termsResult || results.geohashResult).buckets);
             $('#results').html(html);
         }).fail(function (err) {

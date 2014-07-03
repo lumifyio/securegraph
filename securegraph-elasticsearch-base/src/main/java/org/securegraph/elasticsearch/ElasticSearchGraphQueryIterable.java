@@ -1,6 +1,7 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.geo.GeoHashUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -12,6 +13,7 @@ import org.securegraph.Element;
 import org.securegraph.SecureGraphException;
 import org.securegraph.query.*;
 import org.securegraph.type.GeoPoint;
+import org.securegraph.type.GeoRect;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -107,7 +109,17 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
             GeoHashGrid h = (GeoHashGrid) agg;
             for (GeoHashGrid.Bucket b : h.getBuckets()) {
                 org.elasticsearch.common.geo.GeoPoint g = b.getKeyAsGeoPoint();
-                buckets.add(new GeohashBucket(b.getKey(), b.getDocCount(), new GeoPoint(g.getLat(), g.getLon())));
+                GeohashBucket geohashBucket = new GeohashBucket(b.getKey(), b.getDocCount(), new GeoPoint(g.getLat(), g.getLon())) {
+
+                    @Override
+                    public GeoRect getGeoCell() {
+                        org.elasticsearch.common.geo.GeoPoint northWest = new org.elasticsearch.common.geo.GeoPoint();
+                        org.elasticsearch.common.geo.GeoPoint southEast = new org.elasticsearch.common.geo.GeoPoint();
+                        GeoHashUtils.decodeCell(getKey(), northWest, southEast);
+                        return new GeoRect(new GeoPoint(northWest.getLat(), northWest.getLon()), new GeoPoint(southEast.getLat(), southEast.getLon()));
+                    }
+                };
+                buckets.add(geohashBucket);
             }
         } else {
             throw new SecureGraphException("Aggregation is not a geohash: " + agg.getClass().getName());
