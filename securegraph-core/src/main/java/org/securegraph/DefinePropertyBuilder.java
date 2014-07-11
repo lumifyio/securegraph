@@ -9,7 +9,7 @@ public class DefinePropertyBuilder {
     private final String propertyName;
     protected Class dataType = String.class;
     protected Set<TextIndexHint> textIndexHints = new HashSet<TextIndexHint>();
-    private double boost;
+    private Double boost;
 
     DefinePropertyBuilder(String propertyName) {
         this.propertyName = propertyName;
