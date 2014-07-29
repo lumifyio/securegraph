@@ -9,6 +9,7 @@ import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
 import static org.securegraph.util.IterableUtils.count;
+import static org.securegraph.util.IterableUtils.toSet;
 
 public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     public InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
@@ -115,6 +116,16 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     @Override
     public int getEdgeCount(Direction direction, Authorizations authorizations) {
         return count(getEdgeIds(direction, authorizations));
+    }
+
+    @Override
+    public Iterable<String> getEdgeLabels(Direction direction, Authorizations authorizations) {
+        return toSet(new ConvertingIterable<Edge, String>(getEdges(direction, authorizations)) {
+            @Override
+            protected String convert(Edge o) {
+                return o.getLabel();
+            }
+        });
     }
 
     @Override

@@ -5,6 +5,7 @@ import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
 import org.securegraph.query.VertexQuery;
+import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.JoinIterable;
 import org.securegraph.util.LookAheadIterable;
 
@@ -13,6 +14,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static org.securegraph.util.IterableUtils.count;
+import static org.securegraph.util.IterableUtils.toSet;
 
 public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
@@ -94,6 +96,16 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     @Override
     public int getEdgeCount(Direction direction, Authorizations authorizations) {
         return count(getEdgeIds(direction, authorizations));
+    }
+
+    @Override
+    public Iterable<String> getEdgeLabels(Direction direction, Authorizations authorizations) {
+        return toSet(new ConvertingIterable<Map.Entry<Object, EdgeInfo>, String>(getEdgeInfos(direction, authorizations)) {
+            @Override
+            protected String convert(Map.Entry<Object, EdgeInfo> o) {
+                return o.getValue().getLabel();
+            }
+        });
     }
 
     public Iterable<Object> getEdgeIdsWithOtherVertexId(final Object otherVertexId, final Direction direction, final String[] labels, final Authorizations authorizations) {

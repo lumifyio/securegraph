@@ -100,7 +100,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                         .request()
         ).actionGet();
         if (!deleteResponse.isFound()) {
-            throw new SecureGraphException("Could not remove element " + element.getId());
+            LOGGER.warn("Could not remove element " + element.getId());
         }
     }
 
@@ -113,7 +113,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                         .request()
         ).actionGet();
         if (!deleteResponse.isFound()) {
-            throw new SecureGraphException("Could not remove property " + element.getId() + " " + property.toString());
+            LOGGER.warn("Could not remove property " + element.getId() + " " + property.toString());
         }
         LOGGER.debug("deleted property " + element.getId() + " " + property.toString());
     }

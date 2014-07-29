@@ -29,8 +29,7 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.securegraph.test.util.IterableUtils.assertContains;
-import static org.securegraph.util.IterableUtils.count;
-import static org.securegraph.util.IterableUtils.toList;
+import static org.securegraph.util.IterableUtils.*;
 
 @RunWith(JUnit4.class)
 public abstract class GraphTestBase {
@@ -557,6 +556,10 @@ public abstract class GraphTestBase {
         assertEquals(3, count(v1.getEdges(v2, Direction.BOTH, new String[]{"label1", "label2"}, AUTHORIZATIONS_A)));
         assertEquals(2, count(v1.getEdges(v2, Direction.OUT, new String[]{"label1", "label2"}, AUTHORIZATIONS_A)));
         assertEquals(1, count(v1.getEdges(v2, Direction.IN, new String[]{"label1", "label2"}, AUTHORIZATIONS_A)));
+
+        assertArrayEquals(new String[]{"label1", "label2"}, toArray(v1.getEdgeLabels(Direction.OUT, AUTHORIZATIONS_A), String.class));
+        assertArrayEquals(new String[]{"label1"}, toArray(v1.getEdgeLabels(Direction.IN, AUTHORIZATIONS_A), String.class));
+        assertArrayEquals(new String[]{"label1", "label2"}, toArray(v1.getEdgeLabels(Direction.BOTH, AUTHORIZATIONS_A), String.class));
     }
 
     @Test

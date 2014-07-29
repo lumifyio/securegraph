@@ -79,6 +79,8 @@ public interface Vertex extends Element {
 
     int getEdgeCount(Direction direction, Authorizations authorizations);
 
+    Iterable<String> getEdgeLabels(Direction direction, Authorizations authorizations);
+
     /**
      * Similar to getEdges but gets the vertices on the other side of the edges attached to this vertex.
      *
