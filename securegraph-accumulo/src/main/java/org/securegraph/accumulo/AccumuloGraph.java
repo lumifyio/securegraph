@@ -13,6 +13,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
+import org.securegraph.accumulo.iterator.FindRelatedEdgesFilter;
 import org.securegraph.accumulo.serializer.ValueSerializer;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.mutation.AlterPropertyMetadata;
@@ -927,19 +928,34 @@ public class AccumuloGraph extends GraphBase {
 
         // only fetch one size of the edge since we are scanning all vertices the edge will appear on the out on one of the vertices
         batchScanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
-
         batchScanner.setRanges(ranges);
 
-        Iterator<Map.Entry<Key, Value>> it = batchScanner.iterator();
-        Set<Object> edgeIds = new HashSet<Object>();
-        while (it.hasNext()) {
-            Map.Entry<Key, Value> c = it.next();
-            EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
-            if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
-                String edgeId = c.getKey().getColumnQualifier().toString();
-                edgeIds.add(edgeId);
+        try {
+            Set<Object> edgeIds = new HashSet<Object>();
+            if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
+                IteratorSetting iteratorSetting = new IteratorSetting(
+                        100,
+                        FindRelatedEdgesFilter.class.getSimpleName(),
+                        FindRelatedEdgesFilter.class
+                );
+                FindRelatedEdgesFilter.setVertexIds(iteratorSetting, vertexIdsSet);
+                batchScanner.addScanIterator(iteratorSetting);
+                for (Map.Entry<Key, Value> c : batchScanner) {
+                    String edgeId = c.getKey().getColumnQualifier().toString();
+                    edgeIds.add(edgeId);
+                }
+            } else {
+                for (Map.Entry<Key, Value> c : batchScanner) {
+                    EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
+                    if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
+                        String edgeId = c.getKey().getColumnQualifier().toString();
+                        edgeIds.add(edgeId);
+                    }
+                }
             }
+            return edgeIds;
+        } finally {
+            batchScanner.close();
         }
-        return edgeIds;
     }
 }
