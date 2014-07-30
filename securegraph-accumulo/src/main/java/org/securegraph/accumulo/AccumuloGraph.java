@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBase {
@@ -530,37 +531,47 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private BatchScanner createVertexBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
+        return createElementVisibilityWholeRowBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
     }
 
     private BatchScanner createEdgeBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityBatchScanner(authorizations, ElementType.EDGE, numQueryThreads);
+        return createElementVisibilityWholeRowBatchScanner(authorizations, ElementType.EDGE, numQueryThreads);
     }
 
-    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
+    private BatchScanner createElementVisibilityWholeRowBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
+        BatchScanner scanner = createElementVisibilityBatchScanner(authorizations, elementType, numQueryThreads);
+        IteratorSetting iteratorSetting;
+
+        iteratorSetting = new IteratorSetting(
+                101,
+                WholeRowIterator.class.getSimpleName(),
+                WholeRowIterator.class
+        );
+        scanner.addScanIterator(iteratorSetting);
+
+        return scanner;
+    }
+
+    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) {
+        BatchScanner scanner = createElementBatchScanner(authorizations, elementType, numQueryThreads);
+        IteratorSetting iteratorSetting;
+        if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
+            iteratorSetting = new IteratorSetting(
+                    100,
+                    ElementVisibilityRowFilter.class.getSimpleName(),
+                    ElementVisibilityRowFilter.class
+            );
+            String elementMode = getElementModeFromElementType(elementType);
+            iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
+            scanner.addScanIterator(iteratorSetting);
+        }
+        return scanner;
+    }
+
+    private BatchScanner createElementBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) {
         try {
             String tableName = getTableNameFromElementType(elementType);
-            BatchScanner scanner = connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
-            IteratorSetting iteratorSetting;
-            if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
-                iteratorSetting = new IteratorSetting(
-                        100,
-                        ElementVisibilityRowFilter.class.getSimpleName(),
-                        ElementVisibilityRowFilter.class
-                );
-                String elementMode = getElementModeFromElementType(elementType);
-                iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
-                scanner.addScanIterator(iteratorSetting);
-            }
-
-            iteratorSetting = new IteratorSetting(
-                    101,
-                    WholeRowIterator.class.getSimpleName(),
-                    WholeRowIterator.class
-            );
-            scanner.addScanIterator(iteratorSetting);
-
-            return scanner;
+            return connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
         }
@@ -898,5 +909,37 @@ public class AccumuloGraph extends GraphBase {
         } catch (Exception ex) {
             throw new SecureGraphException("Could not delete rows", ex);
         }
+    }
+
+    @Override
+    public Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations) {
+        Set<Object> vertexIdsSet = toSet(vertexIds);
+
+        List<Range> ranges = new ArrayList<Range>();
+        for (Object vertexId : vertexIdsSet) {
+            Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId);
+            Range range = new Range(rowKey);
+            ranges.add(range);
+        }
+
+        int numQueryThreads = Math.min(Math.max(1, ranges.size() / 10), 10);
+        BatchScanner batchScanner = createElementBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
+
+        // only fetch one size of the edge since we are scanning all vertices the edge will appear on the out on one of the vertices
+        batchScanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
+
+        batchScanner.setRanges(ranges);
+
+        Iterator<Map.Entry<Key, Value>> it = batchScanner.iterator();
+        Set<Object> edgeIds = new HashSet<Object>();
+        while (it.hasNext()) {
+            Map.Entry<Key, Value> c = it.next();
+            EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
+            if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
+                String edgeId = c.getKey().getColumnQualifier().toString();
+                edgeIds.add(edgeId);
+            }
+        }
+        return edgeIds;
     }
 }

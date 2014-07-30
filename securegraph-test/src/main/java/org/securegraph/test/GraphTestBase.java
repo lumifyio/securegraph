@@ -1372,6 +1372,57 @@ public abstract class GraphTestBase {
         assertContains(ev3v1.getId(), edges);
     }
 
+    // Test for performance
+    //@Test
+    private void testFindRelatedEdgesPerformance() {
+        int totalNumberOfVertices = 100;
+        int totalNumberOfEdges = 10000;
+        int totalVerticesToCheck = 100;
+
+        Date startTime, endTime;
+        Random random = new Random(100);
+
+        startTime = new Date();
+        List<Vertex> vertices = new ArrayList<Vertex>();
+        for (int i = 0; i < totalNumberOfVertices; i++) {
+            vertices.add(graph.addVertex("v" + i, VISIBILITY_A, AUTHORIZATIONS_A));
+        }
+        graph.flush();
+        endTime = new Date();
+        long insertVerticesTime = endTime.getTime() - startTime.getTime();
+
+        startTime = new Date();
+        for (int i = 0; i < totalNumberOfEdges; i++) {
+            Vertex outVertex = vertices.get(random.nextInt(vertices.size()));
+            Vertex inVertex = vertices.get(random.nextInt(vertices.size()));
+            graph.addEdge("e" + i, outVertex, inVertex, "", VISIBILITY_A, AUTHORIZATIONS_A);
+        }
+        graph.flush();
+        endTime = new Date();
+        long insertEdgesTime = endTime.getTime() - startTime.getTime();
+
+        List<Object> vertexIds = new ArrayList<Object>();
+        for (int i = 0; i < totalVerticesToCheck; i++) {
+            Vertex v = vertices.get(random.nextInt(vertices.size()));
+            vertexIds.add(v.getId());
+        }
+
+        startTime = new Date();
+        Iterable<Object> edges = toList(graph.findRelatedEdges(vertexIds, AUTHORIZATIONS_A));
+        count(edges);
+        endTime = new Date();
+        long findRelatedEdgesTime = endTime.getTime() - startTime.getTime();
+
+        LOGGER.info(String.format(
+                "RESULTS\ntotalNumberOfVertices,totalNumberOfEdges,totalVerticesToCheck,insertVerticesTime,insertEdgesTime,findRelatedEdgesTime\n%d,%d,%d,%d,%d,%d",
+                totalNumberOfVertices,
+                totalNumberOfEdges,
+                totalVerticesToCheck,
+                insertVerticesTime,
+                insertEdgesTime,
+                findRelatedEdgesTime));
+    }
+
     @Test
     public void testEmptyPropertyMutation() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
