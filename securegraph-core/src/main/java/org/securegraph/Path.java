@@ -5,14 +5,14 @@ import org.securegraph.util.ArrayIterable;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class Path implements Iterable<Object> {
-    private final Object[] vertexIds;
+public class Path implements Iterable<String> {
+    private final String[] vertexIds;
 
-    public Path(Object... vertexIds) {
+    public Path(String... vertexIds) {
         this.vertexIds = vertexIds;
     }
 
-    public Path(Path path, Object vertexId) {
+    public Path(Path path, String vertexId) {
         this.vertexIds = Arrays.copyOf(path.vertexIds, path.vertexIds.length + 1);
         this.vertexIds[this.vertexIds.length - 1] = vertexId;
     }
@@ -21,13 +21,13 @@ public class Path implements Iterable<Object> {
         return this.vertexIds.length;
     }
 
-    public Object get(int i) {
+    public String get(int i) {
         return this.vertexIds[i];
     }
 
     @Override
-    public Iterator<Object> iterator() {
-        return new ArrayIterable<Object>(this.vertexIds).iterator();
+    public Iterator<String> iterator() {
+        return new ArrayIterable<String>(this.vertexIds).iterator();
     }
 
     @Override

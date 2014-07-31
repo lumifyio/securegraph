@@ -5,11 +5,11 @@ import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
 
 public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
-    private final Object outVertexId;
-    private final Object inVertexId;
+    private final String outVertexId;
+    private final String inVertexId;
     private final String label;
 
-    protected InMemoryEdge(Graph graph, Object edgeId, Object outVertexId, Object inVertexId, String label, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+    protected InMemoryEdge(Graph graph, String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         super(graph, edgeId, visibility, properties, authorizations);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
@@ -22,7 +22,7 @@ public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     }
 
     @Override
-    public Object getVertexId(Direction direction) {
+    public String getVertexId(Direction direction) {
         switch (direction) {
             case IN:
                 return inVertexId;
@@ -39,7 +39,7 @@ public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     }
 
     @Override
-    public Object getOtherVertexId(Object myVertexId) {
+    public String getOtherVertexId(String myVertexId) {
         if (inVertexId.equals(myVertexId)) {
             return outVertexId;
         } else if (outVertexId.equals(myVertexId)) {
@@ -49,7 +49,7 @@ public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     }
 
     @Override
-    public Vertex getOtherVertex(Object myVertexId, Authorizations authorizations) {
+    public Vertex getOtherVertex(String myVertexId, Authorizations authorizations) {
         return getGraph().getVertex(getOtherVertexId(myVertexId), authorizations);
     }
 

@@ -57,9 +57,9 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
         final SearchHits hits = response.getHits();
-        List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
+        List<String> ids = toList(new ConvertingIterable<SearchHit, String>(hits) {
             @Override
-            protected Object convert(SearchHit searchHit) {
+            protected String convert(SearchHit searchHit) {
                 return searchHit.getId();
             }
         });
@@ -82,9 +82,9 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
         final SearchHits hits = response.getHits();
-        List<Object> ids = toList(new ConvertingIterable<SearchHit, Object>(hits) {
+        List<String> ids = toList(new ConvertingIterable<SearchHit, String>(hits) {
             @Override
-            protected Object convert(SearchHit searchHit) {
+            protected String convert(SearchHit searchHit) {
                 return searchHit.getId();
             }
         });

@@ -34,7 +34,7 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
+    public Vertex addVertex(String vertexId, Visibility visibility, Authorizations authorizations) {
         return prepareVertex(vertexId, visibility).save(authorizations);
     }
 
@@ -53,7 +53,7 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
+    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
         LOGGER.warn("Performing scan of all vertices! Override getVertex.");
         for (Vertex vertex : getVertices(authorizations)) {
             if (vertex.getId().equals(vertexId)) {
@@ -64,29 +64,29 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(final Iterable<Object> ids, final Authorizations authorizations) {
-        LOGGER.warn("Getting each vertex one by one! Override getVertices(java.lang.Iterable<java.lang.Object>, org.securegraph.Authorizations)");
-        return new LookAheadIterable<Object, Vertex>() {
+    public Iterable<Vertex> getVertices(final Iterable<String> ids, final Authorizations authorizations) {
+        LOGGER.warn("Getting each vertex one by one! Override getVertices(java.lang.Iterable<java.lang.String>, org.securegraph.Authorizations)");
+        return new LookAheadIterable<String, Vertex>() {
             @Override
-            protected boolean isIncluded(Object src, Vertex vertex) {
+            protected boolean isIncluded(String src, Vertex vertex) {
                 return vertex != null;
             }
 
             @Override
-            protected Vertex convert(Object id) {
+            protected Vertex convert(String id) {
                 return getVertex(id, authorizations);
             }
 
             @Override
-            protected Iterator<Object> createIterator() {
+            protected Iterator<String> createIterator() {
                 return ids.iterator();
             }
         };
     }
 
     @Override
-    public List<Vertex> getVerticesInOrder(Iterable<Object> ids, Authorizations authorizations) {
-        final List<Object> vertexIds = toList(ids);
+    public List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations) {
+        final List<String> vertexIds = toList(ids);
         List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
         Collections.sort(vertices, new Comparator<Vertex>() {
             @Override
@@ -111,7 +111,7 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+    public Edge addEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
         return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save(authorizations);
     }
 
@@ -121,7 +121,7 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Edge getEdge(Object edgeId, Authorizations authorizations) {
+    public Edge getEdge(String edgeId, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all edges! Override getEdge.");
         for (Edge edge : getEdges(authorizations)) {
             if (edge.getId().equals(edgeId)) {
@@ -132,21 +132,21 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Iterable<Object> ids, final Authorizations authorizations) {
-        LOGGER.warn("Getting each edge one by one! Override getEdges(java.lang.Iterable<java.lang.Object>, org.securegraph.Authorizations)");
-        return new LookAheadIterable<Object, Edge>() {
+    public Iterable<Edge> getEdges(final Iterable<String> ids, final Authorizations authorizations) {
+        LOGGER.warn("Getting each edge one by one! Override getEdges(java.lang.Iterable<java.lang.String>, org.securegraph.Authorizations)");
+        return new LookAheadIterable<String, Edge>() {
             @Override
-            protected boolean isIncluded(Object src, Edge edge) {
+            protected boolean isIncluded(String src, Edge edge) {
                 return edge != null;
             }
 
             @Override
-            protected Edge convert(Object id) {
+            protected Edge convert(String id) {
                 return getEdge(id, authorizations);
             }
 
             @Override
-            protected Iterator<Object> createIterator() {
+            protected Iterator<String> createIterator() {
                 return ids.iterator();
             }
         };
@@ -164,8 +164,8 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations) {
-        Set<Object> results = new HashSet<Object>();
+    public Iterable<String> findRelatedEdges(Iterable<String> vertexIds, Authorizations authorizations) {
+        Set<String> results = new HashSet<String>();
         List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
 
         // since we are checking bi-directional edges we should only have to check v1->v2 and not v2->v1
@@ -176,8 +176,8 @@ public abstract class GraphBase implements Graph {
                 if (checkedCombinations.containsKey(sourceVertex.getId().toString() + destVertex.getId().toString())) {
                     continue;
                 }
-                Iterable<Object> edgeIds = sourceVertex.getEdgeIds(destVertex, Direction.BOTH, authorizations);
-                for (Object edgeId : edgeIds) {
+                Iterable<String> edgeIds = sourceVertex.getEdgeIds(destVertex, Direction.BOTH, authorizations);
+                for (String edgeId : edgeIds) {
                     results.add(edgeId);
                 }
                 checkedCombinations.put(sourceVertex.getId().toString() + destVertex.getId().toString(), "");

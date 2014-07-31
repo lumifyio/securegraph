@@ -1,10 +1,10 @@
 package org.securegraph;
 
 public abstract class VertexBuilder extends ElementBuilder<Vertex> {
-    private Object vertexId;
+    private String vertexId;
     private Visibility visibility;
 
-    public VertexBuilder(Object vertexId, Visibility visibility) {
+    public VertexBuilder(String vertexId, Visibility visibility) {
         this.vertexId = vertexId;
         this.visibility = visibility;
     }
@@ -17,7 +17,7 @@ public abstract class VertexBuilder extends ElementBuilder<Vertex> {
     @Override
     public abstract Vertex save(Authorizations authorizations);
 
-    protected Object getVertexId() {
+    protected String getVertexId() {
         return vertexId;
     }
 

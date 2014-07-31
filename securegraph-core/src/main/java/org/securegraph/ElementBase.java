@@ -13,13 +13,13 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 public abstract class ElementBase<T extends Element> implements Element {
     private final Graph graph;
-    private final Object id;
+    private final String id;
     private Visibility visibility;
 
     private final ConcurrentSkipListSet<Property> properties;
     private final Authorizations authorizations;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+    protected ElementBase(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
@@ -39,7 +39,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Iterable<Object> getPropertyValues(Object key, String name) {
+    public Iterable<Object> getPropertyValues(String key, String name) {
         return new ConvertingIterable<Property, Object>(getProperties(key, name)) {
             @Override
             protected Object convert(Property p) {
@@ -49,7 +49,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Property getProperty(Object key, String name, Visibility visibility) {
+    public Property getProperty(String key, String name, Visibility visibility) {
         for (Property p : getProperties()) {
             if (!p.getKey().equals(key)) {
                 continue;
@@ -69,7 +69,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Property getProperty(Object key, String name) {
+    public Property getProperty(String key, String name) {
         return getProperty(key, name, null);
     }
 
@@ -101,7 +101,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Object getPropertyValue(Object key, String name, int index) {
+    public Object getPropertyValue(String key, String name, int index) {
         Iterator<Object> values = getPropertyValues(key, name).iterator();
         while (values.hasNext() && index >= 0) {
             Object v = values.next();
@@ -114,12 +114,12 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Object getPropertyValue(Object key, String name) {
+    public Object getPropertyValue(String key, String name) {
         return getPropertyValue(key, name, 0);
     }
 
     @Override
-    public Object getId() {
+    public String getId() {
         return this.id;
     }
 
@@ -148,7 +148,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Iterable<Property> getProperties(final Object key, final String name) {
+    public Iterable<Property> getProperties(final String key, final String name) {
         return new FilterIterable<Property>(getProperties()) {
             @Override
             protected boolean isIncluded(Property property) {
@@ -173,7 +173,7 @@ public abstract class ElementBase<T extends Element> implements Element {
         }
     }
 
-    protected Property removePropertyInternal(Object key, String name) {
+    protected Property removePropertyInternal(String key, String name) {
         Property property = getProperty(key, name);
         if (property != null) {
             this.properties.remove(property);

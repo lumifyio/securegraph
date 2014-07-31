@@ -92,7 +92,7 @@ public class GraphRestore extends GraphToolBase {
 
     private Vertex restoreVertex(Graph graph, JSONObject json, Authorizations authorizations) {
         Visibility visibility = jsonToVisibility(json);
-        Object vertexId = jsonStringToObject(json.getString("id"));
+        String vertexId = json.getString("id");
         VertexBuilder v = graph.prepareVertex(vertexId, visibility);
         jsonToProperties(json, v);
         return v.save(authorizations);
@@ -100,9 +100,9 @@ public class GraphRestore extends GraphToolBase {
 
     private Edge restoreEdge(Graph graph, JSONObject json, Authorizations authorizations) {
         Visibility visibility = jsonToVisibility(json);
-        Object edgeId = jsonStringToObject(json.getString("id"));
-        Object outVertexId = jsonStringToObject(json.getString("outVertexId"));
-        Object inVertexId = jsonStringToObject(json.getString("inVertexId"));
+        String edgeId = json.getString("id");
+        String outVertexId = json.getString("outVertexId");
+        String inVertexId = json.getString("inVertexId");
         String label = json.getString("label");
         Vertex outVertex = graph.getVertex(outVertexId, authorizations);
         Vertex inVertex = graph.getVertex(inVertexId, authorizations);
