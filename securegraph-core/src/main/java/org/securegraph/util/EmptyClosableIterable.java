@@ -2,7 +2,7 @@ package org.securegraph.util;
 
 import java.util.Iterator;
 
-public class EmptyClosableIterable<T> implements ClosableIterable<T> {
+public class EmptyClosableIterable<T> implements CloseableIterable<T> {
     @Override
     public void close() {
 

@@ -5,20 +5,26 @@ import org.securegraph.property.PropertyValue;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public abstract class ElementBase<T extends Element> implements Element {
     private final Graph graph;
-    private final Object id;
+    private final String id;
     private Visibility visibility;
 
-    private final TreeSet<Property> properties;
+    private final ConcurrentSkipListSet<Property> properties;
+    private final Authorizations authorizations;
 
-    protected ElementBase(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
+    protected ElementBase(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
-        this.properties = new TreeSet<Property>();
+        this.properties = new ConcurrentSkipListSet<Property>();
+        this.authorizations = authorizations;
         updatePropertiesInternal(properties);
     }
 
@@ -27,31 +33,23 @@ public abstract class ElementBase<T extends Element> implements Element {
         return new ConvertingIterable<Property, Object>(getProperties(name)) {
             @Override
             protected Object convert(Property p) {
-                Object v = p.getValue();
-                if (v instanceof Text) {
-                    v = ((Text) v).getText();
-                }
-                return v;
+                return p.getValue();
             }
         };
     }
 
     @Override
-    public Iterable<Object> getPropertyValues(Object key, String name) {
+    public Iterable<Object> getPropertyValues(String key, String name) {
         return new ConvertingIterable<Property, Object>(getProperties(key, name)) {
             @Override
             protected Object convert(Property p) {
-                Object v = p.getValue();
-                if (v instanceof Text) {
-                    v = ((Text) v).getText();
-                }
-                return v;
+                return p.getValue();
             }
         };
     }
 
     @Override
-    public Property getProperty(Object key, String name, Visibility visibility) {
+    public Property getProperty(String key, String name, Visibility visibility) {
         for (Property p : getProperties()) {
             if (!p.getKey().equals(key)) {
                 continue;
@@ -71,7 +69,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Property getProperty(Object key, String name) {
+    public Property getProperty(String key, String name) {
         return getProperty(key, name, null);
     }
 
@@ -95,9 +93,6 @@ public abstract class ElementBase<T extends Element> implements Element {
         while (values.hasNext() && index >= 0) {
             Object v = values.next();
             if (index == 0) {
-                if (v instanceof Text) {
-                    return ((Text) v).getText();
-                }
                 return v;
             }
             index--;
@@ -106,14 +101,11 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Object getPropertyValue(Object key, String name, int index) {
+    public Object getPropertyValue(String key, String name, int index) {
         Iterator<Object> values = getPropertyValues(key, name).iterator();
         while (values.hasNext() && index >= 0) {
             Object v = values.next();
             if (index == 0) {
-                if (v instanceof Text) {
-                    return ((Text) v).getText();
-                }
                 return v;
             }
             index--;
@@ -122,12 +114,12 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Object getPropertyValue(Object key, String name) {
+    public Object getPropertyValue(String key, String name) {
         return getPropertyValue(key, name, 0);
     }
 
     @Override
-    public Object getId() {
+    public String getId() {
         return this.id;
     }
 
@@ -156,7 +148,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public Iterable<Property> getProperties(final Object key, final String name) {
+    public Iterable<Property> getProperties(final String key, final String name) {
         return new FilterIterable<Property>(getProperties()) {
             @Override
             protected boolean isIncluded(Property property) {
@@ -181,7 +173,7 @@ public abstract class ElementBase<T extends Element> implements Element {
         }
     }
 
-    protected Property removePropertyInternal(Object key, String name) {
+    protected Property removePropertyInternal(String key, String name) {
         Property property = getProperty(key, name);
         if (property != null) {
             this.properties.remove(property);
@@ -234,28 +226,41 @@ public abstract class ElementBase<T extends Element> implements Element {
     public abstract ExistingElementMutation<T> prepareMutation();
 
     @Override
-    public abstract void removeProperty(String key, String name);
+    public abstract void removeProperty(String key, String name, Authorizations authorizations);
 
     @Override
-    public void addPropertyValue(String key, String name, Object value, Visibility visibility) {
-        prepareMutation().addPropertyValue(key, name, value, visibility).save();
+    public void addPropertyValue(String key, String name, Object value, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().addPropertyValue(key, name, value, visibility).save(authorizations);
     }
 
     @Override
-    public void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        prepareMutation().addPropertyValue(key, name, value, metadata, visibility).save();
+    public void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().addPropertyValue(key, name, value, metadata, visibility).save(authorizations);
     }
 
     @Override
-    public void setProperty(String name, Object value, Visibility visibility) {
-        prepareMutation().setProperty(name, value, visibility).save();
+    public void setProperty(String name, Object value, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().setProperty(name, value, visibility).save(authorizations);
     }
 
     @Override
-    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        prepareMutation().setProperty(name, value, metadata, visibility).save();
+    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations) {
+        prepareMutation().setProperty(name, value, metadata, visibility).save(authorizations);
     }
 
     @Override
-    public abstract void removeProperty(String name);
+    public abstract void removeProperty(String name, Authorizations authorizations);
+
+    @Override
+    public Authorizations getAuthorizations() {
+        return authorizations;
+    }
+
+    @Override
+    public void mergeProperties(Element element) {
+        for (Property property : element.getProperties()) {
+            this.properties.remove(property);
+            this.properties.add(property);
+        }
+    }
 }

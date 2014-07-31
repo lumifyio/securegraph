@@ -6,6 +6,7 @@ import org.securegraph.Visibility;
 import org.securegraph.inmemory.security.ColumnVisibility;
 import org.securegraph.inmemory.security.VisibilityEvaluator;
 import org.securegraph.inmemory.security.VisibilityParseException;
+import org.securegraph.util.ArrayUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -23,6 +24,11 @@ public class InMemoryAuthorizations implements Authorizations, Serializable {
     @Override
     public String[] getAuthorizations() {
         return authorizations;
+    }
+
+    @Override
+    public boolean equals(Authorizations authorizations) {
+        return ArrayUtils.intersectsAll(getAuthorizations(), authorizations.getAuthorizations());
     }
 
     @Override

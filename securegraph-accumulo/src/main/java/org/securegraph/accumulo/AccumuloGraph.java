@@ -20,7 +20,7 @@ import org.securegraph.mutation.AlterPropertyVisibility;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.search.SearchIndex;
-import org.securegraph.util.ClosableIterable;
+import org.securegraph.util.CloseableIterable;
 import org.securegraph.util.EmptyClosableIterable;
 import org.securegraph.util.LookAheadIterable;
 
@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBase {
@@ -37,6 +38,7 @@ public class AccumuloGraph extends GraphBase {
     public static final Text DELETE_ROW_COLUMN_QUALIFIER = new Text("");
     public static final String VERTEX_AFTER_ROW_KEY_PREFIX = "W";
     public static final String EDGE_AFTER_ROW_KEY_PREFIX = "F";
+    private static final Object addIteratorLock = new Object();
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private final FileSystem fileSystem;
@@ -109,9 +111,11 @@ public class AccumuloGraph extends GraphBase {
 
     private static void ensureRowDeletingIteratorIsAttached(Connector connector, String tableName) {
         try {
-            IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
-            if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
-                connector.tableOperations().attachIterator(tableName, is);
+            synchronized (addIteratorLock) {
+                IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
+                if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
+                    connector.tableOperations().attachIterator(tableName, is);
+                }
             }
         } catch (Exception e) {
             throw new SecureGraphException("Could not attach RowDeletingIterator", e);
@@ -123,31 +127,31 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Authorizations authorizations) {
-        return prepareVertex(vertexId, vertexVisibility, authorizations).save();
+    public Vertex addVertex(String vertexId, Visibility vertexVisibility, Authorizations authorizations) {
+        return prepareVertex(vertexId, vertexVisibility).save(authorizations);
     }
 
     @Override
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
+    public VertexBuilder prepareVertex(String vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
         return new VertexBuilder(vertexId, visibility) {
             @Override
-            public Vertex save() {
-                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties());
+            public Vertex save(Authorizations authorizations) {
+                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties(), authorizations);
 
                 elementMutationBuilder.saveVertex(vertex);
 
-                getSearchIndex().addElement(AccumuloGraph.this, vertex);
+                getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
 
                 return vertex;
             }
         };
     }
 
-    void saveProperties(AccumuloElement element, Iterable<Property> properties) {
+    void saveProperties(AccumuloElement element, Iterable<Property> properties, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
@@ -160,17 +164,17 @@ public class AccumuloGraph extends GraphBase {
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
         }
-        getSearchIndex().addElement(this, element);
+        getSearchIndex().addElement(this, element, authorizations);
     }
 
-    void removeProperty(AccumuloElement element, Property property) {
+    void removeProperty(AccumuloElement element, Property property, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         Mutation m = new Mutation(rowPrefix + element.getId());
         elementMutationBuilder.addPropertyRemoveToMutation(m, property);
         addMutations(getWriterFromElementType(element), m);
 
-        getSearchIndex().addElement(this, element);
+        getSearchIndex().removeProperty(this, element, property, authorizations);
     }
 
     private String getRowPrefixForElement(AccumuloElement element) {
@@ -258,7 +262,7 @@ public class AccumuloGraph extends GraphBase {
             throw new IllegalArgumentException("vertex cannot be null");
         }
 
-        getSearchIndex().removeElement(this, vertex);
+        getSearchIndex().removeElement(this, vertex, authorizations);
 
         // Remove all edges that this vertex participates.
         for (Edge edge : vertex.getEdges(Direction.BOTH, authorizations)) {
@@ -269,7 +273,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+    public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (outVertex == null) {
             throw new IllegalArgumentException("outVertex is required");
         }
@@ -282,8 +286,8 @@ public class AccumuloGraph extends GraphBase {
 
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
-            public Edge save() {
-                AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+            public Edge save(Authorizations authorizations) {
+                AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties(), authorizations);
                 elementMutationBuilder.saveEdge(edge);
 
                 if (getOutVertex() instanceof AccumuloVertex) {
@@ -293,19 +297,14 @@ public class AccumuloGraph extends GraphBase {
                     ((AccumuloVertex) getInVertex()).addInEdge(edge);
                 }
 
-                getSearchIndex().addElement(AccumuloGraph.this, edge);
+                getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
                 return edge;
             }
         };
     }
 
     @Override
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility edgeVisibility, Authorizations authorizations) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, edgeVisibility, authorizations).save();
-    }
-
-    @Override
-    public Iterable<Edge> getEdges(Authorizations authorizations) {
+    public CloseableIterable<Edge> getEdges(Authorizations authorizations) {
         return getEdgesInRange(null, null, authorizations);
     }
 
@@ -313,7 +312,7 @@ public class AccumuloGraph extends GraphBase {
     public void removeEdge(Edge edge, Authorizations authorizations) {
         checkNotNull(edge);
 
-        getSearchIndex().removeElement(this, edge);
+        getSearchIndex().removeElement(this, edge, authorizations);
 
         Vertex out = edge.getVertex(Direction.OUT, authorizations);
         checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
@@ -397,7 +396,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
+    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
         Iterator<Vertex> vertices = getVerticesInRange(new Range(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId), authorizations).iterator();
         if (vertices.hasNext()) {
             return vertices.next();
@@ -406,11 +405,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public ClosableIterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
+    public CloseableIterable<Vertex> getVertices(Iterable<String> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
-        for (Object id : ids) {
+        for (String id : ids) {
             Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + id);
             ranges.add(new Range(rowKey));
         }
@@ -430,7 +429,7 @@ public class AccumuloGraph extends GraphBase {
             protected Vertex convert(Map.Entry<Key, Value> wholeRow) {
                 try {
                     SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
-                    VertexMaker maker = new VertexMaker(graph, row.entrySet().iterator());
+                    VertexMaker maker = new VertexMaker(graph, row.entrySet().iterator(), authorizations);
                     return maker.make();
                 } catch (IOException ex) {
                     throw new SecureGraphException("Could not recreate row", ex);
@@ -453,7 +452,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private ClosableIterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Vertex> getVerticesInRange(String startId, String endId, final Authorizations authorizations) throws SecureGraphException {
         final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
@@ -472,7 +471,7 @@ public class AccumuloGraph extends GraphBase {
         return getVerticesInRange(range, authorizations);
     }
 
-    private ClosableIterable<Vertex> getVerticesInRange(final Range range, final Authorizations authorizations) {
+    private CloseableIterable<Vertex> getVerticesInRange(final Range range, final Authorizations authorizations) {
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
             public Scanner scanner;
 
@@ -483,7 +482,7 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
-                VertexMaker maker = new VertexMaker(AccumuloGraph.this, next);
+                VertexMaker maker = new VertexMaker(AccumuloGraph.this, next, authorizations);
                 return maker.make();
             }
 
@@ -532,37 +531,47 @@ public class AccumuloGraph extends GraphBase {
     }
 
     private BatchScanner createVertexBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
+        return createElementVisibilityWholeRowBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
     }
 
     private BatchScanner createEdgeBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityBatchScanner(authorizations, ElementType.EDGE, numQueryThreads);
+        return createElementVisibilityWholeRowBatchScanner(authorizations, ElementType.EDGE, numQueryThreads);
     }
 
-    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
+    private BatchScanner createElementVisibilityWholeRowBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
+        BatchScanner scanner = createElementVisibilityBatchScanner(authorizations, elementType, numQueryThreads);
+        IteratorSetting iteratorSetting;
+
+        iteratorSetting = new IteratorSetting(
+                101,
+                WholeRowIterator.class.getSimpleName(),
+                WholeRowIterator.class
+        );
+        scanner.addScanIterator(iteratorSetting);
+
+        return scanner;
+    }
+
+    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) {
+        BatchScanner scanner = createElementBatchScanner(authorizations, elementType, numQueryThreads);
+        IteratorSetting iteratorSetting;
+        if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
+            iteratorSetting = new IteratorSetting(
+                    100,
+                    ElementVisibilityRowFilter.class.getSimpleName(),
+                    ElementVisibilityRowFilter.class
+            );
+            String elementMode = getElementModeFromElementType(elementType);
+            iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
+            scanner.addScanIterator(iteratorSetting);
+        }
+        return scanner;
+    }
+
+    private BatchScanner createElementBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) {
         try {
             String tableName = getTableNameFromElementType(elementType);
-            BatchScanner scanner = connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
-            IteratorSetting iteratorSetting;
-            if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
-                iteratorSetting = new IteratorSetting(
-                        100,
-                        ElementVisibilityRowFilter.class.getSimpleName(),
-                        ElementVisibilityRowFilter.class
-                );
-                String elementMode = getElementModeFromElementType(elementType);
-                iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
-                scanner.addScanIterator(iteratorSetting);
-            }
-
-            iteratorSetting = new IteratorSetting(
-                    101,
-                    WholeRowIterator.class.getSimpleName(),
-                    WholeRowIterator.class
-            );
-            scanner.addScanIterator(iteratorSetting);
-
-            return scanner;
+            return connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
         }
@@ -606,7 +615,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge getEdge(Object edgeId, Authorizations authorizations) {
+    public Edge getEdge(String edgeId, Authorizations authorizations) {
         Iterator<Edge> edges = getEdgesInRange(edgeId, edgeId, authorizations).iterator();
         if (edges.hasNext()) {
             return edges.next();
@@ -615,11 +624,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public ClosableIterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
+    public CloseableIterable<Edge> getEdges(Iterable<String> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
-        for (Object id : ids) {
+        for (String id : ids) {
             Text rowKey = new Text(AccumuloConstants.EDGE_ROW_KEY_PREFIX + id);
             ranges.add(new Range(rowKey));
         }
@@ -639,7 +648,7 @@ public class AccumuloGraph extends GraphBase {
             protected Edge convert(Map.Entry<Key, Value> wholeRow) {
                 try {
                     SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
-                    EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator());
+                    EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator(), authorizations);
                     return maker.make();
                 } catch (IOException ex) {
                     throw new SecureGraphException("Could not recreate row", ex);
@@ -662,7 +671,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private ClosableIterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Edge> getEdgesInRange(String startId, String endId, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
 
         final Key startKey;
@@ -689,7 +698,7 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
-                EdgeMaker maker = new EdgeMaker(graph, next);
+                EdgeMaker maker = new EdgeMaker(graph, next, authorizations);
                 return maker.make();
             }
 
@@ -888,5 +897,49 @@ public class AccumuloGraph extends GraphBase {
     @Override
     public boolean isVisibilityValid(Visibility visibility, Authorizations authorizations) {
         return authorizations.canRead(visibility);
+    }
+
+    @Override
+    public void clearData() {
+        try {
+            this.connector.tableOperations().deleteRows(getDataTableName(), null, null);
+            this.connector.tableOperations().deleteRows(getEdgesTableName(), null, null);
+            this.connector.tableOperations().deleteRows(getVerticesTableName(), null, null);
+            getSearchIndex().clearData();
+        } catch (Exception ex) {
+            throw new SecureGraphException("Could not delete rows", ex);
+        }
+    }
+
+    @Override
+    public Iterable<String> findRelatedEdges(Iterable<String> vertexIds, Authorizations authorizations) {
+        Set<String> vertexIdsSet = toSet(vertexIds);
+
+        List<Range> ranges = new ArrayList<Range>();
+        for (String vertexId : vertexIdsSet) {
+            Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId);
+            Range range = new Range(rowKey);
+            ranges.add(range);
+        }
+
+        int numQueryThreads = Math.min(Math.max(1, ranges.size() / 10), 10);
+        BatchScanner batchScanner = createElementBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
+
+        // only fetch one size of the edge since we are scanning all vertices the edge will appear on the out on one of the vertices
+        batchScanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
+
+        batchScanner.setRanges(ranges);
+
+        Iterator<Map.Entry<Key, Value>> it = batchScanner.iterator();
+        Set<String> edgeIds = new HashSet<String>();
+        while (it.hasNext()) {
+            Map.Entry<Key, Value> c = it.next();
+            EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
+            if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
+                String edgeId = c.getKey().getColumnQualifier().toString();
+                edgeIds.add(edgeId);
+            }
+        }
+        return edgeIds;
     }
 }

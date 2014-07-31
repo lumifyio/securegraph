@@ -1,13 +1,13 @@
 package org.securegraph.accumulo.mapreduce;
 
-import org.securegraph.*;
-import org.securegraph.accumulo.*;
-import org.securegraph.accumulo.serializer.ValueSerializer;
-import org.securegraph.id.IdGenerator;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.securegraph.*;
+import org.securegraph.accumulo.*;
+import org.securegraph.accumulo.serializer.ValueSerializer;
+import org.securegraph.id.IdGenerator;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -71,34 +71,34 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
 
     protected abstract void saveVertexMutation(Context context, Text verticesTableName, Mutation m) throws IOException, InterruptedException;
 
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
+    public VertexBuilder prepareVertex(String vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
         return new VertexBuilder(vertexId, visibility) {
             @Override
-            public Vertex save() {
-                AccumuloVertex vertex = new AccumuloVertex(null, getVertexId(), getVisibility(), getProperties());
+            public Vertex save(Authorizations authorizations) {
+                AccumuloVertex vertex = new AccumuloVertex(null, getVertexId(), getVisibility(), getProperties(), authorizations);
                 elementMutationBuilder.saveVertex(vertex);
                 return vertex;
             }
         };
     }
 
-    public Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
-        return prepareEdge(edgeId, outVertex, inVertex, label, visibility, authorizations).save();
+    public Edge addEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save(authorizations);
     }
 
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+    public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
         }
 
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
-            public Edge save() {
-                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+            public Edge save(Authorizations authorizations) {
+                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties(), authorizations);
                 elementMutationBuilder.saveEdge(edge);
                 return edge;
             }

@@ -1,10 +1,11 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.SecureGraphException;
-import org.securegraph.Vertex;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
+import org.securegraph.Authorizations;
+import org.securegraph.SecureGraphException;
+import org.securegraph.Vertex;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,11 +15,11 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private static final String VISIBILITY_SIGNAL = AccumuloVertex.CF_SIGNAL.toString();
 
     private final AccumuloGraph graph;
-    private final Map<Object, EdgeInfo> outEdges = new HashMap<Object, EdgeInfo>();
-    private final Map<Object, EdgeInfo> inEdges = new HashMap<Object, EdgeInfo>();
+    private final Map<String, EdgeInfo> outEdges = new HashMap<String, EdgeInfo>();
+    private final Map<String, EdgeInfo> inEdges = new HashMap<String, EdgeInfo>();
 
-    public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row) {
-        super(graph, row);
+    public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
+        super(graph, row, authorizations);
         this.graph = graph;
     }
 
@@ -63,7 +64,8 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.getVisibility(),
                 this.getProperties(),
                 this.inEdges,
-                this.outEdges);
+                this.outEdges,
+                this.getAuthorizations());
     }
 
 }

@@ -1,5 +1,6 @@
 package org.securegraph.mutation;
 
+import org.securegraph.Authorizations;
 import org.securegraph.Element;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
@@ -9,6 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.securegraph.util.Preconditions.checkNotNull;
 
 public abstract class ExistingElementMutationImpl<T extends Element> implements ElementMutation<T>, ExistingElementMutation<T> {
     private final List<Property> properties = new ArrayList<Property>();
@@ -21,7 +24,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
         this.element = element;
     }
 
-    public abstract T save();
+    public abstract T save(Authorizations authorizations);
 
     public ElementMutation<T> setProperty(String name, Object value, Visibility visibility) {
         return setProperty(name, value, new HashMap<String, Object>(), visibility);
@@ -36,6 +39,8 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     public ElementMutation<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        checkNotNull(name, "property name cannot be null for property: " + name + ":" + key);
+        checkNotNull(value, "property value cannot be null for property: " + name + ":" + key);
         properties.add(new MutableProperty(key, name, value, metadata, visibility));
         return this;
     }

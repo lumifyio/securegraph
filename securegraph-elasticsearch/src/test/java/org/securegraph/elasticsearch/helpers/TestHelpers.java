@@ -8,6 +8,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.securegraph.Graph;
 import org.securegraph.GraphConfiguration;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndex;
+import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
 import org.securegraph.inmemory.InMemoryGraph;
 import org.securegraph.inmemory.InMemoryGraphConfiguration;
 import org.slf4j.Logger;
@@ -25,13 +26,19 @@ public class TestHelpers {
     private static Node elasticSearchNode;
     private static String addr;
     private static String clusterName;
+    private static boolean TESTING = false;
 
     public static Graph createGraph() {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndex.ES_LOCATIONS, addr);
-        config.put(ElasticSearchSearchIndex.SETTING_CLUSTER_NAME, clusterName);
+        if (TESTING) {
+            addr = "192.168.33.10";
+            config.put(ElasticSearchSearchIndexBase.CONFIG_STORE_SOURCE_DATA, "true");
+        } else {
+            config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
+        }
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_ES_LOCATIONS, addr);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }

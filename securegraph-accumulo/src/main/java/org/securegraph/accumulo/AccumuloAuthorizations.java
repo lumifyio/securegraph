@@ -1,11 +1,12 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.Authorizations;
-import org.securegraph.SecureGraphException;
-import org.securegraph.Visibility;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.VisibilityEvaluator;
 import org.apache.accumulo.core.security.VisibilityParseException;
+import org.securegraph.Authorizations;
+import org.securegraph.SecureGraphException;
+import org.securegraph.Visibility;
+import org.securegraph.util.ArrayUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -23,6 +24,11 @@ public class AccumuloAuthorizations implements Authorizations, Serializable {
     @Override
     public String[] getAuthorizations() {
         return authorizations;
+    }
+
+    @Override
+    public boolean equals(Authorizations authorizations) {
+        return ArrayUtils.intersectsAll(getAuthorizations(), authorizations.getAuthorizations());
     }
 
     @Override

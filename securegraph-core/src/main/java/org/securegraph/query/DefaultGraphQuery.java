@@ -4,23 +4,25 @@ import org.securegraph.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class DefaultGraphQuery extends GraphQueryBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGraphQuery.class);
 
-    public DefaultGraphQuery(Graph graph, String queryString, Authorizations authorizations) {
-        super(graph, queryString, authorizations);
+    public DefaultGraphQuery(Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
+        super(graph, queryString, propertyDefinitions, authorizations);
     }
 
     @Override
     public Iterable<Vertex> vertices() {
         LOGGER.warn("scanning all vertices! create your own GraphQuery.");
-        return new DefaultGraphQueryIterable<Vertex>(getParameters(), this.<Vertex>getIterableFromElementType(ElementType.VERTEX), true);
+        return new DefaultGraphQueryIterable<Vertex>(getParameters(), this.<Vertex>getIterableFromElementType(ElementType.VERTEX), true, true);
     }
 
     @Override
     public Iterable<Edge> edges() {
         LOGGER.warn("scanning all edges! create your own GraphQuery.");
-        return new DefaultGraphQueryIterable<Edge>(getParameters(), this.<Edge>getIterableFromElementType(ElementType.EDGE), true);
+        return new DefaultGraphQueryIterable<Edge>(getParameters(), this.<Edge>getIterableFromElementType(ElementType.EDGE), true, true);
     }
 
     @SuppressWarnings("unchecked")

@@ -15,7 +15,7 @@ Maven
 
 ```
 <properties>
-    <securegraph.version>0.5.0</securegraph.version>
+    <securegraph.version>0.7.0</securegraph.version>
 </properties>
 ```
 
@@ -113,10 +113,10 @@ Authorizations authA = new AccumuloAuthorizations("a");
 Visibility visA = new Visibility("a");
 Visibility visB = new Visibility("b");
 
-Vertex v = graph.prepareVertex("v1", visA, authA)
+Vertex v = graph.prepareVertex("v1", visA)
                 .setProperty("prop1", "value1", visA)
                 .setProperty("prop2", "value2", visB)
-                .save();
+                .save(authA);
 ```
 
 ### add an edge

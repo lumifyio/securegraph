@@ -5,13 +5,16 @@ import org.securegraph.util.FilterIterable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public abstract class QueryBase implements Query {
     private final Graph graph;
+    private final Map<String, PropertyDefinition> propertyDefinitions;
     private final Parameters parameters;
 
-    protected QueryBase(Graph graph, String queryString, Authorizations authorizations) {
+    protected QueryBase(Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, Authorizations authorizations) {
         this.graph = graph;
+        this.propertyDefinitions = propertyDefinitions;
         this.parameters = createParameters(queryString, authorizations);
     }
 
@@ -37,20 +40,20 @@ public abstract class QueryBase implements Query {
 
     @Override
     public <T> Query range(String propertyName, T startValue, T endValue) {
-        this.parameters.addHasContainer(new HasContainer(propertyName, Compare.GREATER_THAN_EQUAL, startValue));
-        this.parameters.addHasContainer(new HasContainer(propertyName, Compare.LESS_THAN_EQUAL, endValue));
+        this.parameters.addHasContainer(new HasContainer(propertyName, Compare.GREATER_THAN_EQUAL, startValue, this.propertyDefinitions));
+        this.parameters.addHasContainer(new HasContainer(propertyName, Compare.LESS_THAN_EQUAL, endValue, this.propertyDefinitions));
         return this;
     }
 
     @Override
     public <T> Query has(String propertyName, T value) {
-        this.parameters.addHasContainer(new HasContainer(propertyName, Compare.EQUAL, value));
+        this.parameters.addHasContainer(new HasContainer(propertyName, Compare.EQUAL, value, this.propertyDefinitions));
         return this;
     }
 
     @Override
     public <T> Query has(String propertyName, Predicate predicate, T value) {
-        this.parameters.addHasContainer(new HasContainer(propertyName, predicate, value));
+        this.parameters.addHasContainer(new HasContainer(propertyName, predicate, value, this.propertyDefinitions));
         return this;
     }
 
@@ -74,19 +77,25 @@ public abstract class QueryBase implements Query {
         return parameters;
     }
 
+    protected Map<String, PropertyDefinition> getPropertyDefinitions() {
+        return propertyDefinitions;
+    }
+
     public static class HasContainer {
         public String key;
         public Object value;
         public Predicate predicate;
+        private final Map<String, PropertyDefinition> propertyDefinitions;
 
-        public HasContainer(final String key, final Predicate predicate, final Object value) {
+        public HasContainer(final String key, final Predicate predicate, final Object value, Map<String, PropertyDefinition> propertyDefinitions) {
             this.key = key;
             this.value = value;
             this.predicate = predicate;
+            this.propertyDefinitions = propertyDefinitions;
         }
 
         public boolean isMatch(Element elem) {
-            return this.predicate.evaluate(elem.getProperties(this.key), this.value);
+            return this.predicate.evaluate(elem.getProperties(this.key), this.value, this.propertyDefinitions);
         }
     }
 

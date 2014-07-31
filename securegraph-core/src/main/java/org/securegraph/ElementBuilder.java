@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.securegraph.util.Preconditions.checkNotNull;
+
 public abstract class ElementBuilder<T extends Element> implements ElementMutation<T> {
     private final List<Property> properties = new ArrayList<Property>();
 
@@ -18,9 +20,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * visibility so adding properties with the same name and different visibility strings is still permitted.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param name       The name of the property.
      * @param value      The value of the property.
@@ -37,9 +37,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * visibility so adding properties with the same name and different visibility strings is still permitted.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param name       The name of the property.
      * @param value      The value of the property.
@@ -54,9 +52,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * Adds or updates a property.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param key        The unique key given to the property allowing for multi-valued properties.
      * @param name       The name of the property.
@@ -71,9 +67,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * Adds or updates a property.
      * <p/>
      * The added property will also be indexed in the configured search provider. The type of the value
-     * will determine how it gets indexed. If you would like to index a string for both {@link org.securegraph.query.Compare#EQUAL}
-     * and {@link org.securegraph.query.TextPredicate#CONTAINS} you will need to wrap the
-     * value in {@link org.securegraph.Text}.
+     * will determine how it gets indexed.
      *
      * @param key        The unique key given to the property allowing for multi-valued properties.
      * @param name       The name of the property.
@@ -82,6 +76,8 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      * @param visibility The visibility to give this property.
      */
     public ElementBuilder<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+        checkNotNull(name, "property name cannot be null for property: " + name + ":" + key);
+        checkNotNull(value, "property value cannot be null for property: " + name + ":" + key);
         this.properties.add(new MutableProperty(key, name, value, metadata, visibility));
         return this;
     }
@@ -91,7 +87,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
      *
      * @return either the vertex or edge just saved.
      */
-    public abstract T save();
+    public abstract T save(Authorizations authorizations);
 
     public Iterable<Property> getProperties() {
         return properties;

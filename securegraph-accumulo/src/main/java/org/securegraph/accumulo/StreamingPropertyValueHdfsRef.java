@@ -1,10 +1,15 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.property.StreamingPropertyValue;
 import org.apache.hadoop.fs.Path;
+import org.securegraph.property.StreamingPropertyValue;
 
-class StreamingPropertyValueHdfsRef extends StreamingPropertyValueRef {
-    private final String path;
+public class StreamingPropertyValueHdfsRef extends StreamingPropertyValueRef {
+    private String path;
+
+    protected StreamingPropertyValueHdfsRef() {
+        super();
+        this.path = null;
+    }
 
     public StreamingPropertyValueHdfsRef(String path, StreamingPropertyValue propertyValue) {
         super(propertyValue);

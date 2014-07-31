@@ -4,13 +4,21 @@ import org.securegraph.SecureGraphException;
 
 import java.io.Serializable;
 
-public class GeoPoint implements Serializable, GeoShape {
+public class GeoPoint implements Serializable, GeoShape, Comparable<GeoPoint> {
     private static final long serialVersionUID = 1L;
+    private static final double COMPARE_TOLERANCE = 0.00001;
     private static double EARTH_RADIUS = 6371; // km
-    private final double latitude;
-    private final double longitude;
-    private final Double altitude;
-    private final String description;
+    private double latitude;
+    private double longitude;
+    private Double altitude;
+    private String description;
+
+    protected GeoPoint() {
+        latitude = 0;
+        longitude = 0;
+        altitude = null;
+        description = null;
+    }
 
     public GeoPoint(double latitude, double longitude, Double altitude, String description) {
         this.latitude = latitude;
@@ -48,6 +56,11 @@ public class GeoPoint implements Serializable, GeoShape {
     }
 
     @Override
+    public String toString() {
+        return "(" + getLatitude() + ", " + getLongitude() + ")";
+    }
+
+    @Override
     public boolean within(GeoShape geoShape) {
         throw new SecureGraphException("Not implemented for argument type " + geoShape.getClass().getName());
     }
@@ -82,6 +95,12 @@ public class GeoPoint implements Serializable, GeoShape {
         return true;
     }
 
+    public static double distanceBetween(GeoPoint geoPoint1, GeoPoint geoPoint2) {
+        return distanceBetween(
+                geoPoint1.getLatitude(), geoPoint1.getLongitude(),
+                geoPoint2.getLatitude(), geoPoint2.getLongitude());
+    }
+
     // see http://www.movable-type.co.uk/scripts/latlong.html
     public static double distanceBetween(double latitude1, double longitude1, double latitude2, double longitude2) {
         double dLat = toRadians(latitude2 - latitude1);
@@ -96,5 +115,39 @@ public class GeoPoint implements Serializable, GeoShape {
 
     private static double toRadians(double v) {
         return v * Math.PI / 180;
+    }
+
+    @Override
+    public int compareTo(GeoPoint other) {
+        int i;
+        if ((i = compare(getLatitude(), other.getLatitude())) != 0) {
+            return i;
+        }
+        if ((i = compare(getLongitude(), other.getLongitude())) != 0) {
+            return i;
+        }
+        if (getAltitude() != null && other.getAltitude() != null) {
+            return compare(getAltitude(), other.getAltitude());
+        }
+        if (getAltitude() != null) {
+            return 1;
+        }
+        if (other.getAltitude() != null) {
+            return -1;
+        }
+        return 0;
+    }
+
+    private static int compare(double d1, double d2) {
+        if (Math.abs(d1 - d2) < COMPARE_TOLERANCE) {
+            return 0;
+        }
+        if (d1 < d2) {
+            return -1;
+        }
+        if (d1 > d2) {
+            return 1;
+        }
+        return 0;
     }
 }

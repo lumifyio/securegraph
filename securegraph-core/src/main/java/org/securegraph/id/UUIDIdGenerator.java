@@ -9,7 +9,7 @@ public class UUIDIdGenerator implements IdGenerator {
     }
 
     @Override
-    public Object nextId() {
+    public String nextId() {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 }

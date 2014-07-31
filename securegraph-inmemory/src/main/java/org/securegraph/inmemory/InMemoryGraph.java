@@ -16,18 +16,18 @@ import static org.securegraph.util.Preconditions.checkNotNull;
 
 public class InMemoryGraph extends GraphBase {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
-    private final Map<Object, InMemoryVertex> vertices;
-    private final Map<Object, InMemoryEdge> edges;
+    private final Map<String, InMemoryVertex> vertices;
+    private final Map<String, InMemoryEdge> edges;
 
     public InMemoryGraph() {
         this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION.getConfig()), new DefaultSearchIndex(DEFAULT_CONFIGURATION.getConfig()));
     }
 
     public InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
-        this(configuration, idGenerator, searchIndex, new HashMap<Object, InMemoryVertex>(), new HashMap<Object, InMemoryEdge>());
+        this(configuration, idGenerator, searchIndex, new HashMap<String, InMemoryVertex>(), new HashMap<String, InMemoryEdge>());
     }
 
-    protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex, Map<Object, InMemoryVertex> vertices, Map<Object, InMemoryEdge> edges) {
+    protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex, Map<String, InMemoryVertex> vertices, Map<String, InMemoryEdge> edges) {
         super(configuration, idGenerator, searchIndex);
         this.vertices = vertices;
         this.edges = edges;
@@ -44,19 +44,33 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility, Authorizations authorizations) {
+    public VertexBuilder prepareVertex(String vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
 
         return new VertexBuilder(vertexId, visibility) {
             @Override
-            public Vertex save() {
-                Iterable<Property> properties = getProperties();
-                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties);
+            public Vertex save(Authorizations authorizations) {
+                Vertex existingVertex = getVertex(getVertexId(), authorizations);
+
+                Iterable<Property> properties;
+                if (existingVertex == null) {
+                    properties = getProperties();
+                } else {
+                    Iterable<Property> existingProperties = existingVertex.getProperties();
+                    Iterable<Property> newProperties = getProperties();
+                    properties = new TreeSet<Property>(toList(existingProperties));
+                    for (Property p : newProperties) {
+                        ((TreeSet<Property>) properties).remove(p);
+                        ((TreeSet<Property>) properties).add(p);
+                    }
+                }
+
+                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties, authorizations);
                 vertices.put(getVertexId(), vertex);
 
-                getSearchIndex().addElement(InMemoryGraph.this, vertex);
+                getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
 
                 return vertex;
             }
@@ -67,7 +81,7 @@ public class InMemoryGraph extends GraphBase {
     public Iterable<Vertex> getVertices(final Authorizations authorizations) throws SecureGraphException {
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
-            protected boolean isIncluded(InMemoryVertex src, Vertex edge) {
+            protected boolean isIncluded(InMemoryVertex src, Vertex vertex) {
                 return canRead(src.getVisibility(), authorizations);
             }
 
@@ -95,22 +109,37 @@ public class InMemoryGraph extends GraphBase {
         }
 
         this.vertices.remove(vertex.getId());
-        getSearchIndex().removeElement(this, vertex);
+        getSearchIndex().removeElement(this, vertex, authorizations);
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations) {
+    public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
         }
 
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
-            public Edge save() {
-                InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties());
+            public Edge save(Authorizations authorizations) {
+                Edge existingEdge = getEdge(getEdgeId(), authorizations);
+
+                Iterable<Property> properties;
+                if (existingEdge == null) {
+                    properties = getProperties();
+                } else {
+                    Iterable<Property> existingProperties = existingEdge.getProperties();
+                    Iterable<Property> newProperties = getProperties();
+                    properties = new TreeSet<Property>(toList(existingProperties));
+                    for (Property p : newProperties) {
+                        ((TreeSet<Property>) properties).remove(p);
+                        ((TreeSet<Property>) properties).add(p);
+                    }
+                }
+
+                InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), properties, authorizations);
                 edges.put(getEdgeId(), edge);
 
-                getSearchIndex().addElement(InMemoryGraph.this, edge);
+                getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
 
                 return edge;
             }
@@ -149,16 +178,16 @@ public class InMemoryGraph extends GraphBase {
         checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
 
         this.edges.remove(edge.getId());
-        getSearchIndex().removeElement(this, edge);
+        getSearchIndex().removeElement(this, edge, authorizations);
     }
 
-    public Iterable<Edge> getEdgesFromVertex(final Object vertexId, final Authorizations authorizations) {
+    public Iterable<Edge> getEdgesFromVertex(final String vertexId, final Authorizations authorizations) {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {
-                Object inVertexId = src.getVertexId(Direction.IN);
+                String inVertexId = src.getVertexId(Direction.IN);
                 checkNotNull(inVertexId, "inVertexId was null");
-                Object outVertexId = src.getVertexId(Direction.OUT);
+                String outVertexId = src.getVertexId(Direction.OUT);
                 checkNotNull(outVertexId, "outVertexId was null");
 
                 if (!inVertexId.equals(vertexId) && !outVertexId.equals(vertexId)) {
@@ -188,7 +217,7 @@ public class InMemoryGraph extends GraphBase {
         return authorizations.canRead(visibility);
     }
 
-    public void saveProperties(Element element, Iterable<Property> properties) {
+    public void saveProperties(Element element, Iterable<Property> properties, Authorizations authorizations) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
             vertex.updatePropertiesInternal(properties);
@@ -198,10 +227,10 @@ public class InMemoryGraph extends GraphBase {
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
-        getSearchIndex().addElement(this, element);
+        getSearchIndex().addElement(this, element, authorizations);
     }
 
-    public void removeProperty(Element element, Property property) {
+    public void removeProperty(Element element, Property property, Authorizations authorizations) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
             vertex.removePropertyInternal(property.getKey(), property.getName());
@@ -211,24 +240,24 @@ public class InMemoryGraph extends GraphBase {
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
-        getSearchIndex().removeElement(this, element);
+        getSearchIndex().removeProperty(this, element, property, authorizations);
     }
 
     private Edge filteredEdge(InMemoryEdge edge, Authorizations authorizations) {
-        Object edgeId = edge.getId();
-        Object outVertexId = edge.getVertexId(Direction.OUT);
-        Object inVertexId = edge.getVertexId(Direction.IN);
+        String edgeId = edge.getId();
+        String outVertexId = edge.getVertexId(Direction.OUT);
+        String inVertexId = edge.getVertexId(Direction.IN);
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
         List<Property> properties = filterProperties(edge.getProperties(), authorizations);
-        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties);
+        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, authorizations);
     }
 
     private Vertex filteredVertex(InMemoryVertex vertex, Authorizations authorizations) {
-        Object vertexId = vertex.getId();
+        String vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
         List<Property> properties = filterProperties(vertex.getProperties(), authorizations);
-        return new InMemoryVertex(this, vertexId, visibility, properties);
+        return new InMemoryVertex(this, vertexId, visibility, properties, authorizations);
     }
 
     private List<Property> filterProperties(Iterable<Property> properties, Authorizations authorizations) {
@@ -241,31 +270,31 @@ public class InMemoryGraph extends GraphBase {
         return filteredProperties;
     }
 
-    public Map<Object, InMemoryVertex> getAllVertices() {
+    public Map<String, InMemoryVertex> getAllVertices() {
         return this.vertices;
     }
 
-    public Map<Object, InMemoryEdge> getAllEdges() {
+    public Map<String, InMemoryEdge> getAllEdges() {
         return this.edges;
     }
 
-    void alterEdgeVisibility(Object edgeId, Visibility newEdgeVisibility) {
+    void alterEdgeVisibility(String edgeId, Visibility newEdgeVisibility) {
         this.edges.get(edgeId).setVisibilityInternal(newEdgeVisibility);
     }
 
-    void alterVertexVisibility(Object vertexId, Visibility newVertexVisibility) {
+    void alterVertexVisibility(String vertexId, Visibility newVertexVisibility) {
         this.vertices.get(vertexId).setVisibilityInternal(newVertexVisibility);
     }
 
-    void alterEdgePropertyVisibilities(Object edgeId, List<AlterPropertyVisibility> alterPropertyVisibilities) {
-        alterElementPropertyVisibilities(this.edges.get(edgeId), alterPropertyVisibilities);
+    void alterEdgePropertyVisibilities(String edgeId, List<AlterPropertyVisibility> alterPropertyVisibilities, Authorizations authorizations) {
+        alterElementPropertyVisibilities(this.edges.get(edgeId), alterPropertyVisibilities, authorizations);
     }
 
-    void alterVertexPropertyVisibilities(Object vertexId, List<AlterPropertyVisibility> alterPropertyVisibilities) {
-        alterElementPropertyVisibilities(this.vertices.get(vertexId), alterPropertyVisibilities);
+    void alterVertexPropertyVisibilities(String vertexId, List<AlterPropertyVisibility> alterPropertyVisibilities, Authorizations authorizations) {
+        alterElementPropertyVisibilities(this.vertices.get(vertexId), alterPropertyVisibilities, authorizations);
     }
 
-    void alterElementPropertyVisibilities(InMemoryElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {
+    void alterElementPropertyVisibilities(InMemoryElement element, List<AlterPropertyVisibility> alterPropertyVisibilities, Authorizations authorizations) {
         for (AlterPropertyVisibility apv : alterPropertyVisibilities) {
             Property property = element.getProperty(apv.getKey(), apv.getName(), apv.getExistingVisibility());
             if (property == null) {
@@ -274,16 +303,16 @@ public class InMemoryGraph extends GraphBase {
             Object value = property.getValue();
             Map<String, Object> metadata = property.getMetadata();
 
-            element.removeProperty(apv.getKey(), apv.getName());
-            element.addPropertyValue(apv.getKey(), apv.getName(), value, metadata, apv.getVisibility());
+            element.removeProperty(apv.getKey(), apv.getName(), authorizations);
+            element.addPropertyValue(apv.getKey(), apv.getName(), value, metadata, apv.getVisibility(), authorizations);
         }
     }
 
-    public void alterEdgePropertyMetadata(Object edgeId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+    public void alterEdgePropertyMetadata(String edgeId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
         alterElementPropertyMetadata(this.edges.get(edgeId), alterPropertyMetadatas);
     }
 
-    public void alterVertexPropertyMetadata(Object vertexId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
+    public void alterVertexPropertyMetadata(String vertexId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
         alterElementPropertyMetadata(this.vertices.get(vertexId), alterPropertyMetadatas);
     }
 
@@ -301,5 +330,12 @@ public class InMemoryGraph extends GraphBase {
     @Override
     public boolean isVisibilityValid(Visibility visibility, Authorizations authorizations) {
         return authorizations.canRead(visibility);
+    }
+
+    @Override
+    public void clearData() {
+        this.vertices.clear();
+        this.edges.clear();
+        getSearchIndex().clearData();
     }
 }

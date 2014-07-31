@@ -1,18 +1,19 @@
 package org.securegraph.search;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Element;
-import org.securegraph.Graph;
-import org.securegraph.Vertex;
+import org.securegraph.*;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.query.VertexQuery;
 
+import java.io.IOException;
+
 public interface SearchIndex {
-    void addElement(Graph graph, Element element);
+    void addElement(Graph graph, Element element, Authorizations authorizations);
 
-    void removeElement(Graph graph, Element element);
+    void removeElement(Graph graph, Element element, Authorizations authorizations);
 
-    void addElements(Graph graph, Iterable<Element> elements);
+    void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations);
+
+    void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations);
 
     GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations);
 
@@ -21,4 +22,14 @@ public interface SearchIndex {
     void flush();
 
     void shutdown();
+
+    void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException;
+
+    boolean isFieldBoostSupported();
+
+    boolean isEdgeBoostSupported();
+
+    void clearData();
+
+    SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
 }

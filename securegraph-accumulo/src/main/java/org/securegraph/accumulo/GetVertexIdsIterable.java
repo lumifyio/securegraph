@@ -5,7 +5,7 @@ import org.securegraph.util.LookAheadIterable;
 import java.util.Collection;
 import java.util.Iterator;
 
-class GetVertexIdsIterable extends LookAheadIterable<EdgeInfo, Object> {
+class GetVertexIdsIterable extends LookAheadIterable<EdgeInfo, String> {
     private final Collection<EdgeInfo> edgeInfos;
     private final String[] labels;
 
@@ -15,7 +15,7 @@ class GetVertexIdsIterable extends LookAheadIterable<EdgeInfo, Object> {
     }
 
     @Override
-    protected boolean isIncluded(EdgeInfo edgeInfo, Object vertexId) {
+    protected boolean isIncluded(EdgeInfo edgeInfo, String vertexId) {
         if (labels == null || labels.length == 0) {
             return true;
         }
@@ -28,7 +28,7 @@ class GetVertexIdsIterable extends LookAheadIterable<EdgeInfo, Object> {
     }
 
     @Override
-    protected Object convert(EdgeInfo edgeInfo) {
+    protected String convert(EdgeInfo edgeInfo) {
         return edgeInfo.getVertexId();
     }
 

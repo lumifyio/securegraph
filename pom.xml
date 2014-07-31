@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.sonatype.oss</groupId>
@@ -11,8 +10,8 @@
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.5.1-SNAPSHOT</version>
-    <name>securegraph</name>
+    <version>0.7.1-SNAPSHOT</version>
+    <name>SecureGraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
         requires authorizations and visibilities. Secure graph also supports multivalued properties as well as property
@@ -54,6 +53,10 @@
     </developers>
 
     <properties>
+        <java.compiler.showWarnings>true</java.compiler.showWarnings>
+        <java.source.version>1.6</java.source.version>
+        <java.target.version>1.6</java.target.version>
+
         <junit.version>4.11</junit.version>
         <slf4j.version>1.7.5</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
@@ -65,9 +68,12 @@
         <maven.plugin.gpg.version>1.4</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>2.9.1</maven.plugin.javadoc.version>
         <maven.plugin.source.version>2.2.1</maven.plugin.source.version>
+        <maven.plugin.compiler.version>3.1</maven.plugin.compiler.version>
         <maven.plugin.plugin.version>3.2</maven.plugin.plugin.version>
-        <maven.plugin.release.version>2.4.2</maven.plugin.release.version>
+        <maven.plugin.release.version>2.5</maven.plugin.release.version>
         <maven.plugin.scm.version>1.8.1</maven.plugin.scm.version>
+
+        <elasticsearch.version>1.1.2</elasticsearch.version>
     </properties>
 
     <dependencyManagement>
@@ -119,6 +125,16 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
                 <version>${maven.plugin.scm.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.plugin.compiler.version}</version>
+                <configuration>
+                    <source>${java.source.version}</source>
+                    <target>${java.target.version}</target>
+                    <showWarnings>${java.compiler.showWarnings}</showWarnings>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -180,12 +196,15 @@
         <module>securegraph-accumulo</module>
         <module>securegraph-accumulo-blueprints</module>
         <module>securegraph-blueprints-test</module>
+        <module>securegraph-elasticsearch-base</module>
         <module>securegraph-elasticsearch</module>
         <module>securegraph-inmemory</module>
         <module>securegraph-tools</module>
         <module>securegraph-accumulo-iterators</module>
-        <module>securegraph-performance-test</module>
-        <module>securegraph-elasticsearch-nested</module>
+        <module>securegraph-kryo-serializer</module>
+        <module>securegraph-elasticsearch-parentchild</module>
+        <module>securegraph-elasticsearch-plugin</module>
+        <module>securegraph-examples</module>
     </modules>
 
     <profiles>

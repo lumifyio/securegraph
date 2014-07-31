@@ -83,15 +83,15 @@ public class GraphBackup extends GraphToolBase {
 
     private JSONObject edgeToJson(Edge edge) {
         JSONObject json = elementToJson(edge);
-        json.put("outVertexId", objectToJsonString(edge.getVertexId(Direction.OUT)));
-        json.put("inVertexId", objectToJsonString(edge.getVertexId(Direction.IN)));
+        json.put("outVertexId", edge.getVertexId(Direction.OUT));
+        json.put("inVertexId", edge.getVertexId(Direction.IN));
         json.put("label", edge.getLabel());
         return json;
     }
 
     private JSONObject elementToJson(Element element) {
         JSONObject json = new JSONObject();
-        json.put("id", objectToJsonString(element.getId()));
+        json.put("id", element.getId());
         json.put("visibility", element.getVisibility().getVisibilityString());
         json.put("properties", propertiesToJson(element.getProperties()));
         return json;

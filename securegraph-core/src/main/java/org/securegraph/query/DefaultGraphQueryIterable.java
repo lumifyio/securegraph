@@ -9,11 +9,13 @@ public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>
     private final QueryBase.Parameters parameters;
     private final Iterable<T> iterable;
     private final boolean evaluateQueryString;
+    private final boolean evaluateHasContainers;
 
-    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString) {
+    public DefaultGraphQueryIterable(QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, boolean evaluateHasContainers) {
         this.parameters = parameters;
         this.iterable = iterable;
         this.evaluateQueryString = evaluateQueryString;
+        this.evaluateHasContainers = evaluateHasContainers;
     }
 
     @Override
@@ -57,10 +59,12 @@ public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>
                     T elem = it.next();
 
                     boolean match = true;
-                    for (QueryBase.HasContainer has : parameters.getHasContainers()) {
-                        if (!has.isMatch(elem)) {
-                            match = false;
-                            break;
+                    if (evaluateHasContainers) {
+                        for (QueryBase.HasContainer has : parameters.getHasContainers()) {
+                            if (!has.isMatch(elem)) {
+                                match = false;
+                                break;
+                            }
                         }
                     }
                     if (!match) {

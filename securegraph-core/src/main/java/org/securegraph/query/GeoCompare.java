@@ -1,13 +1,16 @@
 package org.securegraph.query;
 
 import org.securegraph.Property;
+import org.securegraph.PropertyDefinition;
 import org.securegraph.type.GeoShape;
+
+import java.util.Map;
 
 public enum GeoCompare implements Predicate {
     WITHIN;
 
     @Override
-    public boolean evaluate(Iterable<Property> properties, Object second) {
+    public boolean evaluate(Iterable<Property> properties, Object second, Map<String, PropertyDefinition> propertyDefinitions) {
         for (Property property : properties) {
             if (evaluate(property, second)) {
                 return true;

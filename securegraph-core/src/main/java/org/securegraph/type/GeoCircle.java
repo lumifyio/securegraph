@@ -1,6 +1,7 @@
 package org.securegraph.type;
 
 import org.securegraph.SecureGraphException;
+
 import java.io.Serializable;
 
 public class GeoCircle implements Serializable, GeoShape {
@@ -64,5 +65,10 @@ public class GeoCircle implements Serializable, GeoShape {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "GeoCircle[" + getLatitude() + ", " + getLongitude() + ", " + getRadius() + "]";
     }
 }

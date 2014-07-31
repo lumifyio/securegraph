@@ -9,23 +9,23 @@ import org.securegraph.util.StreamUtils;
 import java.io.IOException;
 
 public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
-    protected InMemoryElement(Graph graph, Object id, Visibility visibility, Iterable<Property> properties) {
-        super(graph, id, visibility, properties);
+    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+        super(graph, id, visibility, properties, authorizations);
     }
 
     @Override
-    public void removeProperty(String key, String name) {
+    public void removeProperty(String key, String name, Authorizations authorizations) {
         Property property = removePropertyInternal(key, name);
         if (property != null) {
-            getGraph().removeProperty(this, property);
+            getGraph().removeProperty(this, property, authorizations);
         }
     }
 
     @Override
-    public void removeProperty(String name) {
+    public void removeProperty(String name, Authorizations authorizations) {
         Iterable<Property> properties = removePropertyInternal(name);
         for (Property property : properties) {
-            getGraph().removeProperty(this, property);
+            getGraph().removeProperty(this, property, authorizations);
         }
     }
 
@@ -56,26 +56,26 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    protected Property removePropertyInternal(Object key, String name) {
+    protected Property removePropertyInternal(String key, String name) {
         return super.removePropertyInternal(key, name);
     }
 
-    protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation) {
+    protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation, Authorizations authorizations) {
         Iterable<Property> properties = mutation.getProperties();
         updatePropertiesInternal(properties);
-        getGraph().saveProperties(mutation.getElement(), properties);
+        getGraph().saveProperties(mutation.getElement(), properties, authorizations);
 
         if (mutation.getElement() instanceof Edge) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterEdgeVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
-            getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities());
+            getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
             getGraph().alterEdgePropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
         } else if (mutation.getElement() instanceof Vertex) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterVertexVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
-            getGraph().alterVertexPropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities());
+            getGraph().alterVertexPropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
             getGraph().alterVertexPropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
         } else {
             throw new IllegalStateException("Unexpected element type: " + mutation.getElement());

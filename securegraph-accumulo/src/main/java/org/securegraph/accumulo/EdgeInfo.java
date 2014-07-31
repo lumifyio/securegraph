@@ -5,9 +5,12 @@ import java.io.Serializable;
 public class EdgeInfo implements Serializable {
     private static final long serialVersionUID = 1L;
     private String label;
-    private Object vertexId;
+    private String vertexId;
 
-    public EdgeInfo(String label, Object vertexId) {
+    protected EdgeInfo() {
+    }
+
+    public EdgeInfo(String label, String vertexId) {
         this.label = label;
         this.vertexId = vertexId;
     }
@@ -16,7 +19,7 @@ public class EdgeInfo implements Serializable {
         return label;
     }
 
-    public Object getVertexId() {
+    public String getVertexId() {
         return vertexId;
     }
 }

@@ -3,51 +3,24 @@
     <parent>
         <artifactId>securegraph-root</artifactId>
         <groupId>org.securegraph</groupId>
-        <version>0.5.1-SNAPSHOT</version>
+        <version>0.7.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>securegraph-elasticsearch</artifactId>
-
-    <properties>
-        <elasticsearch.version>1.1.0</elasticsearch.version>
-    </properties>
+    <name>SecureGraph: Elasticsearch</name>
 
     <dependencies>
         <dependency>
             <groupId>org.securegraph</groupId>
-            <artifactId>securegraph-core</artifactId>
+            <artifactId>securegraph-elasticsearch-base</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.securegraph</groupId>
-            <artifactId>securegraph-test</artifactId>
+            <artifactId>securegraph-elasticsearch-plugin</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.securegraph</groupId>
-            <artifactId>securegraph-inmemory</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.securegraph</groupId>
-            <artifactId>securegraph-tools</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>${elasticsearch.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -64,6 +37,18 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.securegraph</groupId>
+            <artifactId>securegraph-test</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.securegraph</groupId>
+            <artifactId>securegraph-inmemory</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

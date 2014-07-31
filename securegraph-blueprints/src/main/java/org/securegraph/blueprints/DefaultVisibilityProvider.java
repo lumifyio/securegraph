@@ -13,12 +13,12 @@ public class DefaultVisibilityProvider implements VisibilityProvider {
     }
 
     @Override
-    public Visibility getVisibilityForEdge(Object id, Vertex outVertex, Vertex inVertex, String label) {
+    public Visibility getVisibilityForEdge(String id, Vertex outVertex, Vertex inVertex, String label) {
         return DEFAULT_VISIBILITY;
     }
 
     @Override
-    public Visibility getVisibilityForVertex(Object id) {
+    public Visibility getVisibilityForVertex(String id) {
         return DEFAULT_VISIBILITY;
     }
 

@@ -1,5 +1,6 @@
 package org.securegraph.mutation;
 
+import org.securegraph.Authorizations;
 import org.securegraph.Element;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
@@ -14,7 +15,7 @@ public interface ElementMutation<T extends Element> {
      *
      * @return the element which was mutated.
      */
-    T save();
+    T save(Authorizations authorizations);
 
     /**
      * Sets or updates a property value. The property key will be set to a constant. This is a convenience method
