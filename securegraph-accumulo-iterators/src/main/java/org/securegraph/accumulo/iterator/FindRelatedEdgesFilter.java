@@ -16,7 +16,7 @@ import java.util.Set;
 
 public class FindRelatedEdgesFilter extends Filter {
     private static final String OPT_VERTEX_IDS = "vertex.ids";
-    private Set<Object> vertexIds;
+    private Set<String> vertexIds;
 
     @Override
     public void init(SortedKeyValueIterator<Key, Value> source, Map<String, String> options, IteratorEnvironment env) throws IOException {
@@ -24,12 +24,12 @@ public class FindRelatedEdgesFilter extends Filter {
         super.init(source, options, env);
     }
 
-    private Set<Object> getVertexIdsOption(Map<String, String> options) throws IOException {
+    private Set<String> getVertexIdsOption(Map<String, String> options) throws IOException {
         String vertexIdsString = options.get(OPT_VERTEX_IDS);
         try {
             BASE64Decoder decoder = new BASE64Decoder();
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(decoder.decodeBuffer(vertexIdsString)));
-            return (Set<Object>) in.readObject();
+            return (Set<String>) in.readObject();
         } catch (ClassNotFoundException ex) {
             throw new IOException("Could not read vertex ids", ex);
         }
@@ -54,7 +54,7 @@ public class FindRelatedEdgesFilter extends Filter {
         }
     }
 
-    public static void setVertexIds(IteratorSetting iteratorSetting, Set<Object> vertexIdsSet) {
+    public static void setVertexIds(IteratorSetting iteratorSetting, Set<String> vertexIdsSet) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream out = new ObjectOutputStream(baos);

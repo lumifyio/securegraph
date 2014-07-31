@@ -23,7 +23,7 @@ public interface Graph {
      * @param authorizations The authorizations required to add and retrieve the new vertex.
      * @return The newly added vertex.
      */
-    Vertex addVertex(Object vertexId, Visibility visibility, Authorizations authorizations);
+    Vertex addVertex(String vertexId, Visibility visibility, Authorizations authorizations);
 
     /**
      * Adds the vertices to the graph.
@@ -51,7 +51,7 @@ public interface Graph {
      * @param visibility The visibility to assign to the new vertex.
      * @return The vertex builder.
      */
-    VertexBuilder prepareVertex(Object vertexId, Visibility visibility);
+    VertexBuilder prepareVertex(String vertexId, Visibility visibility);
 
     /**
      * Get a vertex from the graph.
@@ -60,7 +60,7 @@ public interface Graph {
      * @param authorizations The authorizations required to load the vertex.
      * @return The vertex if successful. null if the vertex is not found or the required authorizations were not provided.
      */
-    Vertex getVertex(Object vertexId, Authorizations authorizations);
+    Vertex getVertex(String vertexId, Authorizations authorizations);
 
     /**
      * Gets all vertices on the graph.
@@ -79,7 +79,7 @@ public interface Graph {
      * @param authorizations The authorizations required to load the vertex.
      * @return An iterable of all the vertices.
      */
-    Iterable<Vertex> getVertices(Iterable<Object> ids, Authorizations authorizations);
+    Iterable<Vertex> getVertices(Iterable<String> ids, Authorizations authorizations);
 
     /**
      * Gets all vertices matching the given ids on the graph. This method is similar to
@@ -91,7 +91,7 @@ public interface Graph {
      * @param authorizations The authorizations required to load the vertex.
      * @return An iterable of all the vertices.
      */
-    List<Vertex> getVerticesInOrder(Iterable<Object> ids, Authorizations authorizations);
+    List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations);
 
     /**
      * Removes a vertex from the graph.
@@ -124,7 +124,7 @@ public interface Graph {
      * @param authorizations The authorizations required to add and retrieve the new edge.
      * @return The newly created edge.
      */
-    Edge addEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations);
+    Edge addEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations);
 
     /**
      * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
@@ -149,7 +149,7 @@ public interface Graph {
      * @param visibility The visibility to assign to the new edge.
      * @return The edge builder.
      */
-    EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility);
+    EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility);
 
     /**
      * Get an edge from the graph.
@@ -158,7 +158,7 @@ public interface Graph {
      * @param authorizations The authorizations required to load the edge.
      * @return The edge if successful. null if the edge is not found or the required authorizations were not provided.
      */
-    Edge getEdge(Object edgeId, Authorizations authorizations);
+    Edge getEdge(String edgeId, Authorizations authorizations);
 
     /**
      * Gets all edges on the graph.
@@ -175,7 +175,7 @@ public interface Graph {
      * @param authorizations The authorizations required to load the edge.
      * @return An iterable of all the edges.
      */
-    Iterable<Edge> getEdges(Iterable<Object> ids, Authorizations authorizations);
+    Iterable<Edge> getEdges(Iterable<String> ids, Authorizations authorizations);
 
     /**
      * Given a list of vertex ids, find all the edge ids that connect them.
@@ -184,7 +184,7 @@ public interface Graph {
      * @param authorizations The authorizations required to load the edges.
      * @return An iterable of all the edge ids between any two vertices.
      */
-    Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations);
+    Iterable<String> findRelatedEdges(Iterable<String> vertexIds, Authorizations authorizations);
 
     /**
      * Removes an edge from the graph.

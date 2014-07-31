@@ -15,7 +15,7 @@ public interface Element {
     /**
      * id of the element.
      */
-    Object getId();
+    String getId();
 
     /**
      * the visibility of the element.
@@ -35,7 +35,7 @@ public interface Element {
      * @param name the name of the property.
      * @return The property if found. null, if not found.
      */
-    Property getProperty(Object key, String name);
+    Property getProperty(String key, String name);
 
     /**
      * Gets a property by key, name, and visibility.
@@ -45,7 +45,7 @@ public interface Element {
      * @param visibility The visibility of the property to get.
      * @return The property if found. null, if not found.
      */
-    Property getProperty(Object key, String name, Visibility visibility);
+    Property getProperty(String key, String name, Visibility visibility);
 
     /**
      * Gets a property by name. This assumes a single valued property. If multiple property values exists this will only return the first one.
@@ -70,7 +70,7 @@ public interface Element {
      * @param key  The property key
      * @param name The name of the property to retrieve
      */
-    Iterable<Property> getProperties(Object key, String name);
+    Iterable<Property> getProperties(String key, String name);
 
     /**
      * an Iterable of all the property values with the given name on this element that you have access to based on the authorizations
@@ -87,7 +87,7 @@ public interface Element {
      * @param key  The property key
      * @param name The name of the property to retrieve
      */
-    Iterable<Object> getPropertyValues(Object key, String name);
+    Iterable<Object> getPropertyValues(String key, String name);
 
     /**
      * Convenience method to retrieve the first value of the property with the given name. This method calls
@@ -102,7 +102,7 @@ public interface Element {
 
     /**
      * Convenience method to retrieve the first value of the property with the given name. This method calls
-     * org.securegraph.Element#getPropertyValue(java.lang.Object, java.lang.String, int) with an index of 0.
+     * org.securegraph.Element#getPropertyValue(java.lang.String, java.lang.String, int) with an index of 0.
      * <p/>
      * This method makes no attempt to verify that one and only one value exists given the name.
      *
@@ -110,7 +110,7 @@ public interface Element {
      * @param name The name of the property to retrieve
      * @return The value of the property. null, if the property was not found.
      */
-    Object getPropertyValue(Object key, String name);
+    Object getPropertyValue(String key, String name);
 
     /**
      * Gets the nth property value of the named property. If the named property has multiple values this method
@@ -131,7 +131,7 @@ public interface Element {
      * Gets the nth property value of the named property. If the named property has multiple values this method
      * provides an easy way to get the value by index.
      * <p/>
-     * This method is a convenience method and calls org.securegraph.Element#getPropertyValues(java.lang.Object, java.lang.String)
+     * This method is a convenience method and calls org.securegraph.Element#getPropertyValues(java.lang.String, java.lang.String)
      * and iterates over that list until the nth value.
      * <p/>
      * This method assumes the property values are retrieved in a deterministic order.
@@ -141,7 +141,7 @@ public interface Element {
      * @param index The zero based index into the values.
      * @return The value of the property. null, if the property doesn't exist or doesn't have that many values.
      */
-    Object getPropertyValue(Object key, String name, int index);
+    Object getPropertyValue(String key, String name, int index);
 
     /**
      * Prepares a mutation to allow changing multiple property values at the same time. This method is similar to

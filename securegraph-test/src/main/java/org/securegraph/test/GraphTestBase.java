@@ -98,7 +98,7 @@ public abstract class GraphTestBase {
     public void testAddVertexWithoutId() {
         Vertex v = graph.addVertex(VISIBILITY_A, AUTHORIZATIONS_A);
         assertNotNull(v);
-        Object vertexId = v.getId();
+        String vertexId = v.getId();
         assertNotNull(vertexId);
 
         v = graph.getVertex(vertexId, AUTHORIZATIONS_A);
@@ -420,7 +420,7 @@ public abstract class GraphTestBase {
                 .setProperty("prop1", "v3", VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
 
-        List<Object> ids = new ArrayList<Object>();
+        List<String> ids = new ArrayList<String>();
         ids.add("v2");
         ids.add("v1");
 
@@ -464,7 +464,7 @@ public abstract class GraphTestBase {
                 .setProperty("prop1", "e3", VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
 
-        List<Object> ids = new ArrayList<Object>();
+        List<String> ids = new ArrayList<String>();
         ids.add("e1");
         ids.add("e2");
         Iterable<Edge> edges = graph.getEdges(ids, AUTHORIZATIONS_A);
@@ -1116,7 +1116,7 @@ public abstract class GraphTestBase {
         for (Path path : paths) {
             assertEquals(3, path.length());
             int i = 0;
-            for (Object id : path) {
+            for (String id : path) {
                 if (i == 0) {
                     assertEquals(id, v1.getId());
                 } else if (i == 1) {
@@ -1147,7 +1147,7 @@ public abstract class GraphTestBase {
         for (Path path : paths) {
             assertEquals(3, path.length());
             int i = 0;
-            for (Object id : path) {
+            for (String id : path) {
                 if (i == 0) {
                     assertEquals(id, v4.getId());
                 } else if (i == 1) {
@@ -1196,7 +1196,7 @@ public abstract class GraphTestBase {
         for (Path path : paths) {
             assertEquals(3, path.length());
             int i = 0;
-            for (Object id : path) {
+            for (String id : path) {
                 if (i == 0) {
                     assertEquals(id, v1.getId());
                 } else if (i == 1) {
@@ -1227,7 +1227,7 @@ public abstract class GraphTestBase {
         for (Path path : paths) {
             if (path.length() == 3) {
                 int i = 0;
-                for (Object id : path) {
+                for (String id : path) {
                     if (i == 0) {
                         assertEquals(id, v1.getId());
                     } else if (i == 1) {
@@ -1264,7 +1264,7 @@ public abstract class GraphTestBase {
         for (Path path : paths) {
             assertEquals(4, path.length());
             int i = 0;
-            for (Object id : path) {
+            for (String id : path) {
                 if (i == 0) {
                     assertEquals(id, v1.getId());
                 } else if (i == 1) {
@@ -1360,16 +1360,16 @@ public abstract class GraphTestBase {
         Edge ev3v1 = graph.addEdge("e v3->v1", v3, v1, "", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("e v3->v4", v3, v4, "", VISIBILITY_A, AUTHORIZATIONS_A);
 
-        List<Object> vertexIds = new ArrayList<Object>();
+        List<String> vertexIds = new ArrayList<String>();
         vertexIds.add("v1");
         vertexIds.add("v2");
         vertexIds.add("v3");
-        Iterable<Object> edges = toList(graph.findRelatedEdges(vertexIds, AUTHORIZATIONS_A));
-        assertEquals(4, count(edges));
-        assertContains(ev1v2.getId(), edges);
-        assertContains(ev1v3.getId(), edges);
-        assertContains(ev2v3.getId(), edges);
-        assertContains(ev3v1.getId(), edges);
+        Iterable<String> edgeIds = toList(graph.findRelatedEdges(vertexIds, AUTHORIZATIONS_A));
+        assertEquals(4, count(edgeIds));
+        assertContains(ev1v2.getId(), edgeIds);
+        assertContains(ev1v3.getId(), edgeIds);
+        assertContains(ev2v3.getId(), edgeIds);
+        assertContains(ev3v1.getId(), edgeIds);
     }
 
     // Test for performance
@@ -1401,15 +1401,15 @@ public abstract class GraphTestBase {
         endTime = new Date();
         long insertEdgesTime = endTime.getTime() - startTime.getTime();
 
-        List<Object> vertexIds = new ArrayList<Object>();
+        List<String> vertexIds = new ArrayList<String>();
         for (int i = 0; i < totalVerticesToCheck; i++) {
             Vertex v = vertices.get(random.nextInt(vertices.size()));
             vertexIds.add(v.getId());
         }
 
         startTime = new Date();
-        Iterable<Object> edges = toList(graph.findRelatedEdges(vertexIds, AUTHORIZATIONS_A));
-        count(edges);
+        Iterable<String> edgeIds = toList(graph.findRelatedEdges(vertexIds, AUTHORIZATIONS_A));
+        count(edgeIds);
         endTime = new Date();
         long findRelatedEdgesTime = endTime.getTime() - startTime.getTime();
 

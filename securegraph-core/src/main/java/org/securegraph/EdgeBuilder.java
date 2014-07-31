@@ -1,13 +1,13 @@
 package org.securegraph;
 
 public abstract class EdgeBuilder extends ElementBuilder<Edge> {
-    private Object edgeId;
+    private String edgeId;
     private Vertex outVertex;
     private Vertex inVertex;
     private String label;
     private Visibility visibility;
 
-    public EdgeBuilder(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+    public EdgeBuilder(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         this.edgeId = edgeId;
         this.outVertex = outVertex;
         this.inVertex = inVertex;
@@ -23,7 +23,7 @@ public abstract class EdgeBuilder extends ElementBuilder<Edge> {
     @Override
     public abstract Edge save(Authorizations authorizations);
 
-    protected Object getEdgeId() {
+    protected String getEdgeId() {
         return edgeId;
     }
 

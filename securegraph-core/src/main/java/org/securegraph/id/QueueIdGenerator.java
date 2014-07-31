@@ -6,10 +6,10 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class QueueIdGenerator implements IdGenerator {
-    private Queue<Object> ids = new LinkedList<Object>();
+    private Queue<String> ids = new LinkedList<String>();
 
     @Override
-    public Object nextId() {
+    public String nextId() {
         synchronized (ids) {
             if (ids.size() == 0) {
                 throw new SecureGraphException("No ids in the queue to give out");
@@ -18,7 +18,7 @@ public class QueueIdGenerator implements IdGenerator {
         }
     }
 
-    public void push(Object id) {
+    public void push(String id) {
         ids.add(id);
     }
 }

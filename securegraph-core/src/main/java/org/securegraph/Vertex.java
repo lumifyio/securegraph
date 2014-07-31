@@ -13,7 +13,7 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Direction direction, Authorizations authorizations);
 
-    Iterable<Object> getEdgeIds(Direction direction, Authorizations authorizations);
+    Iterable<String> getEdgeIds(Direction direction, Authorizations authorizations);
 
     /**
      * Gets all edges with the given label attached to this vertex.
@@ -25,7 +25,7 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations);
 
-    Iterable<Object> getEdgeIds(Direction direction, String label, Authorizations authorizations);
+    Iterable<String> getEdgeIds(Direction direction, String label, Authorizations authorizations);
 
     /**
      * Gets all edges with any of the given labels attached to this vertex.
@@ -37,7 +37,7 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Direction direction, String[] labels, Authorizations authorizations);
 
-    Iterable<Object> getEdgeIds(Direction direction, String[] labels, Authorizations authorizations);
+    Iterable<String> getEdgeIds(Direction direction, String[] labels, Authorizations authorizations);
 
     /**
      * Gets all edges between this vertex and another vertex.
@@ -49,7 +49,7 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, Authorizations authorizations);
 
-    Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations);
+    Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations);
 
     /**
      * Gets all edges between this vertex and another vertex matching the given label.
@@ -62,7 +62,7 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String label, Authorizations authorizations);
 
-    Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations);
+    Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations);
 
     /**
      * Gets all edges between this vertex and another vertex matching any of the given labels.
@@ -75,7 +75,7 @@ public interface Vertex extends Element {
      */
     Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations);
 
-    Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations);
+    Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations);
 
     int getEdgeCount(Direction direction, Authorizations authorizations);
 
@@ -118,7 +118,7 @@ public interface Vertex extends Element {
      * @param authorizations The authorizations used to find the vertices.
      * @return An Iterable of vertex ids.
      */
-    Iterable<Object> getVertexIds(Direction direction, String label, Authorizations authorizations);
+    Iterable<String> getVertexIds(Direction direction, String label, Authorizations authorizations);
 
     /**
      * Gets vertex ids of connected vertices.
@@ -128,7 +128,7 @@ public interface Vertex extends Element {
      * @param authorizations The authorizations used to find the vertices.
      * @return An Iterable of vertex ids.
      */
-    Iterable<Object> getVertexIds(Direction direction, String[] labels, Authorizations authorizations);
+    Iterable<String> getVertexIds(Direction direction, String[] labels, Authorizations authorizations);
 
     /**
      * Gets vertex ids of connected vertices.
@@ -137,7 +137,7 @@ public interface Vertex extends Element {
      * @param authorizations The authorizations used to find the vertices.
      * @return An Iterable of vertex ids.
      */
-    Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations);
+    Iterable<String> getVertexIds(Direction direction, Authorizations authorizations);
 
     /**
      * Creates a query to query the edges and vertices attached to this vertex.

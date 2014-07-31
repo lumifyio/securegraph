@@ -12,7 +12,7 @@ import static org.securegraph.util.IterableUtils.count;
 import static org.securegraph.util.IterableUtils.toSet;
 
 public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
-    public InMemoryVertex(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+    public InMemoryVertex(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         super(graph, id, visibility, properties, authorizations);
     }
 
@@ -34,7 +34,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getEdgeIds(Direction direction, Authorizations authorizations) {
+    public Iterable<String> getEdgeIds(Direction direction, Authorizations authorizations) {
         return new EdgeToEdgeIdIterable(getEdges(direction, authorizations));
     }
 
@@ -44,7 +44,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getEdgeIds(Direction direction, String label, Authorizations authorizations) {
+    public Iterable<String> getEdgeIds(Direction direction, String label, Authorizations authorizations) {
         return new EdgeToEdgeIdIterable(getEdges(direction, label, authorizations));
     }
 
@@ -64,7 +64,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getEdgeIds(Direction direction, String[] labels, Authorizations authorizations) {
+    public Iterable<String> getEdgeIds(Direction direction, String[] labels, Authorizations authorizations) {
         return new EdgeToEdgeIdIterable(getEdges(direction, labels, authorizations));
     }
 
@@ -79,7 +79,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations) {
+    public Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, Authorizations authorizations) {
         return new EdgeToEdgeIdIterable(getEdges(otherVertex, direction, authorizations));
     }
 
@@ -94,7 +94,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+    public Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
         return new EdgeToEdgeIdIterable(getEdges(otherVertex, direction, label, authorizations));
     }
 
@@ -109,7 +109,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getEdgeIds(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+    public Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
         return new EdgeToEdgeIdIterable(getEdges(otherVertex, direction, labels, authorizations));
     }
 
@@ -154,30 +154,30 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Object> getVertexIds(Direction direction, String label, Authorizations authorizations) {
-        return new ConvertingIterable<Vertex, Object>(getVertices(direction, label, authorizations)) {
+    public Iterable<String> getVertexIds(Direction direction, String label, Authorizations authorizations) {
+        return new ConvertingIterable<Vertex, String>(getVertices(direction, label, authorizations)) {
             @Override
-            protected Object convert(Vertex o) {
+            protected String convert(Vertex o) {
                 return o.getId();
             }
         };
     }
 
     @Override
-    public Iterable<Object> getVertexIds(Direction direction, String[] labels, Authorizations authorizations) {
-        return new ConvertingIterable<Vertex, Object>(getVertices(direction, labels, authorizations)) {
+    public Iterable<String> getVertexIds(Direction direction, String[] labels, Authorizations authorizations) {
+        return new ConvertingIterable<Vertex, String>(getVertices(direction, labels, authorizations)) {
             @Override
-            protected Object convert(Vertex o) {
+            protected String convert(Vertex o) {
                 return o.getId();
             }
         };
     }
 
     @Override
-    public Iterable<Object> getVertexIds(Direction direction, Authorizations authorizations) {
-        return new ConvertingIterable<Vertex, Object>(getVertices(direction, authorizations)) {
+    public Iterable<String> getVertexIds(Direction direction, Authorizations authorizations) {
+        return new ConvertingIterable<Vertex, String>(getVertices(direction, authorizations)) {
             @Override
-            protected Object convert(Vertex o) {
+            protected String convert(Vertex o) {
                 return o.getId();
             }
         };

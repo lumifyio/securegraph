@@ -14,7 +14,7 @@ public interface Edge extends Element {
      * @param direction The side of the edge to get the vertex id from (IN or OUT).
      * @return The id of the vertex.
      */
-    Object getVertexId(Direction direction);
+    String getVertexId(Direction direction);
 
     /**
      * Get the attach vertex on either side of the edge.
@@ -27,12 +27,12 @@ public interface Edge extends Element {
     /**
      * Given a vertexId that represents one side of a relationship, get me the id of the other side.
      */
-    Object getOtherVertexId(Object myVertexId);
+    String getOtherVertexId(String myVertexId);
 
     /**
      * Given a vertexId that represents one side of a relationship, get me the vertex of the other side.
      */
-    Vertex getOtherVertex(Object myVertexId, Authorizations authorizations);
+    Vertex getOtherVertex(String myVertexId, Authorizations authorizations);
 
     /**
      * Prepares a mutation to allow changing multiple property values at the same time. This method is similar to

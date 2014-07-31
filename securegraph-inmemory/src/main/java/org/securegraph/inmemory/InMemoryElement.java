@@ -9,7 +9,7 @@ import org.securegraph.util.StreamUtils;
 import java.io.IOException;
 
 public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
-    protected InMemoryElement(Graph graph, Object id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         super(graph, id, visibility, properties, authorizations);
     }
 
@@ -56,7 +56,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    protected Property removePropertyInternal(Object key, String name) {
+    protected Property removePropertyInternal(String key, String name) {
         return super.removePropertyInternal(key, name);
     }
 

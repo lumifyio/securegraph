@@ -30,7 +30,7 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
     private final SearchResponse searchResponse;
     private final long totalHits;
     private final long searchTimeInNanoSeconds;
-    private final Map<Object, Double> scores = new HashMap<Object, Double>();
+    private final Map<String, Double> scores = new HashMap<String, Double>();
 
     public ElasticSearchGraphQueryIterable(SearchResponse searchResponse, QueryBase.Parameters parameters, Iterable<T> iterable, boolean evaluateQueryString, boolean evaluateHasContainers, long totalHits, long searchTimeInNanoSeconds, SearchHits hits) {
         super(parameters, iterable, evaluateQueryString, evaluateHasContainers);
@@ -48,7 +48,7 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
     }
 
     @Override
-    public Map<Object, Double> getScores() {
+    public Map<String, Double> getScores() {
         return this.scores;
     }
 

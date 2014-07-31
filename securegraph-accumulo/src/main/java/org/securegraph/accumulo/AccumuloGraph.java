@@ -128,12 +128,12 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex addVertex(Object vertexId, Visibility vertexVisibility, Authorizations authorizations) {
+    public Vertex addVertex(String vertexId, Visibility vertexVisibility, Authorizations authorizations) {
         return prepareVertex(vertexId, vertexVisibility).save(authorizations);
     }
 
     @Override
-    public VertexBuilder prepareVertex(Object vertexId, Visibility visibility) {
+    public VertexBuilder prepareVertex(String vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
         }
@@ -274,7 +274,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public EdgeBuilder prepareEdge(Object edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
+    public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (outVertex == null) {
             throw new IllegalArgumentException("outVertex is required");
         }
@@ -397,7 +397,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex getVertex(Object vertexId, Authorizations authorizations) throws SecureGraphException {
+    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
         Iterator<Vertex> vertices = getVerticesInRange(new Range(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId), authorizations).iterator();
         if (vertices.hasNext()) {
             return vertices.next();
@@ -406,11 +406,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public CloseableIterable<Vertex> getVertices(Iterable<Object> ids, final Authorizations authorizations) {
+    public CloseableIterable<Vertex> getVertices(Iterable<String> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
-        for (Object id : ids) {
+        for (String id : ids) {
             Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + id);
             ranges.add(new Range(rowKey));
         }
@@ -453,7 +453,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private CloseableIterable<Vertex> getVerticesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Vertex> getVerticesInRange(String startId, String endId, final Authorizations authorizations) throws SecureGraphException {
         final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
@@ -616,7 +616,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge getEdge(Object edgeId, Authorizations authorizations) {
+    public Edge getEdge(String edgeId, Authorizations authorizations) {
         Iterator<Edge> edges = getEdgesInRange(edgeId, edgeId, authorizations).iterator();
         if (edges.hasNext()) {
             return edges.next();
@@ -625,11 +625,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public CloseableIterable<Edge> getEdges(Iterable<Object> ids, final Authorizations authorizations) {
+    public CloseableIterable<Edge> getEdges(Iterable<String> ids, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
-        for (Object id : ids) {
+        for (String id : ids) {
             Text rowKey = new Text(AccumuloConstants.EDGE_ROW_KEY_PREFIX + id);
             ranges.add(new Range(rowKey));
         }
@@ -672,7 +672,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private CloseableIterable<Edge> getEdgesInRange(Object startId, Object endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Edge> getEdgesInRange(String startId, String endId, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
 
         final Key startKey;
@@ -913,11 +913,11 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Object> findRelatedEdges(Iterable<Object> vertexIds, Authorizations authorizations) {
-        Set<Object> vertexIdsSet = toSet(vertexIds);
+    public Iterable<String> findRelatedEdges(Iterable<String> vertexIds, Authorizations authorizations) {
+        Set<String> vertexIdsSet = toSet(vertexIds);
 
         List<Range> ranges = new ArrayList<Range>();
-        for (Object vertexId : vertexIdsSet) {
+        for (String vertexId : vertexIdsSet) {
             Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId);
             Range range = new Range(rowKey);
             ranges.add(range);
@@ -931,7 +931,7 @@ public class AccumuloGraph extends GraphBase {
         batchScanner.setRanges(ranges);
 
         try {
-            Set<Object> edgeIds = new HashSet<Object>();
+            Set<String> edgeIds = new HashSet<String>();
             if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
                 IteratorSetting iteratorSetting = new IteratorSetting(
                         100,

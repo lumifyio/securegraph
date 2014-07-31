@@ -6,7 +6,7 @@ import org.securegraph.Vertex;
 
 import java.util.Iterator;
 
-public class VerticesToEdgeIdsIterable implements Iterable<Object> {
+public class VerticesToEdgeIdsIterable implements Iterable<String> {
     private final Iterable<Vertex> vertices;
     private final Authorizations authorizations;
 
@@ -16,10 +16,10 @@ public class VerticesToEdgeIdsIterable implements Iterable<Object> {
     }
 
     @Override
-    public Iterator<Object> iterator() {
-        return new SelectManyIterable<Vertex, Object>(this.vertices) {
+    public Iterator<String> iterator() {
+        return new SelectManyIterable<Vertex, String>(this.vertices) {
             @Override
-            public Iterable<Object> getIterable(Vertex vertex) {
+            public Iterable<String> getIterable(Vertex vertex) {
                 return vertex.getEdgeIds(Direction.BOTH, authorizations);
             }
         }.iterator();
