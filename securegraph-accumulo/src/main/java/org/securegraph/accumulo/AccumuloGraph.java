@@ -924,22 +924,25 @@ public class AccumuloGraph extends GraphBase {
 
         int numQueryThreads = Math.min(Math.max(1, ranges.size() / 10), 10);
         BatchScanner batchScanner = createElementBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
+        try {
+            // only fetch one size of the edge since we are scanning all vertices the edge will appear on the out on one of the vertices
+            batchScanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
 
-        // only fetch one size of the edge since we are scanning all vertices the edge will appear on the out on one of the vertices
-        batchScanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
+            batchScanner.setRanges(ranges);
 
-        batchScanner.setRanges(ranges);
-
-        Iterator<Map.Entry<Key, Value>> it = batchScanner.iterator();
-        Set<String> edgeIds = new HashSet<String>();
-        while (it.hasNext()) {
-            Map.Entry<Key, Value> c = it.next();
-            EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
-            if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
-                String edgeId = c.getKey().getColumnQualifier().toString();
-                edgeIds.add(edgeId);
+            Iterator<Map.Entry<Key, Value>> it = batchScanner.iterator();
+            Set<String> edgeIds = new HashSet<String>();
+            while (it.hasNext()) {
+                Map.Entry<Key, Value> c = it.next();
+                EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
+                if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
+                    String edgeId = c.getKey().getColumnQualifier().toString();
+                    edgeIds.add(edgeId);
+                }
             }
+            return edgeIds;
+        } finally {
+            batchScanner.close();
         }
-        return edgeIds;
     }
 }
