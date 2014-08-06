@@ -5,18 +5,8 @@ import org.securegraph.Visibility;
 
 import java.util.Map;
 
-public class MutableProperty extends Property {
-    public MutableProperty(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        super(key, name, value, metadata, visibility);
-    }
+public abstract class MutableProperty extends Property {
+    public abstract void setValue(Object value);
 
-    @Override
-    public void setValue(Object value) {
-        super.setValue(value);
-    }
-
-    @Override
-    public void setVisibility(Visibility visibility) {
-        super.setVisibility(visibility);
-    }
+    public abstract void setVisibility(Visibility visibility);
 }
