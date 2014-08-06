@@ -30,14 +30,14 @@ public class VertexMaker extends ElementMaker<Vertex> {
 
         if (AccumuloVertex.CF_OUT_EDGE.compareTo(columnFamily) == 0) {
             String edgeId = columnQualifier.toString();
-            EdgeInfo edgeInfo = graph.getValueSerializer().valueToObject(value);
+            EdgeInfo edgeInfo = EdgeInfo.parse(value);
             outEdges.put(edgeId, edgeInfo);
             return;
         }
 
         if (AccumuloVertex.CF_IN_EDGE.compareTo(columnFamily) == 0) {
             String edgeId = columnQualifier.toString();
-            EdgeInfo edgeInfo = graph.getValueSerializer().valueToObject(value);
+            EdgeInfo edgeInfo = EdgeInfo.parse(value);
             inEdges.put(edgeId, edgeInfo);
             return;
         }

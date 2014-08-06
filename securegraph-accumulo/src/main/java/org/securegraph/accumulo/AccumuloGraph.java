@@ -934,7 +934,7 @@ public class AccumuloGraph extends GraphBase {
             Set<String> edgeIds = new HashSet<String>();
             while (it.hasNext()) {
                 Map.Entry<Key, Value> c = it.next();
-                EdgeInfo edgeInfo = getValueSerializer().valueToObject(c.getValue());
+                EdgeInfo edgeInfo = EdgeInfo.parse(c.getValue());
                 if (vertexIdsSet.contains(edgeInfo.getVertexId())) {
                     String edgeId = c.getKey().getColumnQualifier().toString();
                     edgeIds.add(edgeId);
