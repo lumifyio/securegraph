@@ -251,9 +251,26 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                 for (Object propertyObj : properties.entrySet()) {
                     Map.Entry property = (Map.Entry) propertyObj;
                     String propertyName = (String) property.getKey();
-                    Map propertyAttributes = (Map) property.getValue();
-                    String propertyType = (String) propertyAttributes.get("type");
-                    propertyTypes.put(propertyName, propertyType);
+                    try {
+                        Map propertyAttributes = (Map) property.getValue();
+                        String propertyType = (String) propertyAttributes.get("type");
+                        if (propertyType != null) {
+                            propertyTypes.put(propertyName, propertyType);
+                            continue;
+                        }
+
+                        Map subProperties = (Map) propertyAttributes.get("properties");
+                        if (subProperties != null) {
+                            if (subProperties.containsKey("lat") && subProperties.containsKey("lon")) {
+                                propertyTypes.put(propertyName, "geo_point");
+                                continue;
+                            }
+                        }
+
+                        throw new SecureGraphException("Failed to parse property type on property could not determine property type: " + propertyName);
+                    } catch (Exception ex) {
+                        throw new SecureGraphException("Failed to parse property type on property: " + propertyName);
+                    }
                 }
             }
         } catch (IOException ex) {
