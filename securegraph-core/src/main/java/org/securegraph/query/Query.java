@@ -1,14 +1,23 @@
 package org.securegraph.query;
 
 import org.securegraph.Edge;
+import org.securegraph.FetchHint;
 import org.securegraph.Vertex;
+
+import java.util.EnumSet;
 
 public interface Query {
     Iterable<Vertex> vertices();
 
+    Iterable<Vertex> vertices(EnumSet<FetchHint> fetchHints);
+
     Iterable<Edge> edges();
 
+    Iterable<Edge> edges(EnumSet<FetchHint> fetchHints);
+
     Iterable<Edge> edges(String label);
+
+    Iterable<Edge> edges(String label, EnumSet<FetchHint> fetchHints);
 
     /**
      * Queries for properties in the given range.

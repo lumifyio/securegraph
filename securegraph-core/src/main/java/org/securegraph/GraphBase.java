@@ -53,9 +53,9 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
+    public Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all vertices! Override getVertex.");
-        for (Vertex vertex : getVertices(authorizations)) {
+        for (Vertex vertex : getVertices(fetchHints, authorizations)) {
             if (vertex.getId().equals(vertexId)) {
                 return vertex;
             }
@@ -64,7 +64,12 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(final Iterable<String> ids, final Authorizations authorizations) {
+    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
+        return getVertex(vertexId, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(final Iterable<String> ids, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         LOGGER.warn("Getting each vertex one by one! Override getVertices(java.lang.Iterable<java.lang.String>, org.securegraph.Authorizations)");
         return new LookAheadIterable<String, Vertex>() {
             @Override
@@ -85,7 +90,12 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations) {
+    public Iterable<Vertex> getVertices(final Iterable<String> ids, final Authorizations authorizations) {
+        return getVertices(ids, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public List<Vertex> getVerticesInOrder(Iterable<String> ids, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         final List<String> vertexIds = toList(ids);
         List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
         Collections.sort(vertices, new Comparator<Vertex>() {
@@ -100,7 +110,17 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public abstract Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException;
+    public List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations) {
+        return getVerticesInOrder(ids, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException {
+        return getVertices(FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public abstract Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     @Override
     public abstract void removeVertex(Vertex vertex, Authorizations authorizations);
@@ -121,9 +141,9 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Edge getEdge(String edgeId, Authorizations authorizations) {
+    public Edge getEdge(String edgeId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all edges! Override getEdge.");
-        for (Edge edge : getEdges(authorizations)) {
+        for (Edge edge : getEdges(fetchHints, authorizations)) {
             if (edge.getId().equals(edgeId)) {
                 return edge;
             }
@@ -132,7 +152,12 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Iterable<String> ids, final Authorizations authorizations) {
+    public Edge getEdge(String edgeId, Authorizations authorizations) {
+        return getEdge(edgeId, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Iterable<String> ids, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         LOGGER.warn("Getting each edge one by one! Override getEdges(java.lang.Iterable<java.lang.String>, org.securegraph.Authorizations)");
         return new LookAheadIterable<String, Edge>() {
             @Override
@@ -153,7 +178,17 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public abstract Iterable<Edge> getEdges(Authorizations authorizations);
+    public Iterable<Edge> getEdges(final Iterable<String> ids, final Authorizations authorizations) {
+        return getEdges(ids, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Authorizations authorizations) {
+        return getEdges(FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public abstract Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     @Override
     public abstract void removeEdge(Edge edge, Authorizations authorizations);

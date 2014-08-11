@@ -3,6 +3,7 @@ package org.securegraph;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.query.GraphQuery;
 
+import java.util.EnumSet;
 import java.util.List;
 
 public interface Graph {
@@ -63,12 +64,31 @@ public interface Graph {
     Vertex getVertex(String vertexId, Authorizations authorizations);
 
     /**
+     * Get a vertex from the graph.
+     *
+     * @param vertexId       The vertex id to retrieve from the graph.
+     * @param fetchHints     Hint at what parts of the vertex to fetch.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return The vertex if successful. null if the vertex is not found or the required authorizations were not provided.
+     */
+    Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    /**
      * Gets all vertices on the graph.
      *
      * @param authorizations The authorizations required to load the vertex.
      * @return An iterable of all the vertices.
      */
     Iterable<Vertex> getVertices(Authorizations authorizations);
+
+    /**
+     * Gets all vertices on the graph.
+     *
+     * @param fetchHints     Hint at what parts of the vertex to fetch.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return An iterable of all the vertices.
+     */
+    Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     /**
      * Gets all vertices matching the given ids on the graph. The order of
@@ -82,6 +102,18 @@ public interface Graph {
     Iterable<Vertex> getVertices(Iterable<String> ids, Authorizations authorizations);
 
     /**
+     * Gets all vertices matching the given ids on the graph. The order of
+     * the returned vertices is not guaranteed {@link org.securegraph.Graph#getVerticesInOrder(Iterable, Authorizations)}.
+     * Vertices are not kept in memory during the iteration.
+     *
+     * @param ids            The ids of the vertices to get.
+     * @param fetchHints     Hint at what parts of the vertex to fetch.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return An iterable of all the vertices.
+     */
+    Iterable<Vertex> getVertices(Iterable<String> ids, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    /**
      * Gets all vertices matching the given ids on the graph. This method is similar to
      * {@link org.securegraph.Graph#getVertices(Iterable, Authorizations)}
      * but returns the vertices in the order that you passed in the ids. This requires loading
@@ -92,6 +124,19 @@ public interface Graph {
      * @return An iterable of all the vertices.
      */
     List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations);
+
+    /**
+     * Gets all vertices matching the given ids on the graph. This method is similar to
+     * {@link org.securegraph.Graph#getVertices(Iterable, Authorizations)}
+     * but returns the vertices in the order that you passed in the ids. This requires loading
+     * all the vertices in memory to sort them.
+     *
+     * @param ids            The ids of the vertices to get.
+     * @param fetchHints     Hint at what parts of the vertex to fetch.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return An iterable of all the vertices.
+     */
+    List<Vertex> getVerticesInOrder(Iterable<String> ids, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     /**
      * Removes a vertex from the graph.
@@ -161,12 +206,31 @@ public interface Graph {
     Edge getEdge(String edgeId, Authorizations authorizations);
 
     /**
+     * Get an edge from the graph.
+     *
+     * @param edgeId         The edge id to retrieve from the graph.
+     * @param fetchHints     Hint at what parts of the edge to fetch.
+     * @param authorizations The authorizations required to load the edge.
+     * @return The edge if successful. null if the edge is not found or the required authorizations were not provided.
+     */
+    Edge getEdge(String edgeId, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    /**
      * Gets all edges on the graph.
      *
      * @param authorizations The authorizations required to load the edge.
      * @return An iterable of all the edges.
      */
     Iterable<Edge> getEdges(Authorizations authorizations);
+
+    /**
+     * Gets all edges on the graph.
+     *
+     * @param fetchHints     Hint at what parts of the edge to fetch.
+     * @param authorizations The authorizations required to load the edge.
+     * @return An iterable of all the edges.
+     */
+    Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     /**
      * Gets all edges on the graph matching the given ids.
@@ -176,6 +240,16 @@ public interface Graph {
      * @return An iterable of all the edges.
      */
     Iterable<Edge> getEdges(Iterable<String> ids, Authorizations authorizations);
+
+    /**
+     * Gets all edges on the graph matching the given ids.
+     *
+     * @param ids            The ids of the edges to get.
+     * @param fetchHints     Hint at what parts of the edge to fetch.
+     * @param authorizations The authorizations required to load the edge.
+     * @return An iterable of all the edges.
+     */
+    Iterable<Edge> getEdges(Iterable<String> ids, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     /**
      * Given a list of vertex ids, find all the edge ids that connect them.

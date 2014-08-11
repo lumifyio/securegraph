@@ -78,7 +78,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(final Authorizations authorizations) throws SecureGraphException {
+    public Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, final Authorizations authorizations) throws SecureGraphException {
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
             protected boolean isIncluded(InMemoryVertex src, Vertex vertex) {
@@ -147,7 +147,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Authorizations authorizations) {
+    public Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {

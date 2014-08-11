@@ -5,6 +5,8 @@ import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
 
+import java.util.EnumSet;
+
 public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
     public static final Text CF_OUT_VERTEX = new Text("EOUT");
@@ -38,6 +40,11 @@ public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     }
 
     @Override
+    public Vertex getVertex(Direction direction, Authorizations authorizations) {
+        return getVertex(direction, FetchHint.ALL, authorizations);
+    }
+
+    @Override
     public String getOtherVertexId(String myVertexId) {
         if (inVertexId.equals(myVertexId)) {
             return outVertexId;
@@ -49,12 +56,17 @@ public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
 
     @Override
     public Vertex getOtherVertex(String myVertexId, Authorizations authorizations) {
-        return getGraph().getVertex(getOtherVertexId(myVertexId), authorizations);
+        return getOtherVertex(myVertexId, FetchHint.ALL, authorizations);
     }
 
     @Override
-    public Vertex getVertex(Direction direction, Authorizations authorizations) {
-        return getGraph().getVertex(getVertexId(direction), authorizations);
+    public Vertex getOtherVertex(String myVertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getVertex(getOtherVertexId(myVertexId), fetchHints, authorizations);
+    }
+
+    @Override
+    public Vertex getVertex(Direction direction, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getVertex(getVertexId(direction), fetchHints, authorizations);
     }
 
     @Override

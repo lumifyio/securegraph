@@ -11,10 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.securegraph.Authorizations;
-import org.securegraph.Graph;
-import org.securegraph.SecureGraphException;
-import org.securegraph.Vertex;
+import org.securegraph.*;
 import org.securegraph.test.GraphTestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,13 +19,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
+import static junit.framework.Assert.*;
 import static org.junit.Assert.assertNotEquals;
+import static org.securegraph.util.IterableUtils.count;
 
 @RunWith(JUnit4.class)
 public class AccumuloGraphTest extends GraphTestBase {
@@ -68,6 +66,69 @@ public class AccumuloGraphTest extends GraphTestBase {
     }
 
     @Test
+    public void testFilterHints() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        v1.addPropertyValue("k1", "n1", "value1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        Edge e1 = graph.addEdge("e1", v1, v2, "label1", VISIBILITY_A, AUTHORIZATIONS_A);
+        e1.addPropertyValue("k1", "n1", "value1", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("e2", v2, v1, "label1", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
+
+        v1 = graph.getVertex("v1", FetchHint.NONE, AUTHORIZATIONS_A);
+        assertNotNull(v1);
+        assertEquals(0, count(v1.getProperties()));
+        assertEquals(0, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(0, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", FetchHint.ALL, AUTHORIZATIONS_A);
+        assertNotNull(v1);
+        assertEquals(1, count(v1.getProperties()));
+        assertEquals(1, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", EnumSet.of(FetchHint.PROPERTIES), AUTHORIZATIONS_A);
+        assertNotNull(v1);
+        assertEquals(1, count(v1.getProperties()));
+        assertEquals(0, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(0, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", FetchHint.EDGE_REFS, AUTHORIZATIONS_A);
+        assertNotNull(v1);
+        assertEquals(0, count(v1.getProperties()));
+        assertEquals(1, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", EnumSet.of(FetchHint.IN_EDGE_REFS), AUTHORIZATIONS_A);
+        assertNotNull(v1);
+        assertEquals(0, count(v1.getProperties()));
+        assertEquals(1, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(0, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+
+        v1 = graph.getVertex("v1", EnumSet.of(FetchHint.OUT_EDGE_REFS), AUTHORIZATIONS_A);
+        assertNotNull(v1);
+        assertEquals(0, count(v1.getProperties()));
+        assertEquals(0, count(v1.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+
+        e1 = graph.getEdge("e1", FetchHint.NONE, AUTHORIZATIONS_A);
+        assertNotNull(e1);
+        assertEquals(0, count(e1.getProperties()));
+        assertEquals("v1", e1.getVertexId(Direction.OUT));
+        assertEquals("v2", e1.getVertexId(Direction.IN));
+
+        e1 = graph.getEdge("e1", FetchHint.ALL, AUTHORIZATIONS_A);
+        assertEquals(1, count(e1.getProperties()));
+        assertEquals("v1", e1.getVertexId(Direction.OUT));
+        assertEquals("v2", e1.getVertexId(Direction.IN));
+
+        e1 = graph.getEdge("e1", EnumSet.of(FetchHint.PROPERTIES), AUTHORIZATIONS_A);
+        assertEquals(1, count(e1.getProperties()));
+        assertEquals("v1", e1.getVertexId(Direction.OUT));
+        assertEquals("v2", e1.getVertexId(Direction.IN));
+    }
+
+    @Test
     public void testStoringEmptyMetadata() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
         Map<String, Object> metadata = new HashMap<String, Object>();
@@ -87,7 +148,7 @@ public class AccumuloGraphTest extends GraphTestBase {
         assertEquals("metavalue1", metadata.get("meta1"));
 
         AccumuloGraph accumuloGraph = (AccumuloGraph) graph;
-        Scanner vertexScanner = accumuloGraph.createVertexScanner(AUTHORIZATIONS_EMPTY);
+        Scanner vertexScanner = accumuloGraph.createVertexScanner(FetchHint.ALL, AUTHORIZATIONS_EMPTY);
         vertexScanner.setRange(new Range("V", "W"));
         RowIterator rows = new RowIterator(vertexScanner.iterator());
         while (rows.hasNext()) {

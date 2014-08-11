@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +54,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     }
 
     @Override
-    public Iterable<Vertex> vertices() {
+    public Iterable<Vertex> vertices(EnumSet<FetchHint> fetchHints) {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
         final SearchHits hits = response.getHits();
@@ -73,12 +74,12 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         // and rely on the DefaultGraphQueryIterable to provide property filtering
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
-        Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
+        Iterable<Vertex> vertices = getGraph().getVertices(ids, fetchHints, filterParameters.getAuthorizations());
         return createIterable(response, filterParameters, vertices, evaluateHasContainers, searchTime, hits);
     }
 
     @Override
-    public Iterable<Edge> edges() {
+    public Iterable<Edge> edges(EnumSet<FetchHint> fetchHints) {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
         final SearchHits hits = response.getHits();
@@ -98,7 +99,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         // and rely on the DefaultGraphQueryIterable to provide property filtering
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
-        Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
+        Iterable<Edge> edges = getGraph().getEdges(ids, fetchHints, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
         return createIterable(response, filterParameters, edges, evaluateHasContainers, searchTime, hits);
     }

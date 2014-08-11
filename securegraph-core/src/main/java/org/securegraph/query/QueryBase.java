@@ -4,6 +4,7 @@ import org.securegraph.*;
 import org.securegraph.util.FilterIterable;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -23,19 +24,34 @@ public abstract class QueryBase implements Query {
     }
 
     @Override
-    public abstract Iterable<Vertex> vertices();
+    public Iterable<Vertex> vertices() {
+        return vertices(FetchHint.ALL);
+    }
 
     @Override
-    public abstract Iterable<Edge> edges();
+    public abstract Iterable<Vertex> vertices(EnumSet<FetchHint> fetchHints);
 
     @Override
-    public Iterable<Edge> edges(final String label) {
+    public Iterable<Edge> edges() {
+        return edges(FetchHint.ALL);
+    }
+
+    @Override
+    public abstract Iterable<Edge> edges(EnumSet<FetchHint> fetchHints);
+
+    @Override
+    public Iterable<Edge> edges(final String label, EnumSet<FetchHint> fetchHints) {
         return new FilterIterable<Edge>(edges()) {
             @Override
             protected boolean isIncluded(Edge o) {
                 return label.equals(o.getLabel());
             }
         };
+    }
+
+    @Override
+    public Iterable<Edge> edges(final String label) {
+        return edges(label, FetchHint.ALL);
     }
 
     @Override
