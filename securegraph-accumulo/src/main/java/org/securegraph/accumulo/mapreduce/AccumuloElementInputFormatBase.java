@@ -3,10 +3,13 @@ package org.securegraph.accumulo.mapreduce;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
+import org.apache.accumulo.core.client.mapreduce.AccumuloRowInputFormat;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.WholeRowIterator;
+import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
 import org.securegraph.Authorizations;
 import org.securegraph.Element;
@@ -18,13 +21,12 @@ import org.securegraph.util.MapUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 
-public abstract class AccumuloElementInputFormatBase<TValue extends Element> extends InputFormat<String, TValue> {
-    private final AccumuloInputFormat accumuloInputFormat;
+public abstract class AccumuloElementInputFormatBase<TValue extends Element> extends InputFormat<Text, TValue> {
+    private final AccumuloRowInputFormat accumuloInputFormat;
 
     public AccumuloElementInputFormatBase() {
-        accumuloInputFormat = new AccumuloInputFormat();
+        accumuloInputFormat = new AccumuloRowInputFormat();
     }
 
     protected static void setInputInfo(Job job, String instanceName, String zooKeepers, String principal, AuthenticationToken token, String[] authorizations, String tableName) throws AccumuloSecurityException {
@@ -41,9 +43,9 @@ public abstract class AccumuloElementInputFormatBase<TValue extends Element> ext
     }
 
     @Override
-    public RecordReader<String, TValue> createRecordReader(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-        final RecordReader<Key, Value> reader = accumuloInputFormat.createRecordReader(inputSplit, taskAttemptContext);
-        return new RecordReader<String, TValue>() {
+    public RecordReader<Text, TValue> createRecordReader(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
+        final RecordReader<Text, PeekingIterator<Map.Entry<Key, Value>>> reader = accumuloInputFormat.createRecordReader(inputSplit, taskAttemptContext);
+        return new RecordReader<Text, TValue>() {
             public AccumuloGraph graph;
             public Authorizations authorizations;
 
@@ -62,13 +64,13 @@ public abstract class AccumuloElementInputFormatBase<TValue extends Element> ext
             }
 
             @Override
-            public String getCurrentKey() throws IOException, InterruptedException {
-                return reader.getCurrentKey().getRow().toString();
+            public Text getCurrentKey() throws IOException, InterruptedException {
+                return reader.getCurrentKey();
             }
 
             @Override
             public TValue getCurrentValue() throws IOException, InterruptedException {
-                SortedMap<Key, Value> row = WholeRowIterator.decodeRow(reader.getCurrentKey(), reader.getCurrentValue());
+                PeekingIterator<Map.Entry<Key, Value>> row = reader.getCurrentValue();
                 return createElementFromRow(graph, row, authorizations);
             }
 
@@ -84,5 +86,5 @@ public abstract class AccumuloElementInputFormatBase<TValue extends Element> ext
         };
     }
 
-    protected abstract TValue createElementFromRow(AccumuloGraph graph, SortedMap<Key, Value> row, Authorizations authorizations);
+    protected abstract TValue createElementFromRow(AccumuloGraph graph, PeekingIterator<Map.Entry<Key, Value>> row, Authorizations authorizations);
 }
