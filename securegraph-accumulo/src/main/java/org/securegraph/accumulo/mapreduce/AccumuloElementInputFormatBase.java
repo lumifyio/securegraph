@@ -1,13 +1,10 @@
 package org.securegraph.accumulo.mapreduce;
 
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.core.client.mapreduce.AccumuloRowInputFormat;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.accumulo.core.util.PeekingIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
@@ -30,10 +27,9 @@ public abstract class AccumuloElementInputFormatBase<TValue extends Element> ext
     }
 
     protected static void setInputInfo(Job job, String instanceName, String zooKeepers, String principal, AuthenticationToken token, String[] authorizations, String tableName) throws AccumuloSecurityException {
-        AccumuloInputFormat.setInputTableName(job, tableName);
-        AccumuloInputFormat.setConnectorInfo(job, principal, token);
-        AccumuloInputFormat.setZooKeeperInstance(job, instanceName, zooKeepers);
-        AccumuloInputFormat.addIterator(job, new IteratorSetting(10, WholeRowIterator.class));
+        AccumuloRowInputFormat.setInputTableName(job, tableName);
+        AccumuloRowInputFormat.setConnectorInfo(job, principal, token);
+        AccumuloRowInputFormat.setZooKeeperInstance(job, instanceName, zooKeepers);
         job.getConfiguration().setStrings(SecureGraphMRUtils.CONFIG_AUTHORIZATIONS, authorizations);
     }
 
