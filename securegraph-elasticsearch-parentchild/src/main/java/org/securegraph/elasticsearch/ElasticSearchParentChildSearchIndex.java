@@ -287,7 +287,9 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             propertyValue = ((DateOnly) propertyValue).getDate();
         }
 
-        jsonBuilder.field(property.getName(), propertyValue);
+        if (!(propertyValue instanceof String)) {
+            jsonBuilder.field(property.getName(), propertyValue);
+        }
         jsonBuilder.field(VISIBILITY_FIELD_NAME, property.getVisibility().getVisibilityString());
 
         return jsonBuilder;
