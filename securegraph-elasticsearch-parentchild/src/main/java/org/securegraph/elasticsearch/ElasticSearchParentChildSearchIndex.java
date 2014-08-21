@@ -72,7 +72,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     private void deleteChildDocuments(Element element) {
-        String parentId = element.getId().toString();
+        String parentId = element.getId();
         DeleteByQueryResponse response = getClient()
                 .prepareDeleteByQuery(getIndexName())
                 .setTypes(PROPERTY_TYPE)
@@ -92,7 +92,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     private void deleteParentDocument(Element element) {
-        String id = element.getId().toString();
+        String id = element.getId();
         LOGGER.debug("deleting parent document " + id);
         DeleteResponse deleteResponse = getClient().delete(
                 getClient()
@@ -125,7 +125,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         try {
             BulkRequest bulkRequest = new BulkRequest();
 
-            addElementToBulkRequest(bulkRequest, graph, element, authorizations);
+            addElementToBulkRequest(bulkRequest, element, authorizations);
 
             doBulkRequest(bulkRequest);
 
@@ -160,20 +160,20 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 bulkRequest = new BulkRequest();
                 count = 0;
             }
-            addElementToBulkRequest(bulkRequest, graph, element, authorizations);
+            addElementToBulkRequest(bulkRequest, element, authorizations);
             count++;
             totalCount++;
 
             if (isUseEdgeBoost() && element instanceof Edge) {
                 Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
                 if (vOut != null) {
-                    addElementToBulkRequest(bulkRequest, graph, vOut, authorizations);
+                    addElementToBulkRequest(bulkRequest, vOut, authorizations);
                     count++;
                     totalCount++;
                 }
                 Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
                 if (vIn != null) {
-                    addElementToBulkRequest(bulkRequest, graph, vIn, authorizations);
+                    addElementToBulkRequest(bulkRequest, vIn, authorizations);
                     count++;
                     totalCount++;
                 }
@@ -189,11 +189,11 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
     }
 
-    private void addElementToBulkRequest(BulkRequest bulkRequest, Graph graph, Element element, Authorizations authorizations) {
+    private void addElementToBulkRequest(BulkRequest bulkRequest, Element element, Authorizations authorizations) {
         try {
-            bulkRequest.add(getParentDocumentRequest(graph, element, authorizations));
+            bulkRequest.add(getParentDocumentIndexRequest(element, authorizations));
             for (Property property : element.getProperties()) {
-                IndexRequest propertyIndexRequest = getPropertyDocumentRequest(graph, element, property, authorizations);
+                IndexRequest propertyIndexRequest = getPropertyDocumentIndexRequest(element, property);
                 if (propertyIndexRequest != null) {
                     bulkRequest.add(propertyIndexRequest);
                 }
@@ -203,8 +203,8 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
     }
 
-    private IndexRequest getPropertyDocumentRequest(Graph graph, Element element, Property property, Authorizations authorizations) throws IOException {
-        XContentBuilder jsonBuilder = buildJsonContentFromProperty(graph, element, property, authorizations);
+    public IndexRequest getPropertyDocumentIndexRequest(Element element, Property property) throws IOException {
+        XContentBuilder jsonBuilder = buildJsonContentFromProperty(property);
         if (jsonBuilder == null) {
             return null;
         }
@@ -213,21 +213,21 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
         //LOGGER.debug(jsonBuilder.string());
         IndexRequestBuilder builder = getClient().prepareIndex(getIndexName(), PROPERTY_TYPE, id);
-        builder = builder.setParent(element.getId().toString());
+        builder = builder.setParent(element.getId());
         builder = builder.setSource(jsonBuilder);
         return builder.request();
     }
 
     private String getChildDocId(Element element, Property property) {
-        return element.getId().toString() + "_" + property.getName() + "_" + property.getKey();
+        return element.getId() + "_" + property.getName() + "_" + property.getKey();
     }
 
-    private IndexRequest getParentDocumentRequest(Graph graph, Element element, Authorizations authorizations) throws IOException {
+    public IndexRequest getParentDocumentIndexRequest(Element element, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
-        String id = element.getId().toString();
+        String id = element.getId();
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
             if (isUseEdgeBoost()) {
@@ -247,7 +247,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         return new IndexRequest(getIndexName(), ELEMENT_TYPE, id).source(jsonBuilder);
     }
 
-    private XContentBuilder buildJsonContentFromProperty(Graph graph, Element element, Property property, Authorizations authorizations) throws IOException {
+    private XContentBuilder buildJsonContentFromProperty(Property property) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
