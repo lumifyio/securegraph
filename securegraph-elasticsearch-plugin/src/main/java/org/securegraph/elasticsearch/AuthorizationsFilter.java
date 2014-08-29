@@ -13,13 +13,16 @@ import org.securegraph.inmemory.security.VisibilityEvaluator;
 import org.securegraph.inmemory.security.VisibilityParseException;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AuthorizationsFilter extends Filter {
     public static String VISIBILITY_FIELD_NAME = "__visibility";
-    private final Authorizations authorizations;
+    private final VisibilityEvaluator visibilityEvaluator;
+    private static final Map<BytesRef, ColumnVisibility> columnVisibilityCache = new HashMap<BytesRef, ColumnVisibility>();
 
     public AuthorizationsFilter(Authorizations authorizations) {
-        this.authorizations = authorizations;
+        this.visibilityEvaluator = new VisibilityEvaluator(authorizations);
     }
 
     @Override
@@ -33,7 +36,6 @@ public class AuthorizationsFilter extends Filter {
             OpenBitSet bitSet = new OpenBitSet(reader.maxDoc());
             TermsEnum iterator = terms.iterator(null);
             BytesRef bytesRef;
-            VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
             while ((bytesRef = iterator.next()) != null) {
                 makeVisible(iterator, bitSet, acceptDocs, isVisible(visibilityEvaluator, bytesRef));
             }
@@ -53,12 +55,11 @@ public class AuthorizationsFilter extends Filter {
         }
     }
 
-    private boolean isVisible(VisibilityEvaluator visibilityEvaluator, BytesRef bytesRef) throws IOException {
-        byte[] expression = trim(bytesRef);
-        if (expression.length == 0) {
+    private static boolean isVisible(VisibilityEvaluator visibilityEvaluator, BytesRef bytesRef) throws IOException {
+        ColumnVisibility visibility = lookupColumnVisibility(bytesRef);
+        if (visibility == null) {
             return true;
         }
-        ColumnVisibility visibility = new ColumnVisibility(expression);
         try {
             return visibilityEvaluator.evaluate(visibility);
         } catch (VisibilityParseException e) {
@@ -66,7 +67,22 @@ public class AuthorizationsFilter extends Filter {
         }
     }
 
-    private byte[] trim(BytesRef bytesRef) {
+    private static ColumnVisibility lookupColumnVisibility(BytesRef bytesRef) {
+        ColumnVisibility visibility = columnVisibilityCache.get(bytesRef);
+        if (visibility != null) {
+            return visibility;
+        }
+
+        byte[] expression = trim(bytesRef);
+        if (expression.length == 0) {
+            return null;
+        }
+        visibility = new ColumnVisibility(expression);
+        columnVisibilityCache.put(bytesRef, visibility);
+        return visibility;
+    }
+
+    private static byte[] trim(BytesRef bytesRef) {
         byte[] buf = new byte[bytesRef.length];
         System.arraycopy(bytesRef.bytes, bytesRef.offset, buf, 0, bytesRef.length);
         return buf;
