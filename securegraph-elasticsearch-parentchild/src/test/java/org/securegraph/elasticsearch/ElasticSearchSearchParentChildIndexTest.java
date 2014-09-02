@@ -49,10 +49,13 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
 
         ElasticSearchParentChildSearchIndex searchIndex = (ElasticSearchParentChildSearchIndex) ((GraphBase) graph).getSearchIndex();
 
-        String parentDocumentJson = searchIndex.getParentDocumentIndexRequest(v1, AUTHORIZATIONS_A_AND_B).source().toUtf8();
+        String indexName = searchIndex.getIndexName(v1);
+        IndexInfo indexInfo = searchIndex.ensureIndexCreatedAndInitialized(indexName, searchIndex.isStoreSourceData());
+
+        String parentDocumentJson = searchIndex.getParentDocumentIndexRequest(indexInfo, v1, AUTHORIZATIONS_A_AND_B).source().toUtf8();
         assertNotNull(parentDocumentJson);
         for (Property property : v1.getProperties()) {
-            String propertyJson = searchIndex.getPropertyDocumentIndexRequest(v1, property).source().toUtf8();
+            String propertyJson = searchIndex.getPropertyDocumentIndexRequest(indexInfo, v1, property).source().toUtf8();
             assertNotNull(propertyJson);
         }
     }

@@ -69,5 +69,7 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
         String jsonString = getSearchIndex().createJsonForElement(graph, v1, true, AUTHORIZATIONS_A_AND_B);
         JSONObject json = new JSONObject(jsonString);
         assertNotNull(json);
+
+        getSearchIndex().loadPropertyDefinitions();
     }
 }

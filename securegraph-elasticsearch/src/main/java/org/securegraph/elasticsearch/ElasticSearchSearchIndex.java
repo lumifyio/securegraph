@@ -29,14 +29,14 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
     @Override
     public void addElement(Graph graph, Element element, Authorizations authorizations) {
-        addPropertiesToIndex(element.getProperties());
+        IndexInfo indexInfo = addPropertiesToIndex(element, element.getProperties());
 
         try {
             boolean mergeExisting = true;
-            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, element, mergeExisting, authorizations);
+            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations);
 
             IndexResponse response = getClient()
-                    .prepareIndex(getIndexName(), ElasticSearchSearchIndexBase.ELEMENT_TYPE, element.getId().toString())
+                    .prepareIndex(indexInfo.getIndexName(), ElasticSearchSearchIndexBase.ELEMENT_TYPE, element.getId())
                     .setSource(jsonBuilder.endObject())
                     .execute()
                     .actionGet();
@@ -65,11 +65,12 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
     @Override
     public void removeElement(Graph graph, Element element, Authorizations authorizations) {
-        String id = element.getId().toString();
+        String indexName = getIndexName(element);
+        String id = element.getId();
         LOGGER.debug("deleting document " + id);
         DeleteResponse deleteResponse = getClient().delete(
                 getClient()
-                        .prepareDelete(getIndexName(), ELEMENT_TYPE, id)
+                        .prepareDelete(indexName, ELEMENT_TYPE, id)
                         .request()
         ).actionGet();
         if (!deleteResponse.isFound()) {
@@ -79,13 +80,15 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
     public String createJsonForElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) {
         try {
-            return buildJsonContentFromElement(graph, element, mergeExisting, authorizations).string();
+            String indexName = getIndexName(element);
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+            return buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations).string();
         } catch (Exception e) {
             throw new SecureGraphException("Could not create JSON for element", e);
         }
     }
 
-    private XContentBuilder buildJsonContentFromElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) throws IOException {
+    private XContentBuilder buildJsonContentFromElement(Graph graph, IndexInfo indexInfo, Element element, boolean mergeExisting, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
@@ -136,7 +139,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                     throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
                 }
             } else if (propertyValue instanceof String) {
-                PropertyDefinition propertyDefinition = getPropertyDefinitions().get(property.getName());
+                PropertyDefinition propertyDefinition = indexInfo.getPropertyDefinitions().get(property.getName());
                 if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
                     jsonBuilder.field(property.getName() + ElasticSearchSearchIndexBase.EXACT_MATCH_PROPERTY_NAME_SUFFIX, propertyValue);
                 }
@@ -179,8 +182,8 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
     }
 
     @Override
-    protected void addPropertyToIndex(String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException {
-        if (getPropertyDefinitions().get(propertyName) != null) {
+    protected void addPropertyToIndex(IndexInfo indexInfo, String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException {
+        if (indexInfo.isPropertyDefined(propertyName)) {
             return;
         }
 
@@ -205,7 +208,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         PutMappingResponse response = getClient()
                 .admin()
                 .indices()
-                .preparePutMapping(getIndexName())
+                .preparePutMapping(indexInfo.getIndexName())
                 .setIgnoreConflicts(false)
                 .setType(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
                 .setSource(mapping)
@@ -213,12 +216,12 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 .actionGet();
         LOGGER.debug(response.toString());
 
-        getPropertyDefinitions().put(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.ALL));
+        indexInfo.addPropertyDefinition(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.ALL));
     }
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchGraphQuery(getClient(), getIndexName(), graph, queryString, getPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
+        return new ElasticSearchGraphQuery(getClient(), ALL_INDEX_NAME, graph, queryString, getAllPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
     }
 
     @Override
