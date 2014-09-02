@@ -8,6 +8,7 @@ import java.util.Map;
 public final class IndexInfo {
     private final String indexName;
     private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
+    private boolean elementTypeDefined;
 
     public IndexInfo(String indexName) {
         this.indexName = indexName;
@@ -41,5 +42,13 @@ public final class IndexInfo {
         }
         IndexInfo otherIndexInfo = (IndexInfo) obj;
         return getIndexName().equals(otherIndexInfo.getIndexName());
+    }
+
+    public boolean isElementTypeDefined() {
+        return elementTypeDefined;
+    }
+
+    public void setElementTypeDefined(boolean elementTypeDefined) {
+        this.elementTypeDefined = elementTypeDefined;
     }
 }

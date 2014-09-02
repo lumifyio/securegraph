@@ -2,6 +2,7 @@ package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -162,24 +163,49 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
 
     protected IndexInfo ensureIndexCreatedAndInitialized(String indexName, boolean storeSourceData) {
         IndexInfo indexInfo = indexInfos.get(indexName);
-        if (indexInfo != null) {
+        if (indexInfo != null && indexInfo.isElementTypeDefined()) {
             return indexInfo;
         }
 
         synchronized (indexInfos) {
-            if (!client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
-                try {
-                    createIndex(indexName, storeSourceData);
+            if (indexInfo == null) {
+                if (!client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
+                    try {
+                        createIndex(indexName, storeSourceData);
 
-                    IndicesStatusResponse statusResponse = client.admin().indices().prepareStatus(indexName).execute().actionGet();
-                    LOGGER.debug(statusResponse.toString());
+                        IndicesStatusResponse statusResponse = client.admin().indices().prepareStatus(indexName).execute().actionGet();
+                        LOGGER.debug(statusResponse.toString());
+                    } catch (IOException e) {
+                        throw new SecureGraphException("Could not create index: " + indexName, e);
+                    }
+                }
+
+                indexInfo = new IndexInfo(indexName);
+                indexInfos.put(indexName, indexInfo);
+            }
+
+            if (!indexInfo.isElementTypeDefined()) {
+                try {
+                    XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
+                            .startObject()
+                            .startObject("_source").field("enabled", storeSourceData).endObject()
+                            .startObject("properties");
+                    createIndexAddFieldsToElementType(mappingBuilder);
+                    XContentBuilder mapping = mappingBuilder.endObject()
+                            .endObject();
+
+                    PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
+                            .setType(ELEMENT_TYPE)
+                            .setSource(mapping)
+                            .execute()
+                            .actionGet();
+                    LOGGER.debug(putMappingResponse.toString());
+                    indexInfo.setElementTypeDefined(true);
                 } catch (IOException e) {
-                    throw new SecureGraphException("Could not create index", e);
+                    throw new SecureGraphException("Could not add mappings to index: " + indexName, e);
                 }
             }
 
-            indexInfo = new IndexInfo(indexName);
-            indexInfos.put(indexName, indexInfo);
             return indexInfo;
         }
     }
@@ -187,14 +213,8 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder()
                 .startObject()
-                .startObject(ELEMENT_TYPE)
-                .startObject("_source").field("enabled", storeSourceData).endObject()
-                .startObject("properties");
-        createIndexAddFieldsToElementType(builder);
-        XContentBuilder mapping = builder.endObject()
-                .endObject()
                 .endObject();
-        CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).addMapping(ELEMENT_TYPE, mapping).execute().actionGet();
+        CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).execute().actionGet();
         LOGGER.debug(createResponse.toString());
     }
 
