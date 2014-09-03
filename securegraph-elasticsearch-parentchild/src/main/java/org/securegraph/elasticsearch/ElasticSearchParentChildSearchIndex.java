@@ -213,7 +213,13 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
     }
 
-    public IndexRequest getPropertyDocumentIndexRequest(IndexInfo indexInfo, Element element, Property property) throws IOException {
+    public IndexRequest getPropertyDocumentIndexRequest(Element element, Property property) throws IOException {
+        String indexName = getIndexName(element);
+        IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        return getPropertyDocumentIndexRequest(indexInfo, element, property);
+    }
+
+    private IndexRequest getPropertyDocumentIndexRequest(IndexInfo indexInfo, Element element, Property property) throws IOException {
         XContentBuilder jsonBuilder = buildJsonContentFromProperty(indexInfo, property);
         if (jsonBuilder == null) {
             return null;
