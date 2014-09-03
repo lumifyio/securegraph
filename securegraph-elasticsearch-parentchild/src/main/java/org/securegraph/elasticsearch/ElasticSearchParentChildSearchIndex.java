@@ -238,7 +238,13 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         return element.getId() + "_" + property.getName() + "_" + property.getKey();
     }
 
-    public IndexRequest getParentDocumentIndexRequest(IndexInfo indexInfo, Element element, Authorizations authorizations) throws IOException {
+    public IndexRequest getParentDocumentIndexRequest(Element element, Authorizations authorizations) throws IOException {
+        String indexName = getIndexName(element);
+        IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        return getParentDocumentIndexRequest(indexInfo, element, authorizations);
+    }
+
+    private IndexRequest getParentDocumentIndexRequest(IndexInfo indexInfo, Element element, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
