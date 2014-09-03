@@ -30,6 +30,7 @@ public abstract class AccumuloElementInputFormatBase<TValue extends Element> ext
         AccumuloRowInputFormat.setInputTableName(job, tableName);
         AccumuloRowInputFormat.setConnectorInfo(job, principal, token);
         AccumuloRowInputFormat.setZooKeeperInstance(job, instanceName, zooKeepers);
+        AccumuloRowInputFormat.setScanAuthorizations(job, new org.apache.accumulo.core.security.Authorizations(authorizations));
         job.getConfiguration().setStrings(SecureGraphMRUtils.CONFIG_AUTHORIZATIONS, authorizations);
     }
 
