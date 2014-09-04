@@ -591,4 +591,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         }
         loadPropertyDefinitions();
     }
+
+    public abstract VertexQueryResult getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 }

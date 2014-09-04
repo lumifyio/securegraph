@@ -21,8 +21,42 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+
+/*
+
+get parent and children
+
+{
+  "filter": {
+    "or": [
+      {
+        "ids": {
+          "type": "element",
+          "values": [
+            "v1"
+          ]
+        }
+      },
+      {
+        "has_parent": {
+          "parent_type": "element",
+          "filter": {
+            "ids": {
+              "type": "element",
+              "values": [
+                "v1"
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+ */
 
 public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchIndexBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchParentChildSearchIndex.class);
@@ -360,6 +394,11 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         LOGGER.debug(response.toString());
 
         indexInfo.addPropertyDefinition(propertyName, new PropertyDefinition(propertyName, dataType, TextIndexHint.ALL));
+    }
+
+    @Override
+    public VertexQueryResult getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        throw new RuntimeException("not implemented");
     }
 
     @Override

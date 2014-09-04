@@ -205,6 +205,7 @@
         <module>securegraph-elasticsearch-parentchild</module>
         <module>securegraph-elasticsearch-plugin</module>
         <module>securegraph-examples</module>
+        <module>securegraph-elasticsearch-graph</module>
     </modules>
 
     <profiles>
