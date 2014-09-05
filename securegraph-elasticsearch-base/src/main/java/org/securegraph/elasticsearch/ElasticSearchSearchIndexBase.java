@@ -592,5 +592,5 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         loadPropertyDefinitions();
     }
 
-    public abstract VertexQueryResult getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+    public abstract Map<String, VertexQueryResult> getVertex(Iterable<String> vertexIds, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 }

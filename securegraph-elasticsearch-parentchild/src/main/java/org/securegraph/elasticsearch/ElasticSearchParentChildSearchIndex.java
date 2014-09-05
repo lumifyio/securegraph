@@ -7,11 +7,16 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.deletebyquery.IndexDeleteByQueryResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 import org.securegraph.*;
+import org.securegraph.property.MutablePropertyImpl;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.type.GeoPoint;
@@ -25,38 +30,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
-/*
-
-get parent and children
-
-{
-  "filter": {
-    "or": [
-      {
-        "ids": {
-          "type": "element",
-          "values": [
-            "v1"
-          ]
-        }
-      },
-      {
-        "has_parent": {
-          "parent_type": "element",
-          "filter": {
-            "ids": {
-              "type": "element",
-              "values": [
-                "v1"
-              ]
-            }
-          }
-        }
-      }
-    ]
-  }
-}
- */
+import static org.securegraph.util.IterableUtils.toArray;
 
 public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchIndexBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchParentChildSearchIndex.class);
@@ -397,8 +371,86 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     @Override
-    public VertexQueryResult getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        throw new RuntimeException("not implemented");
+    public Map<String, VertexQueryResult> getVertex(Iterable<String> vertexIds, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        String[] vertexIdsArray = toArray(vertexIds, String.class);
+
+        FilterBuilder parentFilter = FilterBuilders.idsFilter(ElasticSearchSearchIndexBase.ELEMENT_TYPE).ids(vertexIdsArray);
+        FilterBuilder childFilter = FilterBuilders.hasParentFilter(
+                ElasticSearchSearchIndexBase.ELEMENT_TYPE,
+                FilterBuilders.idsFilter(ElasticSearchSearchIndexBase.ELEMENT_TYPE).ids(vertexIdsArray));
+
+        OrFilterBuilder f = FilterBuilders.orFilter(parentFilter, childFilter);
+        QueryBuilder query = QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), f);
+
+        SearchRequestBuilder searchRequestBuilder = getClient()
+                .prepareSearch()
+                .addFields("_parent", "_source")
+                .setQuery(query);
+        LOGGER.debug("query: " + searchRequestBuilder);
+
+        SearchResponse searchResults = getClient().search(searchRequestBuilder.request()).actionGet();
+        SearchHit[] hits = searchResults.getHits().hits();
+        if (hits.length == 0) {
+            return null;
+        }
+
+        Map<String, VertexQueryResult> results = new HashMap<String, VertexQueryResult>();
+        for (SearchHit hit : hits) {
+            SearchHitField parentField = hit.getFields() == null ? null : hit.getFields().get("_parent");
+            String vertexId;
+            if (parentField == null) {
+                // parent document
+                vertexId = hit.getId();
+            } else {
+                // child document
+                vertexId = parentField.value();
+            }
+
+            VertexQueryResult result = results.get(vertexId);
+            if (result == null) {
+                result = new VertexQueryResult(vertexId);
+                results.put(vertexId, result);
+            }
+
+            if (parentField == null) {
+                // parent document
+                String vertexVisibilityString = (String) hit.getSource().get(VISIBILITY_FIELD_NAME);
+                Visibility vertexVisibility = new Visibility(vertexVisibilityString);
+                result.setVertexVisibility(vertexVisibility);
+            } else {
+                // child document
+                String propertyVisibilityString = null;
+                String propertyName = null;
+                Object propertyValue = null;
+                for (Map.Entry<String, Object> sourceEntry : hit.getSource().entrySet()) {
+                    String entryName = sourceEntry.getKey();
+                    if (entryName.equals(VISIBILITY_FIELD_NAME)) {
+                        propertyVisibilityString = (String) sourceEntry.getValue();
+                    } else if (entryName.endsWith(EXACT_MATCH_PROPERTY_NAME_SUFFIX)) {
+                        propertyName = entryName.substring(0, entryName.length() - EXACT_MATCH_PROPERTY_NAME_SUFFIX.length());
+                        propertyValue = sourceEntry.getValue();
+                    } else {
+                        propertyName = entryName;
+                        propertyValue = sourceEntry.getValue();
+                    }
+                }
+
+                if (propertyVisibilityString == null) {
+                    throw new SecureGraphException("Could not find " + VISIBILITY_FIELD_NAME + " field on element " + vertexId);
+                }
+                if (propertyName == null) {
+                    throw new SecureGraphException("Could not find property name and value on element " + vertexId);
+                }
+
+                String key = ""; // TODO fill me in
+                Map<String, Object> metadata = new HashMap<String, Object>(); // TODO fill me in
+                Visibility visibility = new Visibility(propertyVisibilityString);
+                Property property = new MutablePropertyImpl(key, propertyName, propertyValue, metadata, visibility);
+                result.getProperties().add(property);
+            }
+        }
+
+        return results;
     }
 
     @Override

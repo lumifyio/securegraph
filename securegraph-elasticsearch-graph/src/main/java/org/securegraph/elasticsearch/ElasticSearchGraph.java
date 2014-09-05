@@ -3,9 +3,13 @@ package org.securegraph.elasticsearch;
 import org.securegraph.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.search.SearchIndex;
+import org.securegraph.util.ConvertingIterable;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Map;
+
+import static org.securegraph.util.IterableUtils.singleOrDefault;
 
 public class ElasticSearchGraph extends GraphBase {
     public static ElasticSearchGraph create(Map config) {
@@ -55,9 +59,21 @@ public class ElasticSearchGraph extends GraphBase {
     }
 
     @Override
+    public Iterable<Vertex> getVertices(Iterable<String> ids, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
+        Map<String, VertexQueryResult> vertexQueryResults = getSearchIndex().getVertex(ids, fetchHints, authorizations);
+        return new ConvertingIterable<VertexQueryResult, Vertex>(vertexQueryResults.values()) {
+            @Override
+            protected Vertex convert(VertexQueryResult vertexQueryResult) {
+                return new ElasticSearchVertex(ElasticSearchGraph.this, vertexQueryResult, authorizations);
+            }
+        };
+    }
+
+    @Override
     public Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        VertexQueryResult vertexQueryResult = getSearchIndex().getVertex(vertexId, fetchHints, authorizations);
-        return new ElasticSearchVertex(this, vertexQueryResult, authorizations);
+        ArrayList<String> vertexIds = new ArrayList<String>();
+        vertexIds.add(vertexId);
+        return singleOrDefault(getVertices(vertexIds, fetchHints, authorizations), null);
     }
 
     @Override
