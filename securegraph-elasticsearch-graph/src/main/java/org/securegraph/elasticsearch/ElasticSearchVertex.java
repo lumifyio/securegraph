@@ -2,6 +2,7 @@ package org.securegraph.elasticsearch;
 
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
+import org.securegraph.mutation.ExistingElementMutationImpl;
 import org.securegraph.query.VertexQuery;
 import org.securegraph.util.JoinIterable;
 import org.securegraph.util.LookAheadIterable;
@@ -241,6 +242,12 @@ public class ElasticSearchVertex extends ElasticSearchElement<Vertex> implements
 
     @Override
     public ExistingElementMutation<Vertex> prepareMutation() {
-        throw new RuntimeException("not implemented");
+        return new ExistingElementMutationImpl<Vertex>(this) {
+            @Override
+            public Vertex save(Authorizations authorizations) {
+                saveExistingElementMutation(this, authorizations);
+                return getElement();
+            }
+        };
     }
 }
