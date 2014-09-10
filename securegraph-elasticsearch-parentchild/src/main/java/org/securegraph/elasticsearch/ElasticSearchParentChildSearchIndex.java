@@ -320,7 +320,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchParentChildGraphQuery(getClient(), ALL_INDEX_NAME, graph, queryString, getAllPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
+        return new ElasticSearchParentChildGraphQuery(getClient(), getIndicesToQuery(), graph, queryString, getAllPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
     }
 
     @Override

@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryBase {
-    protected ElasticSearchParentChildGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, double inEdgeBoost, double outEdgeBoost, Authorizations authorizations) {
-        super(client, indexName, graph, queryString, propertyDefinitions, inEdgeBoost, outEdgeBoost, false, authorizations);
+    protected ElasticSearchParentChildGraphQuery(TransportClient client, String[] indicesToQuery, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, double inEdgeBoost, double outEdgeBoost, Authorizations authorizations) {
+        super(client, indicesToQuery, graph, queryString, propertyDefinitions, inEdgeBoost, outEdgeBoost, false, authorizations);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
     @Override
     protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
         return getClient()
-                .prepareSearch(getIndexName())
+                .prepareSearch(getIndicesToQuery())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
                 .setQuery(functionScoreQuery)
                 .setFrom((int) getParameters().getSkip())
