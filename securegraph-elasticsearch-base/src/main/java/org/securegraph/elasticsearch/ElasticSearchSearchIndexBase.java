@@ -101,6 +101,10 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             client.addTransportAddress(new InetSocketTransportAddress(hostname, port));
         }
 
+        for (String indexName : getIndicesToQuery()) {
+            ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        }
+
         loadIndexInfos();
         loadPropertyDefinitions();
     }
