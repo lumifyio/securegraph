@@ -182,7 +182,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                 continue;
             }
 
-            indexInfo = new IndexInfo(indexName);
+            indexInfo = createIndexInfo(indexName);
             indexInfos.put(indexName, indexInfo);
         }
     }
@@ -206,33 +206,41 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                     }
                 }
 
-                indexInfo = new IndexInfo(indexName);
+                indexInfo = createIndexInfo(indexName);
                 indexInfos.put(indexName, indexInfo);
             }
 
-            if (!indexInfo.isElementTypeDefined()) {
-                try {
-                    XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
-                            .startObject()
-                            .startObject("_source").field("enabled", storeSourceData).endObject()
-                            .startObject("properties");
-                    createIndexAddFieldsToElementType(mappingBuilder);
-                    XContentBuilder mapping = mappingBuilder.endObject()
-                            .endObject();
-
-                    PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
-                            .setType(ELEMENT_TYPE)
-                            .setSource(mapping)
-                            .execute()
-                            .actionGet();
-                    LOGGER.debug(putMappingResponse.toString());
-                    indexInfo.setElementTypeDefined(true);
-                } catch (IOException e) {
-                    throw new SecureGraphException("Could not add mappings to index: " + indexName, e);
-                }
-            }
+            ensureMappingsCreated(indexInfo);
 
             return indexInfo;
+        }
+    }
+
+    protected IndexInfo createIndexInfo(String indexName) {
+        return new IndexInfo(indexName);
+    }
+
+    protected void ensureMappingsCreated(IndexInfo indexInfo) {
+        if (!indexInfo.isElementTypeDefined()) {
+            try {
+                XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
+                        .startObject()
+                        .startObject("_source").field("enabled", storeSourceData).endObject()
+                        .startObject("properties");
+                createIndexAddFieldsToElementType(mappingBuilder);
+                XContentBuilder mapping = mappingBuilder.endObject()
+                        .endObject();
+
+                PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexInfo.getIndexName())
+                        .setType(ELEMENT_TYPE)
+                        .setSource(mapping)
+                        .execute()
+                        .actionGet();
+                LOGGER.debug(putMappingResponse.toString());
+                indexInfo.setElementTypeDefined(true);
+            } catch (IOException e) {
+                throw new SecureGraphException("Could not add mappings to index: " + indexInfo.getIndexName(), e);
+            }
         }
     }
 

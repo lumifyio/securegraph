@@ -34,29 +34,43 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     @Override
-    protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
-        super.createIndex(indexName, storeSourceData);
-        XContentBuilder mapping = XContentFactory.jsonBuilder()
-                .startObject()
-                .startObject(PROPERTY_TYPE)
-                .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
-                .startObject("_source").field("enabled", storeSourceData).endObject()
-                .startObject("properties")
-                .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "not_analyzed").field("store", "true").endObject()
-                .endObject()
-                .endObject()
-                .endObject();
-        LOGGER.debug(mapping.string());
-        PutMappingResponse response = getClient()
-                .admin()
-                .indices()
-                .preparePutMapping(indexName)
-                .setIgnoreConflicts(false)
-                .setType(PROPERTY_TYPE)
-                .setSource(mapping)
-                .execute()
-                .actionGet();
-        LOGGER.debug(response.toString());
+    protected void ensureMappingsCreated(IndexInfo indexInfo) {
+        ParentChildIndexInfo parentChildIndexInfo = (ParentChildIndexInfo) indexInfo;
+        super.ensureMappingsCreated(indexInfo);
+
+        if (!parentChildIndexInfo.isPropertyTypeDefined()) {
+            try {
+                XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
+                        .startObject()
+                        .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
+                        .startObject("_source").field("enabled", isStoreSourceData()).endObject()
+                        .startObject("properties")
+                        .startObject(VISIBILITY_FIELD_NAME)
+                        .field("type", "string")
+                        .field("analyzer", "keyword")
+                        .field("index", "not_analyzed")
+                        .field("store", "true")
+                        .endObject();
+                XContentBuilder mapping = mappingBuilder.endObject()
+                        .endObject();
+
+                PutMappingResponse putMappingResponse = getClient().admin().indices().preparePutMapping(indexInfo.getIndexName())
+                        .setIgnoreConflicts(false)
+                        .setType(PROPERTY_TYPE)
+                        .setSource(mapping)
+                        .execute()
+                        .actionGet();
+                LOGGER.debug(putMappingResponse.toString());
+                parentChildIndexInfo.setPropertyTypeDefined(true);
+            } catch (IOException e) {
+                throw new SecureGraphException("Could not add mappings to index: " + indexInfo.getIndexName(), e);
+            }
+        }
+    }
+
+    @Override
+    protected IndexInfo createIndexInfo(String indexName) {
+        return new ParentChildIndexInfo(indexName);
     }
 
     @Override

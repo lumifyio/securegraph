@@ -5,7 +5,7 @@ import org.securegraph.PropertyDefinition;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class IndexInfo {
+public class IndexInfo {
     private final String indexName;
     private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
     private boolean elementTypeDefined;
