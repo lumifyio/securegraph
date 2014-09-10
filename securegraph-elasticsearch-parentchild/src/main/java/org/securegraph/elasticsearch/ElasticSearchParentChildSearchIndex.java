@@ -292,6 +292,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             if (valueType == String.class) {
                 InputStream in = streamingPropertyValue.getInputStream();
                 propertyValue = StreamUtils.toString(in);
+                jsonBuilder.field(property.getName(), propertyValue);
             } else {
                 throw new SecureGraphException("Unhandled StreamingPropertyValue type: " + valueType.getName());
             }
