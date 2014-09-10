@@ -233,9 +233,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     }
 
     protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
-        XContentBuilder builder = XContentFactory.jsonBuilder()
-                .startObject()
-                .endObject();
         CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).execute().actionGet();
         LOGGER.debug(createResponse.toString());
     }
