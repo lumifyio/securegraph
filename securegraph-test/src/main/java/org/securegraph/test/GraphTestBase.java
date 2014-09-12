@@ -15,6 +15,8 @@ import org.securegraph.query.Compare;
 import org.securegraph.query.DefaultGraphQuery;
 import org.securegraph.query.GeoCompare;
 import org.securegraph.query.TextPredicate;
+import org.securegraph.search.DefaultSearchIndex;
+import org.securegraph.search.IndexHint;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
@@ -1795,11 +1797,90 @@ public abstract class GraphTestBase {
         assertVertexIds(vertices, new String[]{"v1"});
     }
 
+    @Test
+    public void testAddVertexWithoutIndexing() {
+        if (isDefaultSearchIndex()) {
+            return;
+        }
+
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .setIndexHint(IndexHint.DO_NOT_INDEX)
+                .save(AUTHORIZATIONS_A);
+        graph.flush();
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("prop1", "value1")
+                .vertices();
+        assertVertexIds(vertices, new String[]{});
+    }
+
+    @Test
+    public void testAlterVertexWithoutIndexing() {
+        if (isDefaultSearchIndex()) {
+            return;
+        }
+
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setIndexHint(IndexHint.DO_NOT_INDEX)
+                .save(AUTHORIZATIONS_A);
+        graph.flush();
+
+        Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+        v1.prepareMutation()
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .setIndexHint(IndexHint.DO_NOT_INDEX)
+                .save(AUTHORIZATIONS_A);
+        graph.flush();
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("prop1", "value1")
+                .vertices();
+        assertVertexIds(vertices, new String[]{});
+    }
+
+    @Test
+    public void testAddEdgeWithoutIndexing() {
+        if (isDefaultSearchIndex()) {
+            return;
+        }
+
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.prepareEdge("e1", v1, v2, "label1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .setIndexHint(IndexHint.DO_NOT_INDEX)
+                .save(AUTHORIZATIONS_A);
+        graph.flush();
+
+        Iterable<Edge> edges = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("prop1", "value1")
+                .edges();
+        assertEdgeIds(edges, new String[]{});
+    }
+
+    private boolean isDefaultSearchIndex() {
+        if (!(graph instanceof GraphBaseWithSearchIndex)) {
+            return false;
+        }
+
+        GraphBaseWithSearchIndex graphBaseWithSearchIndex = (GraphBaseWithSearchIndex) graph;
+        return graphBaseWithSearchIndex.getSearchIndex() instanceof DefaultSearchIndex;
+    }
+
     protected void assertVertexIds(Iterable<Vertex> vertices, String[] ids) {
         List<Vertex> verticesList = toList(vertices);
         assertEquals("ids length mismatch", ids.length, verticesList.size());
         for (int i = 0; i < ids.length; i++) {
             assertEquals("at offset: " + i, ids[i], verticesList.get(i).getId());
+        }
+    }
+
+    protected void assertEdgeIds(Iterable<Edge> edges, String[] ids) {
+        List<Edge> edgesList = toList(edges);
+        assertEquals("ids length mismatch", ids.length, edgesList.size());
+        for (int i = 0; i < ids.length; i++) {
+            assertEquals("at offset: " + i, ids[i], edgesList.get(i).getId());
         }
     }
 }
