@@ -12,7 +12,7 @@ import static org.securegraph.util.IterableUtils.toSet;
 // TODO this algorithm could probably be better optimized to be iterable instead
 public class RecursivePathFindingAlgorithm implements PathFindingAlgorithm {
     @Override
-    public Iterable<Path> findPaths(GraphBase graphBase, final Vertex sourceVertex, Vertex destVertex, int hops, final Authorizations authorizations) {
+    public Iterable<Path> findPaths(Graph graph, final Vertex sourceVertex, Vertex destVertex, int hops, final Authorizations authorizations) {
         Set<String> seenVertices = new HashSet<String>();
         seenVertices.add(sourceVertex.getId());
 

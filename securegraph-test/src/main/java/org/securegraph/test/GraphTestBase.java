@@ -400,8 +400,8 @@ public abstract class GraphTestBase {
         Iterable<Vertex> vertices = graph.addVertices(elements, AUTHORIZATIONS_A_AND_B);
         assertVertexIds(vertices, new String[]{"v1", "v2"});
 
-        if (graph instanceof GraphBase) {
-            ((GraphBase) graph).getSearchIndex().addElements(graph, new ToElementIterable(vertices), AUTHORIZATIONS_A_AND_B);
+        if (graph instanceof GraphBaseWithSearchIndex) {
+            ((GraphBaseWithSearchIndex) graph).getSearchIndex().addElements(graph, new ToElementIterable(vertices), AUTHORIZATIONS_A_AND_B);
         }
     }
 

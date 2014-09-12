@@ -31,13 +31,13 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQueryBase.class);
     private final TransportClient client;
     private final boolean evaluateHasContainers;
-    private String indexName;
+    private String[] indicesToQuery;
     private final double inEdgeBoost;
     private final double outEdgeBoost;
 
     protected ElasticSearchGraphQueryBase(
             TransportClient client,
-            String indexName,
+            String[] indicesToQuery,
             Graph graph,
             String queryString,
             Map<String, PropertyDefinition> propertyDefinitions,
@@ -47,7 +47,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
             Authorizations authorizations) {
         super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
-        this.indexName = indexName;
+        this.indicesToQuery = indicesToQuery;
         this.inEdgeBoost = inEdgeBoost;
         this.outEdgeBoost = outEdgeBoost;
         this.evaluateHasContainers = evaluateHasContainers;
@@ -225,7 +225,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
         AndFilterBuilder filterBuilder = getFilterBuilder(filters);
         return getClient()
-                .prepareSearch(getIndexName())
+                .prepareSearch(getIndicesToQuery())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
                 .setQuery(QueryBuilders.filteredQuery(functionScoreQuery, filterBuilder))
                 .setFrom((int) getParameters().getSkip())
@@ -258,7 +258,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         return client;
     }
 
-    public String getIndexName() {
-        return indexName;
+    public String[] getIndicesToQuery() {
+        return indicesToQuery;
     }
 }

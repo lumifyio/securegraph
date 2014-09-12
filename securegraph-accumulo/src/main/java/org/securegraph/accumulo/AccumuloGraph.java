@@ -31,7 +31,7 @@ import java.util.*;
 import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public class AccumuloGraph extends GraphBase {
+public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private static final String ROW_DELETING_ITERATOR_NAME = RowDeletingIterator.class.getSimpleName();
     private static final int ROW_DELETING_ITERATOR_PRIORITY = 7;
     public static final Text DELETE_ROW_COLUMN_FAMILY = new Text("");

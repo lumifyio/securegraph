@@ -14,7 +14,7 @@ import java.util.*;
 import static org.securegraph.util.IterableUtils.toList;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public class InMemoryGraph extends GraphBase {
+public class InMemoryGraph extends GraphBaseWithSearchIndex {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<String, InMemoryVertex> vertices;
     private final Map<String, InMemoryEdge> edges;

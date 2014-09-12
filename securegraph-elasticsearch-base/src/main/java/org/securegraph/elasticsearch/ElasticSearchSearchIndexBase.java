@@ -38,6 +38,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public static final String CONFIG_ES_LOCATIONS = "locations";
     public static final String CONFIG_INDEX_NAME = "indexName";
     private static final String DEFAULT_INDEX_NAME = "securegraph";
+    public static final String CONFIG_INDICES_TO_QUERY = "indicesToQuery";
     public static final String CONFIG_IN_EDGE_BOOST = "inEdgeBoost";
     private static final double DEFAULT_IN_EDGE_BOOST = 1.2;
     public static final String CONFIG_OUT_EDGE_BOOST = "outEdgeBoost";
@@ -54,11 +55,11 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public static final String SETTING_CLUSTER_NAME = "clusterName";
     public static final int DEFAULT_ES_PORT = 9300;
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
-    protected final String ALL_INDEX_NAME = "_all";
     private final TransportClient client;
     private final boolean autoflush;
     private final boolean storeSourceData;
     private String defaultIndexName;
+    private String[] indicesToQuery;
     private final Map<String, IndexInfo> indexInfos = new HashMap<String, IndexInfo>();
     private int indexInfosLastSize = 0; // Used to prevent creating a index name array each time
     private String[] indexNamesAsArray;
@@ -100,6 +101,10 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             client.addTransportAddress(new InetSocketTransportAddress(hostname, port));
         }
 
+        for (String indexName : getIndicesToQuery()) {
+            ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        }
+
         loadIndexInfos();
         loadPropertyDefinitions();
     }
@@ -119,6 +124,27 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             defaultIndexName = DEFAULT_INDEX_NAME;
         }
         LOGGER.info("Default index name: " + defaultIndexName);
+
+        // Indices to query
+        String indicesToQueryString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDICES_TO_QUERY);
+        if (indicesToQueryString == null) {
+            indicesToQuery = new String[]{defaultIndexName};
+        } else {
+            indicesToQuery = indicesToQueryString.split(",");
+            for (int i = 0; i < indicesToQuery.length; i++) {
+                indicesToQuery[i] = indicesToQuery[i].trim();
+            }
+        }
+        if (LOGGER.isInfoEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < indicesToQuery.length; i++) {
+                if (i > 0) {
+                    sb.append(',');
+                }
+                sb.append(indicesToQuery[i]);
+            }
+            LOGGER.info("Indices to query: " + sb.toString());
+        }
 
         // In-Edge Boost
         String inEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_IN_EDGE_BOOST);
@@ -156,7 +182,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                 continue;
             }
 
-            indexInfo = new IndexInfo(indexName);
+            indexInfo = createIndexInfo(indexName);
             indexInfos.put(indexName, indexInfo);
         }
     }
@@ -180,40 +206,45 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                     }
                 }
 
-                indexInfo = new IndexInfo(indexName);
+                indexInfo = createIndexInfo(indexName);
                 indexInfos.put(indexName, indexInfo);
             }
 
-            if (!indexInfo.isElementTypeDefined()) {
-                try {
-                    XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
-                            .startObject()
-                            .startObject("_source").field("enabled", storeSourceData).endObject()
-                            .startObject("properties");
-                    createIndexAddFieldsToElementType(mappingBuilder);
-                    XContentBuilder mapping = mappingBuilder.endObject()
-                            .endObject();
-
-                    PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
-                            .setType(ELEMENT_TYPE)
-                            .setSource(mapping)
-                            .execute()
-                            .actionGet();
-                    LOGGER.debug(putMappingResponse.toString());
-                    indexInfo.setElementTypeDefined(true);
-                } catch (IOException e) {
-                    throw new SecureGraphException("Could not add mappings to index: " + indexName, e);
-                }
-            }
+            ensureMappingsCreated(indexInfo);
 
             return indexInfo;
         }
     }
 
+    protected IndexInfo createIndexInfo(String indexName) {
+        return new IndexInfo(indexName);
+    }
+
+    protected void ensureMappingsCreated(IndexInfo indexInfo) {
+        if (!indexInfo.isElementTypeDefined()) {
+            try {
+                XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
+                        .startObject()
+                        .startObject("_source").field("enabled", storeSourceData).endObject()
+                        .startObject("properties");
+                createIndexAddFieldsToElementType(mappingBuilder);
+                XContentBuilder mapping = mappingBuilder.endObject()
+                        .endObject();
+
+                PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexInfo.getIndexName())
+                        .setType(ELEMENT_TYPE)
+                        .setSource(mapping)
+                        .execute()
+                        .actionGet();
+                LOGGER.debug(putMappingResponse.toString());
+                indexInfo.setElementTypeDefined(true);
+            } catch (IOException e) {
+                throw new SecureGraphException("Could not add mappings to index: " + indexInfo.getIndexName(), e);
+            }
+        }
+    }
+
     protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
-        XContentBuilder builder = XContentFactory.jsonBuilder()
-                .startObject()
-                .endObject();
         CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).execute().actionGet();
         LOGGER.debug(createResponse.toString());
     }
@@ -593,4 +624,8 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     }
 
     public abstract Map<String, VertexQueryResult> getVertex(Iterable<String> vertexIds, EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    protected String[] getIndicesToQuery() {
+        return indicesToQuery;
+    }
 }

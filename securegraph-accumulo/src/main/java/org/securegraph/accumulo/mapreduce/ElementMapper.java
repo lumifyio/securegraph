@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
 public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
     public static final String GRAPH_CONFIG_PREFIX = "graphConfigPrefix";
     private ElementMutationBuilder elementMutationBuilder;
+    private ElementMapperGraph graph;
 
     @Override
     protected void setup(final Context context) throws IOException, InterruptedException {
@@ -63,6 +64,8 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
                 }
             }
         };
+
+        this.graph = new ElementMapperGraph(this);
     }
 
     protected abstract void saveDataMutation(Context context, Text dataTableName, Mutation m) throws IOException, InterruptedException;
@@ -105,5 +108,9 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         };
     }
 
-    protected abstract IdGenerator getIdGenerator();
+    public abstract IdGenerator getIdGenerator();
+
+    public Graph getGraph() {
+        return graph;
+    }
 }
