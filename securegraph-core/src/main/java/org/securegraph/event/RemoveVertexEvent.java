@@ -3,10 +3,10 @@ package org.securegraph.event;
 import org.securegraph.Graph;
 import org.securegraph.Vertex;
 
-public class AddVertexEvent extends GraphEvent {
+public class RemoveVertexEvent extends GraphEvent {
     private final Vertex vertex;
 
-    public AddVertexEvent(Graph graph, Thread thread, Vertex vertex) {
+    public RemoveVertexEvent(Graph graph, Thread thread, Vertex vertex) {
         super(graph, thread);
         this.vertex = vertex;
     }
@@ -17,21 +17,21 @@ public class AddVertexEvent extends GraphEvent {
 
     @Override
     public String toString() {
-        return "AddVertexEvent{vertex=" + vertex + '}';
+        return "RemoveVertexEvent{vertex=" + vertex + '}';
     }
 
     @Override
     public int hashCode() {
-        return this.vertex.hashCode();
+        return getVertex().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof AddVertexEvent)) {
+        if (!(obj instanceof RemoveVertexEvent)) {
             return false;
         }
 
-        AddVertexEvent other = (AddVertexEvent) obj;
+        RemoveVertexEvent other = (RemoveVertexEvent) obj;
         return getVertex().equals(other.getVertex()) && super.equals(obj);
     }
 }

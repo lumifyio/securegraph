@@ -25,6 +25,6 @@ public abstract class GraphEvent {
             GraphEvent other = (GraphEvent) obj;
             return getGraph().equals(other.getGraph()) && getThread().equals(other.getThread());
         }
-        return super.equals(obj);
+        return false;
     }
 }

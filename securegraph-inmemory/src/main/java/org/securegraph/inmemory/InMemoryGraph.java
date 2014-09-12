@@ -1,8 +1,7 @@
 package org.securegraph.inmemory;
 
 import org.securegraph.*;
-import org.securegraph.event.AddPropertyEvent;
-import org.securegraph.event.AddVertexEvent;
+import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.id.UUIDIdGenerator;
 import org.securegraph.mutation.AlterPropertyMetadata;
@@ -77,7 +76,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 if (hasEventListeners()) {
                     fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, Thread.currentThread(), vertex));
                     for (Property property : getProperties()) {
-                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, Thread.currentThread(), property));
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, Thread.currentThread(), vertex, property));
                     }
                 }
 
@@ -119,6 +118,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         this.vertices.remove(vertex.getId());
         getSearchIndex().removeElement(this, vertex, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new RemoveVertexEvent(this, Thread.currentThread(), vertex));
+        }
     }
 
     @Override
@@ -149,6 +152,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 edges.put(getEdgeId(), edge);
 
                 getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
+
+                if (hasEventListeners()) {
+                    fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, Thread.currentThread(), edge));
+                    for (Property property : getProperties()) {
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, Thread.currentThread(), edge, property));
+                    }
+                }
 
                 return edge;
             }
@@ -188,6 +198,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         this.edges.remove(edge.getId());
         getSearchIndex().removeElement(this, edge, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new RemoveEdgeEvent(this, Thread.currentThread(), edge));
+        }
     }
 
     public Iterable<Edge> getEdgesFromVertex(final String vertexId, final Authorizations authorizations) {
