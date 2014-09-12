@@ -61,13 +61,13 @@ public abstract class ElementMutationBuilder {
         // Update out vertex.
         Mutation addEdgeToOutMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.OUT));
         EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.IN));
-        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), edgeColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+        addEdgeToOutMutation.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), edgeColumnVisibility, edgeInfo.toValue());
         saveVertexMutation(addEdgeToOutMutation);
 
         // Update in vertex.
         Mutation addEdgeToInMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.IN));
         edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.OUT));
-        addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), edgeColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+        addEdgeToInMutation.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), edgeColumnVisibility, edgeInfo.toValue());
         saveVertexMutation(addEdgeToInMutation);
     }
 
@@ -123,7 +123,7 @@ public abstract class ElementMutationBuilder {
         }
         EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.IN));
         mvout.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), currentColumnVisibility);
-        mvout.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), newColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+        mvout.put(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), newColumnVisibility, edgeInfo.toValue());
         return true;
     }
 
@@ -135,7 +135,7 @@ public abstract class ElementMutationBuilder {
         }
         EdgeInfo edgeInfo = new EdgeInfo(edge.getLabel(), edge.getVertexId(Direction.OUT));
         mvin.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), currentColumnVisibility);
-        mvin.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), newColumnVisibility, valueSerializer.objectToValue(edgeInfo));
+        mvin.put(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), newColumnVisibility, edgeInfo.toValue());
         return true;
     }
 

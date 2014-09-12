@@ -3,6 +3,7 @@ package org.securegraph.query;
 import org.securegraph.*;
 import org.securegraph.util.FilterIterable;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
@@ -14,14 +15,14 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
     }
 
     @Override
-    public abstract Iterable<Vertex> vertices();
+    public abstract Iterable<Vertex> vertices(EnumSet<FetchHint> fetchHints);
 
     @Override
-    public abstract Iterable<Edge> edges();
+    public abstract Iterable<Edge> edges(EnumSet<FetchHint> fetchHints);
 
     @Override
-    public Iterable<Edge> edges(final Direction direction) {
-        return new FilterIterable<Edge>(edges()) {
+    public Iterable<Edge> edges(final Direction direction, EnumSet<FetchHint> fetchHints) {
+        return new FilterIterable<Edge>(edges(fetchHints)) {
             @Override
             protected boolean isIncluded(Edge edge) {
                 switch (direction) {
@@ -39,13 +40,23 @@ public abstract class VertexQueryBase extends QueryBase implements VertexQuery {
     }
 
     @Override
-    public Iterable<Edge> edges(Direction direction, final String label) {
-        return new FilterIterable<Edge>(edges(direction)) {
+    public Iterable<Edge> edges(final Direction direction) {
+        return edges(direction, FetchHint.ALL);
+    }
+
+    @Override
+    public Iterable<Edge> edges(Direction direction, final String label, EnumSet<FetchHint> fetchHints) {
+        return new FilterIterable<Edge>(edges(direction, fetchHints)) {
             @Override
             protected boolean isIncluded(Edge o) {
                 return label.equals(o.getLabel());
             }
         };
+    }
+
+    @Override
+    public Iterable<Edge> edges(Direction direction, final String label) {
+        return edges(direction, label, FetchHint.ALL);
     }
 
     public Vertex getSourceVertex() {

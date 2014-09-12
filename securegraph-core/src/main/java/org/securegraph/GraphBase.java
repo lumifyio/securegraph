@@ -1,32 +1,19 @@
 package org.securegraph;
 
-import org.securegraph.id.IdGenerator;
 import org.securegraph.path.PathFindingAlgorithm;
 import org.securegraph.path.RecursivePathFindingAlgorithm;
 import org.securegraph.query.GraphQuery;
-import org.securegraph.search.SearchIndex;
 import org.securegraph.util.LookAheadIterable;
-import org.securegraph.util.ToElementIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.securegraph.util.IterableUtils.toList;
 
 public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
-    private final GraphConfiguration configuration;
-    private final IdGenerator idGenerator;
-    private SearchIndex searchIndex;
     private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
-
-    protected GraphBase(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
-        this.configuration = configuration;
-        this.idGenerator = idGenerator;
-        this.searchIndex = searchIndex;
-    }
 
     @Override
     public Vertex addVertex(Visibility visibility, Authorizations authorizations) {
@@ -53,9 +40,9 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
+    public Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all vertices! Override getVertex.");
-        for (Vertex vertex : getVertices(authorizations)) {
+        for (Vertex vertex : getVertices(fetchHints, authorizations)) {
             if (vertex.getId().equals(vertexId)) {
                 return vertex;
             }
@@ -64,7 +51,12 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(final Iterable<String> ids, final Authorizations authorizations) {
+    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
+        return getVertex(vertexId, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(final Iterable<String> ids, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         LOGGER.warn("Getting each vertex one by one! Override getVertices(java.lang.Iterable<java.lang.String>, org.securegraph.Authorizations)");
         return new LookAheadIterable<String, Vertex>() {
             @Override
@@ -85,7 +77,12 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations) {
+    public Iterable<Vertex> getVertices(final Iterable<String> ids, final Authorizations authorizations) {
+        return getVertices(ids, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public List<Vertex> getVerticesInOrder(Iterable<String> ids, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         final List<String> vertexIds = toList(ids);
         List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));
         Collections.sort(vertices, new Comparator<Vertex>() {
@@ -100,7 +97,17 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public abstract Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException;
+    public List<Vertex> getVerticesInOrder(Iterable<String> ids, Authorizations authorizations) {
+        return getVerticesInOrder(ids, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException {
+        return getVertices(FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public abstract Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     @Override
     public abstract void removeVertex(Vertex vertex, Authorizations authorizations);
@@ -121,9 +128,9 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Edge getEdge(String edgeId, Authorizations authorizations) {
+    public Edge getEdge(String edgeId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all edges! Override getEdge.");
-        for (Edge edge : getEdges(authorizations)) {
+        for (Edge edge : getEdges(fetchHints, authorizations)) {
             if (edge.getId().equals(edgeId)) {
                 return edge;
             }
@@ -132,7 +139,12 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Iterable<String> ids, final Authorizations authorizations) {
+    public Edge getEdge(String edgeId, Authorizations authorizations) {
+        return getEdge(edgeId, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Iterable<String> ids, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         LOGGER.warn("Getting each edge one by one! Override getEdges(java.lang.Iterable<java.lang.String>, org.securegraph.Authorizations)");
         return new LookAheadIterable<String, Edge>() {
             @Override
@@ -153,7 +165,17 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public abstract Iterable<Edge> getEdges(Authorizations authorizations);
+    public Iterable<Edge> getEdges(final Iterable<String> ids, final Authorizations authorizations) {
+        return getEdges(ids, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Authorizations authorizations) {
+        return getEdges(FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public abstract Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     @Override
     public abstract void removeEdge(Edge edge, Authorizations authorizations);
@@ -173,15 +195,15 @@ public abstract class GraphBase implements Graph {
 
         for (Vertex sourceVertex : vertices) {
             for (Vertex destVertex : vertices) {
-                if (checkedCombinations.containsKey(sourceVertex.getId().toString() + destVertex.getId().toString())) {
+                if (checkedCombinations.containsKey(sourceVertex.getId() + destVertex.getId())) {
                     continue;
                 }
                 Iterable<String> edgeIds = sourceVertex.getEdgeIds(destVertex, Direction.BOTH, authorizations);
                 for (String edgeId : edgeIds) {
                     results.add(edgeId);
                 }
-                checkedCombinations.put(sourceVertex.getId().toString() + destVertex.getId().toString(), "");
-                checkedCombinations.put(destVertex.getId().toString() + sourceVertex.getId().toString(), "");
+                checkedCombinations.put(sourceVertex.getId() + destVertex.getId(), "");
+                checkedCombinations.put(destVertex.getId() + sourceVertex.getId(), "");
             }
         }
         return results;
@@ -197,85 +219,29 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public GraphQuery query(Authorizations authorizations) {
-        return getSearchIndex().queryGraph(this, null, authorizations);
-    }
+    public abstract GraphQuery query(Authorizations authorizations);
 
     @Override
-    public GraphQuery query(String queryString, Authorizations authorizations) {
-        return getSearchIndex().queryGraph(this, queryString, authorizations);
-    }
-
-    public IdGenerator getIdGenerator() {
-        return idGenerator;
-    }
-
-    public GraphConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public SearchIndex getSearchIndex() {
-        return searchIndex;
-    }
+    public abstract GraphQuery query(String queryString, Authorizations authorizations);
 
     @Override
-    public void reindex(Authorizations authorizations) {
-        reindexVertices(authorizations);
-        reindexEdges(authorizations);
-    }
-
-    protected void reindexVertices(Authorizations authorizations) {
-        this.searchIndex.addElements(this, new ToElementIterable<Vertex>(getVertices(authorizations)), authorizations);
-    }
-
-    private void reindexEdges(Authorizations authorizations) {
-        this.searchIndex.addElements(this, new ToElementIterable<Edge>(getEdges(authorizations)), authorizations);
-    }
+    public abstract void reindex(Authorizations authorizations);
 
     @Override
-    public void flush() {
-        if (getSearchIndex() != null) {
-            this.searchIndex.flush();
-        }
-    }
+    public abstract void flush();
 
     @Override
-    public void shutdown() {
-        flush();
-        if (getSearchIndex() != null) {
-            this.searchIndex.shutdown();
-            this.searchIndex = null;
-        }
-    }
+    public abstract void shutdown();
 
     @Override
-    public DefinePropertyBuilder defineProperty(String propertyName) {
-        return new DefinePropertyBuilder(propertyName) {
-            @Override
-            public PropertyDefinition define() {
-                PropertyDefinition propertyDefinition = super.define();
-                try {
-                    getSearchIndex().addPropertyDefinition(propertyDefinition);
-                } catch (IOException e) {
-                    throw new SecureGraphException("Could not add property definition to search index", e);
-                }
-                return propertyDefinition;
-            }
-        };
-    }
+    public abstract DefinePropertyBuilder defineProperty(String propertyName);
 
     @Override
-    public boolean isFieldBoostSupported() {
-        return getSearchIndex().isFieldBoostSupported();
-    }
+    public abstract boolean isFieldBoostSupported();
 
     @Override
-    public boolean isEdgeBoostSupported() {
-        return getSearchIndex().isEdgeBoostSupported();
-    }
+    public abstract boolean isEdgeBoostSupported();
 
     @Override
-    public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
-        return getSearchIndex().getSearchIndexSecurityGranularity();
-    }
+    public abstract SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
 }

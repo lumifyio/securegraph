@@ -1,7 +1,7 @@
 package org.securegraph.accumulo.serializer;
 
-import org.securegraph.util.JavaSerializableUtils;
 import org.apache.accumulo.core.data.Value;
+import org.securegraph.util.JavaSerializableUtils;
 
 import java.util.Map;
 
@@ -17,6 +17,11 @@ public class JavaValueSerializer implements ValueSerializer {
 
     @Override
     public <T> T valueToObject(Value value) {
-        return (T) JavaSerializableUtils.bytesToObject(value.get());
+        return valueToObject(value.get());
+    }
+
+    @Override
+    public <T> T valueToObject(byte[] data) {
+        return (T) JavaSerializableUtils.bytesToObject(data);
     }
 }

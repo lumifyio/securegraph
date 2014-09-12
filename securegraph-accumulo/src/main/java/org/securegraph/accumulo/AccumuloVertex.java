@@ -9,6 +9,7 @@ import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.JoinIterable;
 import org.securegraph.util.LookAheadIterable;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,7 +36,12 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIds(direction, authorizations), authorizations);
+        return getEdges(direction, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Direction direction, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIds(direction, authorizations), fetchHints, authorizations);
     }
 
     @Override
@@ -45,7 +51,12 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIds(direction, new String[]{label}, authorizations), authorizations);
+        return getEdges(direction, label, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIds(direction, new String[]{label}, authorizations), fetchHints, authorizations);
     }
 
     @Override
@@ -54,8 +65,13 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(Direction direction, final String[] labels, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(null, direction, labels, authorizations), authorizations);
+    public Iterable<Edge> getEdges(Direction direction, String[] labels, Authorizations authorizations) {
+        return getEdges(direction, labels, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Direction direction, final String[] labels, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(null, direction, labels, authorizations), fetchHints, authorizations);
     }
 
     @Override
@@ -64,8 +80,13 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, null, authorizations), authorizations);
+    public Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return getEdges(otherVertex, direction, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, null, authorizations), fetchHints, authorizations);
     }
 
     @Override
@@ -74,8 +95,13 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, new String[]{label}, authorizations), authorizations);
+    public Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return getEdges(otherVertex, direction, label, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, new String[]{label}, authorizations), fetchHints, authorizations);
     }
 
     @Override
@@ -84,8 +110,13 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labels, authorizations), authorizations);
+    public Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return getEdges(otherVertex, direction, labels, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labels, authorizations), fetchHints, authorizations);
     }
 
     @Override
@@ -106,6 +137,11 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
                 return o.getValue().getLabel();
             }
         });
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, Authorizations authorizations) {
+        return getVertices(direction, FetchHint.ALL, authorizations);
     }
 
     public Iterable<String> getEdgeIdsWithOtherVertexId(final String otherVertexId, final Direction direction, final String[] labels, final Authorizations authorizations) {
@@ -155,18 +191,28 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
-        return getGraph().getVertices(getVertexIds(direction, authorizations), authorizations);
+    public Iterable<Vertex> getVertices(Direction direction, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
+        return getGraph().getVertices(getVertexIds(direction, authorizations), fetchHints, authorizations);
     }
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, String label, Authorizations authorizations) {
-        return getVertices(direction, new String[]{label}, authorizations);
+        return getVertices(direction, label, FetchHint.ALL, authorizations);
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Direction direction, String[] labels, final Authorizations authorizations) {
-        return getGraph().getVertices(getVertexIds(direction, labels, authorizations), authorizations);
+    public Iterable<Vertex> getVertices(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getVertices(direction, new String[]{label}, fetchHints, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, String[] labels, Authorizations authorizations) {
+        return getVertices(direction, labels, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, String[] labels, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
+        return getGraph().getVertices(getVertexIds(direction, labels, authorizations), fetchHints, authorizations);
     }
 
     @Override

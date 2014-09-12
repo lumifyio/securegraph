@@ -1,7 +1,7 @@
 package org.securegraph;
 
 import org.securegraph.mutation.ElementMutation;
-import org.securegraph.property.MutableProperty;
+import org.securegraph.property.MutablePropertyImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +78,7 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
     public ElementBuilder<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         checkNotNull(name, "property name cannot be null for property: " + name + ":" + key);
         checkNotNull(value, "property value cannot be null for property: " + name + ":" + key);
-        this.properties.add(new MutableProperty(key, name, value, metadata, visibility));
+        this.properties.add(new MutablePropertyImpl(key, name, value, metadata, visibility));
         return this;
     }
 

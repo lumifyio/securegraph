@@ -1,54 +1,18 @@
 package org.securegraph;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Property implements Comparable<Property> {
-    private final String key;
-    private final String name;
-    private Object value;
-    private Visibility visibility;
-    private final Map<String, Object> metadata;
 
-    protected Property(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
-        if (metadata == null) {
-            metadata = new HashMap<String, Object>();
-        }
+    public abstract String getKey();
 
-        this.key = key;
-        this.name = name;
-        this.value = value;
-        this.metadata = metadata;
-        this.visibility = visibility;
-    }
+    public abstract String getName();
 
-    protected void setValue(Object value) {
-        this.value = value;
-    }
+    public abstract Object getValue();
 
-    public String getKey() {
-        return key;
-    }
+    public abstract Visibility getVisibility();
 
-    public String getName() {
-        return name;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    protected void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
-    }
-
-    public Map<String, Object> getMetadata() {
-        return metadata;
-    }
+    public abstract Map<String, Object> getMetadata();
 
     @Override
     public int compareTo(Property o) {

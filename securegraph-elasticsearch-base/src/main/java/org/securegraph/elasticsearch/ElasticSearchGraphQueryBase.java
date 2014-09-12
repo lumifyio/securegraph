@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -30,13 +31,13 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchGraphQueryBase.class);
     private final TransportClient client;
     private final boolean evaluateHasContainers;
-    private String indexName;
+    private String[] indicesToQuery;
     private final double inEdgeBoost;
     private final double outEdgeBoost;
 
     protected ElasticSearchGraphQueryBase(
             TransportClient client,
-            String indexName,
+            String[] indicesToQuery,
             Graph graph,
             String queryString,
             Map<String, PropertyDefinition> propertyDefinitions,
@@ -46,14 +47,14 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
             Authorizations authorizations) {
         super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
-        this.indexName = indexName;
+        this.indicesToQuery = indicesToQuery;
         this.inEdgeBoost = inEdgeBoost;
         this.outEdgeBoost = outEdgeBoost;
         this.evaluateHasContainers = evaluateHasContainers;
     }
 
     @Override
-    public Iterable<Vertex> vertices() {
+    public Iterable<Vertex> vertices(EnumSet<FetchHint> fetchHints) {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
         final SearchHits hits = response.getHits();
@@ -73,12 +74,12 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         // and rely on the DefaultGraphQueryIterable to provide property filtering
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
-        Iterable<Vertex> vertices = getGraph().getVertices(ids, filterParameters.getAuthorizations());
+        Iterable<Vertex> vertices = getGraph().getVertices(ids, fetchHints, filterParameters.getAuthorizations());
         return createIterable(response, filterParameters, vertices, evaluateHasContainers, searchTime, hits);
     }
 
     @Override
-    public Iterable<Edge> edges() {
+    public Iterable<Edge> edges(EnumSet<FetchHint> fetchHints) {
         long startTime = System.nanoTime();
         SearchResponse response = getSearchResponse(ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
         final SearchHits hits = response.getHits();
@@ -98,7 +99,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         // and rely on the DefaultGraphQueryIterable to provide property filtering
         Parameters filterParameters = getParameters().clone();
         filterParameters.setSkip(0); // ES already did a skip
-        Iterable<Edge> edges = getGraph().getEdges(ids, filterParameters.getAuthorizations());
+        Iterable<Edge> edges = getGraph().getEdges(ids, fetchHints, filterParameters.getAuthorizations());
         // TODO instead of passing false here to not evaluate the query string it would be better to support the Lucene query
         return createIterable(response, filterParameters, edges, evaluateHasContainers, searchTime, hits);
     }
@@ -224,7 +225,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
         AndFilterBuilder filterBuilder = getFilterBuilder(filters);
         return getClient()
-                .prepareSearch(getIndexName())
+                .prepareSearch(getIndicesToQuery())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
                 .setQuery(QueryBuilders.filteredQuery(functionScoreQuery, filterBuilder))
                 .setFrom((int) getParameters().getSkip())
@@ -257,7 +258,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         return client;
     }
 
-    public String getIndexName() {
-        return indexName;
+    public String[] getIndicesToQuery() {
+        return indicesToQuery;
     }
 }

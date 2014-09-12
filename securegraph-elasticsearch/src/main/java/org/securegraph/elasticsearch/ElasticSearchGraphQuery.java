@@ -28,8 +28,8 @@ public class ElasticSearchGraphQuery extends ElasticSearchGraphQueryBase impleme
     private final List<TermsQueryItem> termsQueryItems = new ArrayList<TermsQueryItem>();
     private final List<GeohashQueryItem> geohashQueryItems = new ArrayList<GeohashQueryItem>();
 
-    public ElasticSearchGraphQuery(TransportClient client, String indexName, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, double inEdgeBoost, double outEdgeBoost, Authorizations authorizations) {
-        super(client, indexName, graph, queryString, propertyDefinitions, inEdgeBoost, outEdgeBoost, false, authorizations);
+    public ElasticSearchGraphQuery(TransportClient client, String[] indicesToQuery, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, double inEdgeBoost, double outEdgeBoost, Authorizations authorizations) {
+        super(client, indicesToQuery, graph, queryString, propertyDefinitions, inEdgeBoost, outEdgeBoost, false, authorizations);
     }
 
     @Override
