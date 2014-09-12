@@ -2,6 +2,7 @@ package org.securegraph.query;
 
 import org.securegraph.*;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 public class DefaultVertexQuery extends VertexQueryBase implements VertexQuery {
@@ -10,13 +11,15 @@ public class DefaultVertexQuery extends VertexQueryBase implements VertexQuery {
     }
 
     @Override
-    public Iterable<Vertex> vertices() {
-        return new DefaultGraphQueryIterable<Vertex>(getParameters(), getSourceVertex().getVertices(Direction.BOTH, getParameters().getAuthorizations()), true, true);
+    public Iterable<Vertex> vertices(EnumSet<FetchHint> fetchHints) {
+        Iterable<Vertex> vertices = getSourceVertex().getVertices(Direction.BOTH, fetchHints, getParameters().getAuthorizations());
+        return new DefaultGraphQueryIterable<Vertex>(getParameters(), vertices, true, true);
     }
 
     @Override
-    public Iterable<Edge> edges() {
-        return new DefaultGraphQueryIterable<Edge>(getParameters(), getSourceVertex().getEdges(Direction.BOTH, getParameters().getAuthorizations()), true, true);
+    public Iterable<Edge> edges(EnumSet<FetchHint> fetchHints) {
+        Iterable<Edge> edges = getSourceVertex().getEdges(Direction.BOTH, fetchHints, getParameters().getAuthorizations());
+        return new DefaultGraphQueryIterable<Edge>(getParameters(), edges, true, true);
     }
 
 

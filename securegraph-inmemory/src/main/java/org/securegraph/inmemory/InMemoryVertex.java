@@ -8,6 +8,8 @@ import org.securegraph.query.VertexQuery;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
+import java.util.EnumSet;
+
 import static org.securegraph.util.IterableUtils.count;
 import static org.securegraph.util.IterableUtils.toSet;
 
@@ -17,7 +19,12 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Direction direction, Authorizations authorizations) {
+    public Iterable<Edge> getEdges(Direction direction, Authorizations authorizations) {
+        return getEdges(direction, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Direction direction, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return new FilterIterable<Edge>(getGraph().getEdgesFromVertex(getId(), authorizations)) {
             @Override
             protected boolean isIncluded(Edge edge) {
@@ -40,6 +47,11 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, String label, Authorizations authorizations) {
+        return getEdges(direction, label, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return getEdges(direction, new String[]{label}, authorizations);
     }
 
@@ -49,7 +61,12 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(Direction direction, final String[] labels, Authorizations authorizations) {
+    public Iterable<Edge> getEdges(Direction direction, String[] labels, Authorizations authorizations) {
+        return getEdges(direction, labels, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(Direction direction, final String[] labels, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
             @Override
             protected boolean isIncluded(Edge edge) {
@@ -69,7 +86,12 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, Authorizations authorizations) {
+    public Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, Authorizations authorizations) {
+        return getEdges(otherVertex, direction, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, authorizations)) {
             @Override
             protected boolean isIncluded(Edge edge) {
@@ -84,7 +106,12 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+    public Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
+        return getEdges(otherVertex, direction, label, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, label, authorizations)) {
             @Override
             protected boolean isIncluded(Edge edge) {
@@ -99,7 +126,12 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+    public Iterable<Edge> getEdges(Vertex otherVertex, Direction direction, String[] labels, Authorizations authorizations) {
+        return getEdges(otherVertex, direction, labels, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String[] labels, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return new FilterIterable<Edge>(getEdges(direction, labels, authorizations)) {
             @Override
             protected boolean isIncluded(Edge edge) {
@@ -129,26 +161,41 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Direction direction, final Authorizations authorizations) {
+    public Iterable<Vertex> getVertices(Direction direction, Authorizations authorizations) {
+        return getVertices(direction, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
             @Override
             protected Vertex convert(Edge edge) {
-                return getOtherVertexFromEdge(edge, authorizations);
+                return getOtherVertexFromEdge(edge, fetchHints, authorizations);
             }
         };
     }
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, String label, Authorizations authorizations) {
+        return getVertices(direction, label, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         return getVertices(direction, new String[]{label}, authorizations);
     }
 
     @Override
-    public Iterable<Vertex> getVertices(final Direction direction, final String[] labels, final Authorizations authorizations) {
+    public Iterable<Vertex> getVertices(Direction direction, String[] labels, Authorizations authorizations) {
+        return getVertices(direction, labels, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Iterable<Vertex> getVertices(final Direction direction, final String[] labels, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, labels, authorizations)) {
             @Override
             protected Vertex convert(Edge edge) {
-                return getOtherVertexFromEdge(edge, authorizations);
+                return getOtherVertexFromEdge(edge, fetchHints, authorizations);
             }
         };
     }
@@ -183,7 +230,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
         };
     }
 
-    private Vertex getOtherVertexFromEdge(Edge edge, Authorizations authorizations) {
+    private Vertex getOtherVertexFromEdge(Edge edge, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         if (edge.getVertexId(Direction.IN).equals(getId())) {
             return edge.getVertex(Direction.OUT, authorizations);
         }

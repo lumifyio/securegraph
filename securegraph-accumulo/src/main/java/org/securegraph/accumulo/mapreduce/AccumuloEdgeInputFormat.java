@@ -4,12 +4,14 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.util.PeekingIterator;
 import org.apache.hadoop.mapreduce.Job;
 import org.securegraph.Authorizations;
 import org.securegraph.Edge;
 import org.securegraph.accumulo.AccumuloGraph;
 import org.securegraph.accumulo.EdgeMaker;
 
+import java.util.Map;
 import java.util.SortedMap;
 
 public class AccumuloEdgeInputFormat extends AccumuloElementInputFormatBase<Edge> {
@@ -19,8 +21,8 @@ public class AccumuloEdgeInputFormat extends AccumuloElementInputFormatBase<Edge
     }
 
     @Override
-    protected Edge createElementFromRow(AccumuloGraph graph, SortedMap<Key, Value> row, Authorizations authorizations) {
-        EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator(), authorizations);
+    protected Edge createElementFromRow(AccumuloGraph graph, PeekingIterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
+        EdgeMaker maker = new EdgeMaker(graph, row, authorizations);
         return maker.make();
     }
 }

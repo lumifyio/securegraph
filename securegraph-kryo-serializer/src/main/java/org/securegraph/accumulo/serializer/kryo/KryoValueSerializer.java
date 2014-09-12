@@ -36,7 +36,12 @@ public class KryoValueSerializer implements ValueSerializer {
 
     @Override
     public <T> T valueToObject(Value value) {
-        Input input = new Input(value.get());
+        return valueToObject(value.get());
+    }
+
+    @Override
+    public <T> T valueToObject(byte[] data) {
+        Input input = new Input(data);
         return (T) kryo.readClassAndObject(input);
     }
 }

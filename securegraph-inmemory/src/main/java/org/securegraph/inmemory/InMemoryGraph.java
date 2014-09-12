@@ -14,7 +14,7 @@ import java.util.*;
 import static org.securegraph.util.IterableUtils.toList;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public class InMemoryGraph extends GraphBase {
+public class InMemoryGraph extends GraphBaseWithSearchIndex {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<String, InMemoryVertex> vertices;
     private final Map<String, InMemoryEdge> edges;
@@ -78,7 +78,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(final Authorizations authorizations) throws SecureGraphException {
+    public Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, final Authorizations authorizations) throws SecureGraphException {
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
             protected boolean isIncluded(InMemoryVertex src, Vertex vertex) {
@@ -147,7 +147,7 @@ public class InMemoryGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Edge> getEdges(final Authorizations authorizations) {
+    public Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {

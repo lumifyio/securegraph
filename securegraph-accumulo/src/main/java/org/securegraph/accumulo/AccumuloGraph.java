@@ -32,7 +32,7 @@ import java.util.*;
 import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public class AccumuloGraph extends GraphBase {
+public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private static final String ROW_DELETING_ITERATOR_NAME = RowDeletingIterator.class.getSimpleName();
     private static final int ROW_DELETING_ITERATOR_PRIORITY = 7;
     public static final Text DELETE_ROW_COLUMN_FAMILY = new Text("");
@@ -253,8 +253,8 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Iterable<Vertex> getVertices(Authorizations authorizations) throws SecureGraphException {
-        return getVerticesInRange(null, null, authorizations);
+    public Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, Authorizations authorizations) throws SecureGraphException {
+        return getVerticesInRange(null, null, fetchHints, authorizations);
     }
 
     @Override
@@ -305,8 +305,8 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public CloseableIterable<Edge> getEdges(Authorizations authorizations) {
-        return getEdgesInRange(null, null, authorizations);
+    public CloseableIterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        return getEdgesInRange(null, null, fetchHints, authorizations);
     }
 
     @Override
@@ -323,10 +323,10 @@ public class AccumuloGraph extends GraphBase {
         ColumnVisibility visibility = visibilityToAccumuloVisibility(edge.getVisibility());
 
         Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + out.getId());
-        outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId().toString()), visibility);
+        outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), visibility);
 
         Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + in.getId());
-        inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId().toString()), visibility);
+        inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), visibility);
 
         addMutations(getVerticesWriter(), outMutation, inMutation);
 
@@ -397,8 +397,8 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Vertex getVertex(String vertexId, Authorizations authorizations) throws SecureGraphException {
-        Iterator<Vertex> vertices = getVerticesInRange(new Range(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId), authorizations).iterator();
+    public Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) throws SecureGraphException {
+        Iterator<Vertex> vertices = getVerticesInRange(new Range(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId), fetchHints, authorizations).iterator();
         if (vertices.hasNext()) {
             return vertices.next();
         }
@@ -406,7 +406,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public CloseableIterable<Vertex> getVertices(Iterable<String> ids, final Authorizations authorizations) {
+    public CloseableIterable<Vertex> getVertices(Iterable<String> ids, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
@@ -439,9 +439,8 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
-                batchScanner = createVertexBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
+                batchScanner = createVertexBatchScanner(fetchHints, authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
                 batchScanner.setRanges(ranges);
-                batchScanner.clearColumns();
                 return batchScanner.iterator();
             }
 
@@ -453,7 +452,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private CloseableIterable<Vertex> getVerticesInRange(String startId, String endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Vertex> getVerticesInRange(String startId, String endId, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) throws SecureGraphException {
         final Key startKey;
         if (startId == null) {
             startKey = new Key(AccumuloConstants.VERTEX_ROW_KEY_PREFIX);
@@ -469,10 +468,10 @@ public class AccumuloGraph extends GraphBase {
         }
 
         Range range = new Range(startKey, endKey);
-        return getVerticesInRange(range, authorizations);
+        return getVerticesInRange(range, fetchHints, authorizations);
     }
 
-    private CloseableIterable<Vertex> getVerticesInRange(final Range range, final Authorizations authorizations) {
+    private CloseableIterable<Vertex> getVerticesInRange(final Range range, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
             public Scanner scanner;
 
@@ -489,9 +488,8 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
-                scanner = createVertexScanner(authorizations);
+                scanner = createVertexScanner(fetchHints, authorizations);
                 scanner.setRange(range);
-                scanner.clearColumns();
                 return new RowIterator(scanner.iterator());
             }
 
@@ -503,15 +501,15 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    Scanner createVertexScanner(Authorizations authorizations) throws SecureGraphException {
-        return createElementVisibilityScanner(authorizations, ElementType.VERTEX);
+    Scanner createVertexScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations) throws SecureGraphException {
+        return createElementVisibilityScanner(fetchHints, authorizations, ElementType.VERTEX);
     }
 
-    Scanner createEdgeScanner(Authorizations authorizations) throws SecureGraphException {
-        return createElementVisibilityScanner(authorizations, ElementType.EDGE);
+    Scanner createEdgeScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations) throws SecureGraphException {
+        return createElementVisibilityScanner(fetchHints, authorizations, ElementType.EDGE);
     }
 
-    private Scanner createElementVisibilityScanner(Authorizations authorizations, ElementType elementType) throws SecureGraphException {
+    private Scanner createElementVisibilityScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations, ElementType elementType) throws SecureGraphException {
         try {
             String tableName = getTableNameFromElementType(elementType);
             Scanner scanner = connector.createScanner(tableName, toAccumuloAuthorizations(authorizations));
@@ -525,22 +523,23 @@ public class AccumuloGraph extends GraphBase {
                 iteratorSetting.addOption(elementMode, Boolean.TRUE.toString());
                 scanner.addScanIterator(iteratorSetting);
             }
+            applyFetchHints(scanner, fetchHints, elementType);
             return scanner;
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
         }
     }
 
-    private BatchScanner createVertexBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityWholeRowBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
+    private BatchScanner createVertexBatchScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
+        return createElementVisibilityWholeRowBatchScanner(fetchHints, authorizations, ElementType.VERTEX, numQueryThreads);
     }
 
-    private BatchScanner createEdgeBatchScanner(Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
-        return createElementVisibilityWholeRowBatchScanner(authorizations, ElementType.EDGE, numQueryThreads);
+    private BatchScanner createEdgeBatchScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations, int numQueryThreads) throws SecureGraphException {
+        return createElementVisibilityWholeRowBatchScanner(fetchHints, authorizations, ElementType.EDGE, numQueryThreads);
     }
 
-    private BatchScanner createElementVisibilityWholeRowBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
-        BatchScanner scanner = createElementVisibilityBatchScanner(authorizations, elementType, numQueryThreads);
+    private BatchScanner createElementVisibilityWholeRowBatchScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations, ElementType elementType, int numQueryThreads) throws SecureGraphException {
+        BatchScanner scanner = createElementVisibilityBatchScanner(fetchHints, authorizations, elementType, numQueryThreads);
         IteratorSetting iteratorSetting;
 
         iteratorSetting = new IteratorSetting(
@@ -553,8 +552,8 @@ public class AccumuloGraph extends GraphBase {
         return scanner;
     }
 
-    private BatchScanner createElementVisibilityBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) {
-        BatchScanner scanner = createElementBatchScanner(authorizations, elementType, numQueryThreads);
+    private BatchScanner createElementVisibilityBatchScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations, ElementType elementType, int numQueryThreads) {
+        BatchScanner scanner = createElementBatchScanner(fetchHints, authorizations, elementType, numQueryThreads);
         IteratorSetting iteratorSetting;
         if (getConfiguration().isUseServerSideElementVisibilityRowFilter()) {
             iteratorSetting = new IteratorSetting(
@@ -569,12 +568,44 @@ public class AccumuloGraph extends GraphBase {
         return scanner;
     }
 
-    private BatchScanner createElementBatchScanner(Authorizations authorizations, ElementType elementType, int numQueryThreads) {
+    private BatchScanner createElementBatchScanner(EnumSet<FetchHint> fetchHints, Authorizations authorizations, ElementType elementType, int numQueryThreads) {
         try {
             String tableName = getTableNameFromElementType(elementType);
-            return connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
+            BatchScanner scanner = connector.createBatchScanner(tableName, toAccumuloAuthorizations(authorizations), numQueryThreads);
+            applyFetchHints(scanner, fetchHints, elementType);
+            return scanner;
         } catch (TableNotFoundException e) {
             throw new SecureGraphException(e);
+        }
+    }
+
+    private void applyFetchHints(ScannerBase scanner, EnumSet<FetchHint> fetchHints, ElementType elementType) {
+        scanner.clearColumns();
+        if (fetchHints.equals(FetchHint.ALL)) {
+            return;
+        }
+
+        if (elementType == ElementType.VERTEX) {
+            scanner.fetchColumnFamily(AccumuloVertex.CF_SIGNAL);
+        } else if (elementType == ElementType.EDGE) {
+            scanner.fetchColumnFamily(AccumuloEdge.CF_SIGNAL);
+            scanner.fetchColumnFamily(AccumuloEdge.CF_IN_VERTEX);
+            scanner.fetchColumnFamily(AccumuloEdge.CF_OUT_VERTEX);
+        } else {
+            throw new SecureGraphException("Unhandled element type: " + elementType);
+        }
+
+        if (fetchHints.contains(FetchHint.IN_EDGE_REFS)) {
+            scanner.fetchColumnFamily(AccumuloVertex.CF_IN_EDGE);
+        }
+        if (fetchHints.contains(FetchHint.OUT_EDGE_REFS)) {
+            scanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
+        }
+        if (fetchHints.contains(FetchHint.PROPERTIES)) {
+            scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY);
+        }
+        if (fetchHints.contains(FetchHint.PROPERTY_METADATA)) {
+            scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY_METADATA);
         }
     }
 
@@ -616,8 +647,8 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public Edge getEdge(String edgeId, Authorizations authorizations) {
-        Iterator<Edge> edges = getEdgesInRange(edgeId, edgeId, authorizations).iterator();
+    public Edge getEdge(String edgeId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+        Iterator<Edge> edges = getEdgesInRange(edgeId, edgeId, fetchHints, authorizations).iterator();
         if (edges.hasNext()) {
             return edges.next();
         }
@@ -625,7 +656,7 @@ public class AccumuloGraph extends GraphBase {
     }
 
     @Override
-    public CloseableIterable<Edge> getEdges(Iterable<String> ids, final Authorizations authorizations) {
+    public CloseableIterable<Edge> getEdges(Iterable<String> ids, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
 
         final List<Range> ranges = new ArrayList<Range>();
@@ -658,9 +689,8 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
-                batchScanner = createEdgeBatchScanner(authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
+                batchScanner = createEdgeBatchScanner(fetchHints, authorizations, Math.min(Math.max(1, ranges.size() / 10), 10));
                 batchScanner.setRanges(ranges);
-                batchScanner.clearColumns();
                 return batchScanner.iterator();
             }
 
@@ -672,7 +702,7 @@ public class AccumuloGraph extends GraphBase {
         };
     }
 
-    private CloseableIterable<Edge> getEdgesInRange(String startId, String endId, final Authorizations authorizations) throws SecureGraphException {
+    private CloseableIterable<Edge> getEdgesInRange(String startId, String endId, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
 
         final Key startKey;
@@ -705,9 +735,8 @@ public class AccumuloGraph extends GraphBase {
 
             @Override
             protected Iterator<Iterator<Map.Entry<Key, Value>>> createIterator() {
-                scanner = createEdgeScanner(authorizations);
+                scanner = createEdgeScanner(fetchHints, authorizations);
                 scanner.setRange(new Range(startKey, endKey));
-                scanner.clearColumns();
                 return new RowIterator(scanner.iterator());
             }
 
@@ -924,9 +953,9 @@ public class AccumuloGraph extends GraphBase {
         }
 
         int numQueryThreads = Math.min(Math.max(1, ranges.size() / 10), 10);
-        BatchScanner batchScanner = createElementBatchScanner(authorizations, ElementType.VERTEX, numQueryThreads);
 
         // only fetch one size of the edge since we are scanning all vertices the edge will appear on the out on one of the vertices
+        BatchScanner batchScanner = createElementBatchScanner(EnumSet.of(FetchHint.OUT_EDGE_REFS), authorizations, ElementType.VERTEX, numQueryThreads);
         batchScanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
         batchScanner.setRanges(ranges);
 

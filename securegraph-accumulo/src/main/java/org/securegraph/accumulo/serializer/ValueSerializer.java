@@ -6,4 +6,6 @@ public interface ValueSerializer {
     Value objectToValue(Object value);
 
     <T> T valueToObject(Value value);
+
+    <T> T valueToObject(byte[] data);
 }
