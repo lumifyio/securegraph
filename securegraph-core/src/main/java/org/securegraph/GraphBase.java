@@ -1,5 +1,7 @@
 package org.securegraph;
 
+import org.securegraph.event.GraphEvent;
+import org.securegraph.event.GraphEventListener;
 import org.securegraph.path.PathFindingAlgorithm;
 import org.securegraph.path.RecursivePathFindingAlgorithm;
 import org.securegraph.query.GraphQuery;
@@ -14,6 +16,7 @@ import static org.securegraph.util.IterableUtils.toList;
 public abstract class GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBase.class);
     private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
+    private final List<GraphEventListener> graphEventListeners = new ArrayList<GraphEventListener>();
 
     @Override
     public Vertex addVertex(Visibility visibility, Authorizations authorizations) {
@@ -244,4 +247,19 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public abstract SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
+
+    @Override
+    public void addGraphEventListener(GraphEventListener graphEventListener) {
+        this.graphEventListeners.add(graphEventListener);
+    }
+
+    protected boolean hasEventListeners() {
+        return this.graphEventListeners.size() > 0;
+    }
+
+    protected void fireGraphEvent(GraphEvent graphEvent) {
+        for (GraphEventListener graphEventListener : this.graphEventListeners) {
+            graphEventListener.onGraphEvent(graphEvent);
+        }
+    }
 }

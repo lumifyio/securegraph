@@ -8,6 +8,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.securegraph.*;
+import org.securegraph.event.AddPropertyEvent;
+import org.securegraph.event.AddVertexEvent;
+import org.securegraph.event.GraphEvent;
+import org.securegraph.event.GraphEventListener;
 import org.securegraph.mutation.ElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
@@ -47,6 +51,7 @@ public abstract class GraphTestBase {
     public static final int LARGE_PROPERTY_VALUE_SIZE = 1024 + 1;
 
     protected Graph graph;
+    protected List<GraphEvent> graphEvents;
 
     protected abstract Graph createGraph() throws Exception;
 
@@ -68,6 +73,13 @@ public abstract class GraphTestBase {
     @Before
     public void before() throws Exception {
         graph = createGraph();
+        graphEvents = new ArrayList<GraphEvent>();
+        graph.addGraphEventListener(new GraphEventListener() {
+            @Override
+            public void onGraphEvent(GraphEvent graphEvent) {
+                graphEvents.add(graphEvent);
+            }
+        });
     }
 
     @After
@@ -78,11 +90,12 @@ public abstract class GraphTestBase {
 
     @Test
     public void testAddVertexWithId() {
-        Vertex v = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
-        assertNotNull(v);
-        assertEquals("v1", v.getId());
+        Vertex vertexAdded = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        assertNotNull(vertexAdded);
+        assertEquals("v1", vertexAdded.getId());
+        graph.flush();
 
-        v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        Vertex v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertNotNull(v);
         assertEquals("v1", v.getId());
         assertEquals(VISIBILITY_A, v.getVisibility());
@@ -92,18 +105,26 @@ public abstract class GraphTestBase {
 
         v = graph.getVertex(null, AUTHORIZATIONS_A);
         assertNull(v);
+
+        assertEvents(
+                new AddVertexEvent(graph, Thread.currentThread(), vertexAdded)
+        );
     }
 
     @Test
     public void testAddVertexWithoutId() {
-        Vertex v = graph.addVertex(VISIBILITY_A, AUTHORIZATIONS_A);
-        assertNotNull(v);
-        String vertexId = v.getId();
+        Vertex vertexAdded = graph.addVertex(VISIBILITY_A, AUTHORIZATIONS_A);
+        assertNotNull(vertexAdded);
+        String vertexId = vertexAdded.getId();
         assertNotNull(vertexId);
 
-        v = graph.getVertex(vertexId, AUTHORIZATIONS_A);
+        Vertex v = graph.getVertex(vertexId, AUTHORIZATIONS_A);
         assertNotNull(v);
         assertNotNull(vertexId);
+
+        assertEvents(
+                new AddVertexEvent(graph, Thread.currentThread(), vertexAdded)
+        );
     }
 
     @Test
@@ -202,20 +223,27 @@ public abstract class GraphTestBase {
 
     @Test
     public void testAddVertexWithProperties() {
-        Vertex v = graph.prepareVertex("v1", VISIBILITY_A)
+        Vertex vertexAdded = graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", VISIBILITY_A)
                 .setProperty("prop2", "value2", VISIBILITY_B)
                 .save(AUTHORIZATIONS_A_AND_B);
+        assertEquals(1, count(vertexAdded.getProperties("prop1")));
+        assertEquals("value1", vertexAdded.getPropertyValues("prop1").iterator().next());
+        assertEquals(1, count(vertexAdded.getProperties("prop2")));
+        assertEquals("value2", vertexAdded.getPropertyValues("prop2").iterator().next());
+        graph.flush();
+
+        Vertex v = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
         assertEquals(1, count(v.getProperties("prop1")));
         assertEquals("value1", v.getPropertyValues("prop1").iterator().next());
         assertEquals(1, count(v.getProperties("prop2")));
         assertEquals("value2", v.getPropertyValues("prop2").iterator().next());
 
-        v = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
-        assertEquals(1, count(v.getProperties("prop1")));
-        assertEquals("value1", v.getPropertyValues("prop1").iterator().next());
-        assertEquals(1, count(v.getProperties("prop2")));
-        assertEquals("value2", v.getPropertyValues("prop2").iterator().next());
+        assertEvents(
+                new AddVertexEvent(graph, Thread.currentThread(), vertexAdded),
+                new AddPropertyEvent(graph, Thread.currentThread(), vertexAdded.getProperty("prop1")),
+                new AddPropertyEvent(graph, Thread.currentThread(), vertexAdded.getProperty("prop2"))
+        );
     }
 
     @Test
@@ -1800,6 +1828,14 @@ public abstract class GraphTestBase {
         assertEquals("ids length mismatch", ids.length, verticesList.size());
         for (int i = 0; i < ids.length; i++) {
             assertEquals("at offset: " + i, ids[i], verticesList.get(i).getId());
+        }
+    }
+
+    private void assertEvents(GraphEvent... expectedEvents) {
+        assertEquals("More graph events occurred than were asserted", expectedEvents.length, graphEvents.size());
+
+        for (int i = 0; i < expectedEvents.length; i++) {
+            assertEquals(expectedEvents[i], graphEvents.get(i));
         }
     }
 }

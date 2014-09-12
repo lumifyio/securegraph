@@ -1,6 +1,8 @@
 package org.securegraph.inmemory;
 
 import org.securegraph.*;
+import org.securegraph.event.AddPropertyEvent;
+import org.securegraph.event.AddVertexEvent;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.id.UUIDIdGenerator;
 import org.securegraph.mutation.AlterPropertyMetadata;
@@ -71,6 +73,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 vertices.put(getVertexId(), vertex);
 
                 getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
+
+                if (hasEventListeners()) {
+                    fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, Thread.currentThread(), vertex));
+                    for (Property property : getProperties()) {
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, Thread.currentThread(), property));
+                    }
+                }
 
                 return vertex;
             }

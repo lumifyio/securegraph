@@ -14,6 +14,9 @@ import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import org.securegraph.accumulo.serializer.ValueSerializer;
+import org.securegraph.event.AddPropertyEvent;
+import org.securegraph.event.AddVertexEvent;
+import org.securegraph.event.GraphEvent;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.mutation.AlterPropertyMetadata;
 import org.securegraph.mutation.AlterPropertyVisibility;
@@ -48,6 +51,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private BatchWriter dataWriter;
     private final Object writerLock = new Object();
     private ElementMutationBuilder elementMutationBuilder;
+    private final Queue<GraphEvent> graphEventQueue = new LinkedList<GraphEvent>();
 
     protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, FileSystem fileSystem, ValueSerializer valueSerializer) {
         super(config, idGenerator, searchIndex);
@@ -146,9 +150,22 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
                 getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
 
+                if (hasEventListeners()) {
+                    queueEvent(new AddVertexEvent(AccumuloGraph.this, Thread.currentThread(), vertex));
+                    for (Property property : getProperties()) {
+                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, Thread.currentThread(), property));
+                    }
+                }
+
                 return vertex;
             }
         };
+    }
+
+    private void queueEvent(GraphEvent graphEvent) {
+        synchronized (this.graphEventQueue) {
+            this.graphEventQueue.add(graphEvent);
+        }
     }
 
     void saveProperties(AccumuloElement element, Iterable<Property> properties, Authorizations authorizations) {
@@ -342,10 +359,28 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public void flush() {
+        if (hasEventListeners()) {
+            synchronized (this.graphEventQueue) {
+                flushWritersAndSuper();
+                flushGraphEventQueue();
+            }
+        } else {
+            flushWritersAndSuper();
+        }
+    }
+
+    private void flushWritersAndSuper() {
         flushWriter(this.dataWriter);
         flushWriter(this.verticesWriter);
         flushWriter(this.edgesWriter);
         super.flush();
+    }
+
+    private void flushGraphEventQueue() {
+        GraphEvent graphEvent;
+        while ((graphEvent = this.graphEventQueue.poll()) != null) {
+            fireGraphEvent(graphEvent);
+        }
     }
 
     private static void flushWriter(BatchWriter writer) {
