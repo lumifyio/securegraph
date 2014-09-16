@@ -118,6 +118,7 @@ public abstract class GraphTestBase {
         assertNotNull(vertexAdded);
         String vertexId = vertexAdded.getId();
         assertNotNull(vertexId);
+        graph.flush();
 
         Vertex v = graph.getVertex(vertexId, AUTHORIZATIONS_A);
         assertNotNull(v);
