@@ -16,6 +16,8 @@ import org.securegraph.query.Compare;
 import org.securegraph.query.DefaultGraphQuery;
 import org.securegraph.query.GeoCompare;
 import org.securegraph.query.TextPredicate;
+import org.securegraph.search.DisableEdgeIndexSupport;
+import org.securegraph.search.SearchIndex;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
@@ -978,6 +980,34 @@ public abstract class GraphTestBase {
                 .has("age", Compare.EQUAL, 25)
                 .edges();
         assertEquals(1, count(edges));
+    }
+
+    @Test
+    public void testDisableEdgeIndexing() {
+        if (!(graph instanceof GraphBaseWithSearchIndex)) {
+            LOGGER.info("skipping can't get " + SearchIndex.class.getSimpleName());
+            return;
+        }
+        GraphBaseWithSearchIndex graphBaseWithSearchIndex = (GraphBaseWithSearchIndex) graph;
+        SearchIndex searchIndex = graphBaseWithSearchIndex.getSearchIndex();
+        if (!(searchIndex instanceof DisableEdgeIndexSupport)) {
+            LOGGER.info("skipping " + SearchIndex.class.getSimpleName() + " doesn't support " + DisableEdgeIndexSupport.class.getSimpleName());
+            return;
+        }
+        ((DisableEdgeIndexSupport) searchIndex).setIndexEdges(false);
+
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
+        Vertex v2 = graph.prepareVertex("v2", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
+
+        graph.prepareEdge("e1", v1, v2, "edge", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        Iterable<Edge> edges = graph.query(AUTHORIZATIONS_A)
+                .has("prop1", "value1")
+                .edges();
+        assertEquals(0, count(edges));
     }
 
     @Test
