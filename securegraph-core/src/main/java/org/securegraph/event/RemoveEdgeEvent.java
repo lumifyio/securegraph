@@ -6,8 +6,8 @@ import org.securegraph.Graph;
 public class RemoveEdgeEvent extends GraphEvent {
     private final Edge edge;
 
-    public RemoveEdgeEvent(Graph graph, Thread thread, Edge edge) {
-        super(graph, thread);
+    public RemoveEdgeEvent(Graph graph, Edge edge) {
+        super(graph);
         this.edge = edge;
     }
 

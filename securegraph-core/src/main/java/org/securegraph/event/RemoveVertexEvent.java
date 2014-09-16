@@ -6,8 +6,8 @@ import org.securegraph.Vertex;
 public class RemoveVertexEvent extends GraphEvent {
     private final Vertex vertex;
 
-    public RemoveVertexEvent(Graph graph, Thread thread, Vertex vertex) {
-        super(graph, thread);
+    public RemoveVertexEvent(Graph graph, Vertex vertex) {
+        super(graph);
         this.vertex = vertex;
     }
 

@@ -149,9 +149,9 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
 
                 if (hasEventListeners()) {
-                    queueEvent(new AddVertexEvent(AccumuloGraph.this, Thread.currentThread(), vertex));
+                    queueEvent(new AddVertexEvent(AccumuloGraph.this, vertex));
                     for (Property property : getProperties()) {
-                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, Thread.currentThread(), vertex, property));
+                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, vertex, property));
                     }
                 }
 
@@ -287,7 +287,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         addMutations(getVerticesWriter(), getDeleteRowMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId()));
 
         if (hasEventListeners()) {
-            queueEvent(new RemoveVertexEvent(this, Thread.currentThread(), vertex));
+            queueEvent(new RemoveVertexEvent(this, vertex));
         }
     }
 
@@ -319,9 +319,9 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
 
                 if (hasEventListeners()) {
-                    queueEvent(new AddEdgeEvent(AccumuloGraph.this, Thread.currentThread(), edge));
+                    queueEvent(new AddEdgeEvent(AccumuloGraph.this, edge));
                     for (Property property : getProperties()) {
-                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, Thread.currentThread(), edge, property));
+                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, edge, property));
                     }
                 }
 
@@ -367,7 +367,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
 
         if (hasEventListeners()) {
-            queueEvent(new RemoveEdgeEvent(this, Thread.currentThread(), edge));
+            queueEvent(new RemoveEdgeEvent(this, edge));
         }
     }
 

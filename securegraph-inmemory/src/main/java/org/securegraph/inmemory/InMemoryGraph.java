@@ -74,9 +74,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
 
                 if (hasEventListeners()) {
-                    fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, Thread.currentThread(), vertex));
+                    fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, vertex));
                     for (Property property : getProperties()) {
-                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, Thread.currentThread(), vertex, property));
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, vertex, property));
                     }
                 }
 
@@ -120,7 +120,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         getSearchIndex().removeElement(this, vertex, authorizations);
 
         if (hasEventListeners()) {
-            fireGraphEvent(new RemoveVertexEvent(this, Thread.currentThread(), vertex));
+            fireGraphEvent(new RemoveVertexEvent(this, vertex));
         }
     }
 
@@ -154,9 +154,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
 
                 if (hasEventListeners()) {
-                    fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, Thread.currentThread(), edge));
+                    fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, edge));
                     for (Property property : getProperties()) {
-                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, Thread.currentThread(), edge, property));
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, edge, property));
                     }
                 }
 
@@ -200,7 +200,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         getSearchIndex().removeElement(this, edge, authorizations);
 
         if (hasEventListeners()) {
-            fireGraphEvent(new RemoveEdgeEvent(this, Thread.currentThread(), edge));
+            fireGraphEvent(new RemoveEdgeEvent(this, edge));
         }
     }
 

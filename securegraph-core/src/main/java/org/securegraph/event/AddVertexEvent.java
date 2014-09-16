@@ -6,8 +6,8 @@ import org.securegraph.Vertex;
 public class AddVertexEvent extends GraphEvent {
     private final Vertex vertex;
 
-    public AddVertexEvent(Graph graph, Thread thread, Vertex vertex) {
-        super(graph, thread);
+    public AddVertexEvent(Graph graph, Vertex vertex) {
+        super(graph);
         this.vertex = vertex;
     }
 

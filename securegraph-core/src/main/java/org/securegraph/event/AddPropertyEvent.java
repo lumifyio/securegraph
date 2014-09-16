@@ -8,8 +8,8 @@ public class AddPropertyEvent extends GraphEvent {
     private final Element element;
     private final Property property;
 
-    public AddPropertyEvent(Graph graph, Thread thread, Element element, Property property) {
-        super(graph, thread);
+    public AddPropertyEvent(Graph graph, Element element, Property property) {
+        super(graph);
         this.element = element;
         this.property = property;
     }

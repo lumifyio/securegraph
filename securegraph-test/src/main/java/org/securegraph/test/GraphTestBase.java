@@ -106,7 +106,7 @@ public abstract class GraphTestBase {
         assertNull(v);
 
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), vertexAdded)
+                new AddVertexEvent(graph, vertexAdded)
         );
     }
 
@@ -122,7 +122,7 @@ public abstract class GraphTestBase {
         assertNotNull(vertexId);
 
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), vertexAdded)
+                new AddVertexEvent(graph, vertexAdded)
         );
     }
 
@@ -239,9 +239,9 @@ public abstract class GraphTestBase {
         assertEquals("value2", v.getPropertyValues("prop2").iterator().next());
 
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), vertexAdded),
-                new AddPropertyEvent(graph, Thread.currentThread(), vertexAdded, vertexAdded.getProperty("prop1")),
-                new AddPropertyEvent(graph, Thread.currentThread(), vertexAdded, vertexAdded.getProperty("prop2"))
+                new AddVertexEvent(graph, vertexAdded),
+                new AddPropertyEvent(graph, vertexAdded, vertexAdded.getProperty("prop1")),
+                new AddPropertyEvent(graph, vertexAdded, vertexAdded.getProperty("prop2"))
         );
     }
 
@@ -535,9 +535,9 @@ public abstract class GraphTestBase {
 
         graph.flush();
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), v1),
-                new AddPropertyEvent(graph, Thread.currentThread(), v1, prop1),
-                new RemoveVertexEvent(graph, Thread.currentThread(), v1)
+                new AddVertexEvent(graph, v1),
+                new AddPropertyEvent(graph, v1, prop1),
+                new RemoveVertexEvent(graph, v1)
         );
     }
 
@@ -581,9 +581,9 @@ public abstract class GraphTestBase {
 
         graph.flush();
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), v1),
-                new AddVertexEvent(graph, Thread.currentThread(), v2),
-                new AddEdgeEvent(graph, Thread.currentThread(), addedEdge)
+                new AddVertexEvent(graph, v1),
+                new AddVertexEvent(graph, v2),
+                new AddEdgeEvent(graph, addedEdge)
         );
     }
 
@@ -638,11 +638,11 @@ public abstract class GraphTestBase {
 
         graph.flush();
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), v1),
-                new AddVertexEvent(graph, Thread.currentThread(), v2),
-                new AddEdgeEvent(graph, Thread.currentThread(), addedEdge),
-                new AddPropertyEvent(graph, Thread.currentThread(), addedEdge, addedEdge.getProperty("propA")),
-                new AddPropertyEvent(graph, Thread.currentThread(), addedEdge, addedEdge.getProperty("propB"))
+                new AddVertexEvent(graph, v1),
+                new AddVertexEvent(graph, v2),
+                new AddEdgeEvent(graph, addedEdge),
+                new AddPropertyEvent(graph, addedEdge, addedEdge.getProperty("propA")),
+                new AddPropertyEvent(graph, addedEdge, addedEdge.getProperty("propB"))
         );
     }
 
@@ -671,10 +671,10 @@ public abstract class GraphTestBase {
 
         graph.flush();
         assertEvents(
-                new AddVertexEvent(graph, Thread.currentThread(), v1),
-                new AddVertexEvent(graph, Thread.currentThread(), v2),
-                new AddEdgeEvent(graph, Thread.currentThread(), addedEdge),
-                new RemoveEdgeEvent(graph, Thread.currentThread(), addedEdge)
+                new AddVertexEvent(graph, v1),
+                new AddVertexEvent(graph, v2),
+                new AddEdgeEvent(graph, addedEdge),
+                new RemoveEdgeEvent(graph, addedEdge)
         );
     }
 
