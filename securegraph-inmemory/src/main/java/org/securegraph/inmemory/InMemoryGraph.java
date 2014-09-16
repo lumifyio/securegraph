@@ -1,6 +1,7 @@
 package org.securegraph.inmemory;
 
 import org.securegraph.*;
+import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.id.UUIDIdGenerator;
 import org.securegraph.mutation.AlterPropertyMetadata;
@@ -75,6 +76,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                     getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
                 }
 
+                if (hasEventListeners()) {
+                    fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, vertex));
+                    for (Property property : getProperties()) {
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, vertex, property));
+                    }
+                }
+
                 return vertex;
             }
         };
@@ -113,6 +121,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         this.vertices.remove(vertex.getId());
         getSearchIndex().removeElement(this, vertex, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new RemoveVertexEvent(this, vertex));
+        }
     }
 
     @Override
@@ -144,6 +156,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
                 if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
                     getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
+                }
+
+                if (hasEventListeners()) {
+                    fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, edge));
+                    for (Property property : getProperties()) {
+                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, edge, property));
+                    }
                 }
 
                 return edge;
@@ -184,6 +203,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         this.edges.remove(edge.getId());
         getSearchIndex().removeElement(this, edge, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new RemoveEdgeEvent(this, edge));
+        }
     }
 
     public Iterable<Edge> getEdgesFromVertex(final String vertexId, final Authorizations authorizations) {
@@ -249,6 +272,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
         getSearchIndex().removeProperty(this, element, property, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new RemovePropertyEvent(this, element, property));
+        }
     }
 
     private Edge filteredEdge(InMemoryEdge edge, Authorizations authorizations) {
