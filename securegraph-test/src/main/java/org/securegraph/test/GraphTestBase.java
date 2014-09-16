@@ -358,8 +358,12 @@ public abstract class GraphTestBase {
                 .addPropertyValue("propid1b", "prop1", "value1b", VISIBILITY_A)
                 .addPropertyValue("propid2a", "prop2", "value2a", VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+        this.graphEvents.clear();
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        Property prop1_propid1a = v.getProperty("propid1a", "prop1");
+        Property prop1_propid1b = v.getProperty("propid1b", "prop1");
         v.removeProperty("prop1", AUTHORIZATIONS_A_AND_B);
         graph.flush();
         assertEquals(1, count(v.getProperties()));
@@ -368,12 +372,22 @@ public abstract class GraphTestBase {
 
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop2", "value2a").vertices()));
         assertEquals(0, count(graph.query(AUTHORIZATIONS_A_AND_B).has("prop1", "value1a").vertices()));
+        assertEvents(
+                new RemovePropertyEvent(graph, v, prop1_propid1a),
+                new RemovePropertyEvent(graph, v, prop1_propid1b)
+        );
+        this.graphEvents.clear();
 
+        Property prop2_propid2a = v.getProperty("propid2a", "prop2");
         v.removeProperty("propid2a", "prop2", AUTHORIZATIONS_A_AND_B);
         graph.flush();
         assertEquals(0, count(v.getProperties()));
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(0, count(v.getProperties()));
+
+        assertEvents(
+                new RemovePropertyEvent(graph, v, prop2_propid2a)
+        );
     }
 
     @Test

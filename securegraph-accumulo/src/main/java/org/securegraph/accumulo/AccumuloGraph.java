@@ -190,6 +190,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         addMutations(getWriterFromElementType(element), m);
 
         getSearchIndex().removeProperty(this, element, property, authorizations);
+
+        if (hasEventListeners()) {
+            queueEvent(new RemovePropertyEvent(this, element, property));
+        }
     }
 
     private String getRowPrefixForElement(AccumuloElement element) {

@@ -264,6 +264,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
         getSearchIndex().removeProperty(this, element, property, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new RemovePropertyEvent(this, element, property));
+        }
     }
 
     private Edge filteredEdge(InMemoryEdge edge, Authorizations authorizations) {
