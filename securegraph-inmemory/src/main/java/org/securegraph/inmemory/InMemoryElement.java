@@ -63,7 +63,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation, Authorizations authorizations) {
         Iterable<Property> properties = mutation.getProperties();
         updatePropertiesInternal(properties);
-        getGraph().saveProperties(mutation.getElement(), properties, authorizations);
+        getGraph().saveProperties(mutation.getElement(), properties, mutation.getIndexHint(), authorizations);
 
         if (mutation.getElement() instanceof Edge) {
             if (mutation.getNewElementVisibility() != null) {

@@ -47,7 +47,7 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
 
         Iterable<Property> properties = mutation.getProperties();
         updatePropertiesInternal(properties);
-        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties, authorizations);
+        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties, mutation.getIndexHint(), authorizations);
 
         if (mutation.getNewElementVisibility() != null) {
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());
