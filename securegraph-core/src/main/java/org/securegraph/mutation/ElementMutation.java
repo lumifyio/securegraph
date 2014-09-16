@@ -4,6 +4,7 @@ import org.securegraph.Authorizations;
 import org.securegraph.Element;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
+import org.securegraph.search.IndexHint;
 
 import java.util.Map;
 
@@ -67,4 +68,9 @@ public interface ElementMutation<T extends Element> {
      * Gets the properties currently in this mutation.
      */
     Iterable<Property> getProperties();
+
+    /**
+     * Sets the index hint of this element.
+     */
+    ElementMutation<T> setIndexHint(IndexHint indexHint);
 }

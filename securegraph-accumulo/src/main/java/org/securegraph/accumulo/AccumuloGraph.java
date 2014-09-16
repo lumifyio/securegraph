@@ -19,6 +19,7 @@ import org.securegraph.mutation.AlterPropertyMetadata;
 import org.securegraph.mutation.AlterPropertyVisibility;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.util.CloseableIterable;
 import org.securegraph.util.EmptyClosableIterable;
@@ -144,14 +145,16 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
                 elementMutationBuilder.saveVertex(vertex);
 
-                getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
+                if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
+                    getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
+                }
 
                 return vertex;
             }
         };
     }
 
-    void saveProperties(AccumuloElement element, Iterable<Property> properties, Authorizations authorizations) {
+    void saveProperties(AccumuloElement element, Iterable<Property> properties, IndexHint indexHint, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
@@ -164,7 +167,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
         }
-        getSearchIndex().addElement(this, element, authorizations);
+
+        if (indexHint != IndexHint.DO_NOT_INDEX) {
+            getSearchIndex().addElement(this, element, authorizations);
+        }
     }
 
     void removeProperty(AccumuloElement element, Property property, Authorizations authorizations) {
@@ -297,7 +303,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                     ((AccumuloVertex) getInVertex()).addInEdge(edge);
                 }
 
-                getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
+                if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
+                    getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
+                }
+
                 return edge;
             }
         };
