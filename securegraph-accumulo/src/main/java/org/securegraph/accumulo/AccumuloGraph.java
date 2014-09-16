@@ -14,11 +14,13 @@ import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import org.securegraph.accumulo.serializer.ValueSerializer;
+import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.mutation.AlterPropertyMetadata;
 import org.securegraph.mutation.AlterPropertyVisibility;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
+import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.util.CloseableIterable;
 import org.securegraph.util.EmptyClosableIterable;
@@ -48,6 +50,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private BatchWriter dataWriter;
     private final Object writerLock = new Object();
     private ElementMutationBuilder elementMutationBuilder;
+    private final Queue<GraphEvent> graphEventQueue = new LinkedList<GraphEvent>();
 
     protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, FileSystem fileSystem, ValueSerializer valueSerializer) {
         super(config, idGenerator, searchIndex);
@@ -144,14 +147,29 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
                 elementMutationBuilder.saveVertex(vertex);
 
-                getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
+                if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
+                    getSearchIndex().addElement(AccumuloGraph.this, vertex, authorizations);
+                }
+
+                if (hasEventListeners()) {
+                    queueEvent(new AddVertexEvent(AccumuloGraph.this, vertex));
+                    for (Property property : getProperties()) {
+                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, vertex, property));
+                    }
+                }
 
                 return vertex;
             }
         };
     }
 
-    void saveProperties(AccumuloElement element, Iterable<Property> properties, Authorizations authorizations) {
+    private void queueEvent(GraphEvent graphEvent) {
+        synchronized (this.graphEventQueue) {
+            this.graphEventQueue.add(graphEvent);
+        }
+    }
+
+    void saveProperties(AccumuloElement element, Iterable<Property> properties, IndexHint indexHint, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
@@ -164,7 +182,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         if (hasProperty) {
             addMutations(getWriterFromElementType(element), m);
         }
-        getSearchIndex().addElement(this, element, authorizations);
+
+        if (indexHint != IndexHint.DO_NOT_INDEX) {
+            getSearchIndex().addElement(this, element, authorizations);
+        }
     }
 
     void removeProperty(AccumuloElement element, Property property, Authorizations authorizations) {
@@ -175,6 +196,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         addMutations(getWriterFromElementType(element), m);
 
         getSearchIndex().removeProperty(this, element, property, authorizations);
+
+        if (hasEventListeners()) {
+            queueEvent(new RemovePropertyEvent(this, element, property));
+        }
     }
 
     private String getRowPrefixForElement(AccumuloElement element) {
@@ -270,6 +295,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
 
         addMutations(getVerticesWriter(), getDeleteRowMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId()));
+
+        if (hasEventListeners()) {
+            queueEvent(new RemoveVertexEvent(this, vertex));
+        }
     }
 
     @Override
@@ -297,7 +326,17 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                     ((AccumuloVertex) getInVertex()).addInEdge(edge);
                 }
 
-                getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
+                if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
+                    getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
+                }
+
+                if (hasEventListeners()) {
+                    queueEvent(new AddEdgeEvent(AccumuloGraph.this, edge));
+                    for (Property property : getProperties()) {
+                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, edge, property));
+                    }
+                }
+
                 return edge;
             }
         };
@@ -338,14 +377,36 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         if (in instanceof AccumuloVertex) {
             ((AccumuloVertex) in).removeInEdge(edge);
         }
+
+        if (hasEventListeners()) {
+            queueEvent(new RemoveEdgeEvent(this, edge));
+        }
     }
 
     @Override
     public void flush() {
+        if (hasEventListeners()) {
+            synchronized (this.graphEventQueue) {
+                flushWritersAndSuper();
+                flushGraphEventQueue();
+            }
+        } else {
+            flushWritersAndSuper();
+        }
+    }
+
+    private void flushWritersAndSuper() {
         flushWriter(this.dataWriter);
         flushWriter(this.verticesWriter);
         flushWriter(this.edgesWriter);
         super.flush();
+    }
+
+    private void flushGraphEventQueue() {
+        GraphEvent graphEvent;
+        while ((graphEvent = this.graphEventQueue.poll()) != null) {
+            fireGraphEvent(graphEvent);
+        }
     }
 
     private static void flushWriter(BatchWriter writer) {

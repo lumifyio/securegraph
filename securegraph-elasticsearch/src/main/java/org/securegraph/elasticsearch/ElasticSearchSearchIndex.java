@@ -29,6 +29,10 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
     @Override
     public void addElement(Graph graph, Element element, Authorizations authorizations) {
+        if (!isIndexEdges() && element instanceof Edge) {
+            return;
+        }
+
         IndexInfo indexInfo = addPropertiesToIndex(element, element.getProperties());
 
         try {
