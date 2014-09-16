@@ -2,6 +2,7 @@ package org.securegraph;
 
 import org.securegraph.mutation.ElementMutation;
 import org.securegraph.property.MutablePropertyImpl;
+import org.securegraph.search.IndexHint;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import static org.securegraph.util.Preconditions.checkNotNull;
 
 public abstract class ElementBuilder<T extends Element> implements ElementMutation<T> {
     private final List<Property> properties = new ArrayList<Property>();
+    private IndexHint indexHint = IndexHint.INDEX;
 
     /**
      * Sets or updates a property value. The property key will be set to a constant. This is a convenience method
@@ -91,5 +93,15 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
 
     public Iterable<Property> getProperties() {
         return properties;
+    }
+
+    public IndexHint getIndexHint() {
+        return indexHint;
+    }
+
+    @Override
+    public ElementMutation<T> setIndexHint(IndexHint indexHint) {
+        this.indexHint = indexHint;
+        return this;
     }
 }

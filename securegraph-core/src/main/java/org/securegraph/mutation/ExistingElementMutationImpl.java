@@ -5,6 +5,7 @@ import org.securegraph.Element;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
 import org.securegraph.property.MutablePropertyImpl;
+import org.securegraph.search.IndexHint;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     private final List<AlterPropertyVisibility> alterPropertyVisibilities = new ArrayList<AlterPropertyVisibility>();
     private final List<AlterPropertyMetadata> alterPropertyMetadatas = new ArrayList<AlterPropertyMetadata>();
     private final T element;
+    private IndexHint indexHint = IndexHint.INDEX;
 
     public ExistingElementMutationImpl(T element) {
         this.element = element;
@@ -104,5 +106,15 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     public List<AlterPropertyMetadata> getAlterPropertyMetadatas() {
         return alterPropertyMetadatas;
+    }
+
+    public IndexHint getIndexHint() {
+        return indexHint;
+    }
+
+    @Override
+    public ElementMutation<T> setIndexHint(IndexHint indexHint) {
+        this.indexHint = indexHint;
+        return this;
     }
 }

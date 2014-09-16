@@ -22,6 +22,7 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.DefaultVertexQuery;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.query.VertexQuery;
+import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.type.GeoPoint;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ import java.util.*;
 
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
+public abstract class ElasticSearchSearchIndexBase implements SearchIndex, DisableEdgeIndexSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
     public static final String CONFIG_STORE_SOURCE_DATA = "storeSourceData";
     public static final String CONFIG_ES_LOCATIONS = "locations";
@@ -45,6 +46,8 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private static final double DEFAULT_OUT_EDGE_BOOST = 1.1;
     public static final String CONFIG_USE_EDGE_BOOST = "useEdgeBoost";
     private static final boolean DEFAULT_USE_EDGE_BOOST = true;
+    public static final String CONFIG_INDEX_EDGES = "indexEdges";
+    private static final boolean DEFAULT_INDEX_EDGES = true;
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String VISIBILITY_FIELD_NAME = "__visibility";
@@ -67,6 +70,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private double inEdgeBoost;
     private double outEdgeBoost;
     private boolean useEdgeBoost;
+    private boolean indexEdges;
 
     protected ElasticSearchSearchIndexBase(Map config) {
         readConfig(config);
@@ -172,6 +176,15 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             useEdgeBoost = Boolean.parseBoolean(useEdgeBoostString);
         }
         LOGGER.info("Use edge boost: " + useEdgeBoost);
+
+        // index edges
+        String indexEdgesString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_EDGES);
+        if (indexEdgesString == null) {
+            indexEdges = DEFAULT_INDEX_EDGES;
+        } else {
+            indexEdges = Boolean.parseBoolean(indexEdgesString);
+        }
+        LOGGER.info("index edges: " + indexEdges);
     }
 
     protected void loadIndexInfos() {
@@ -537,6 +550,14 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
 
     public boolean isUseEdgeBoost() {
         return useEdgeBoost;
+    }
+
+    public boolean isIndexEdges() {
+        return indexEdges;
+    }
+
+    public void setIndexEdges(boolean indexEdges) {
+        this.indexEdges = indexEdges;
     }
 
     public double getInEdgeBoost() {

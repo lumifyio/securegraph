@@ -1,5 +1,6 @@
 package org.securegraph;
 
+import org.securegraph.event.GraphEventListener;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.query.GraphQuery;
 
@@ -363,4 +364,9 @@ public interface Graph {
      * Gets the granularity of the search index {@link org.securegraph.SearchIndexSecurityGranularity}
      */
     SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
+
+    /**
+     * Adds a graph event listener that will be called when graph events occur.
+     */
+    void addGraphEventListener(GraphEventListener graphEventListener);
 }
