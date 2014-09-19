@@ -12,10 +12,7 @@ import org.securegraph.event.*;
 import org.securegraph.mutation.ElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.query.Compare;
-import org.securegraph.query.DefaultGraphQuery;
-import org.securegraph.query.GeoCompare;
-import org.securegraph.query.TextPredicate;
+import org.securegraph.query.*;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.IndexHint;
@@ -1959,6 +1956,105 @@ public abstract class GraphTestBase {
                 .has("prop1", "value1")
                 .edges();
         assertEdgeIds(edges, new String[]{});
+    }
+
+    @Test
+    public void testIteratorWtihLessThanPageSizeResultsPageOne() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(0);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(3), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(3, count);
+        assertEquals("2", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithPageSizeResultsPageOne() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(0);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(5), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(5, count);
+        assertEquals("4", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithMoreThanPageSizeResultsPageOne() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(0);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(7), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(5, count);
+        assertEquals("4", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithMoreThanPageSizeResultsPageTwo() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(5);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(12), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(5, count);
+        assertEquals("9", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithMoreThanPageSizeResultsPageThree() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(10);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(12), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(2, count);
+        assertEquals("11", v.getId());
+    }
+
+    private List<Vertex> getVertices(long count) {
+        List<Vertex> vertices = new ArrayList<Vertex>();
+        for (int i = 0; i < count; i++) {
+            Vertex vertex = graph.addVertex(Integer.toString(i), VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
+            vertices.add(vertex);
+        }
+        return vertices;
     }
 
     private boolean isDefaultSearchIndex() {
