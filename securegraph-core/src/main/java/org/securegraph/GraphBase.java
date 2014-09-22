@@ -18,6 +18,10 @@ public abstract class GraphBase implements Graph {
     private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
     private final List<GraphEventListener> graphEventListeners = new ArrayList<GraphEventListener>();
 
+    protected GraphBase() {
+
+    }
+
     @Override
     public Vertex addVertex(Visibility visibility, Authorizations authorizations) {
         return prepareVertex(visibility).save(authorizations);
