@@ -136,7 +136,13 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     @Override
     public void addElement(Graph graph, Element element, Authorizations authorizations) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("addElement: " + element.getId());
+        }
         if (!isIndexEdges() && element instanceof Edge) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("skipping edge: " + element.getId());
+            }
             return;
         }
 
