@@ -11,7 +11,7 @@
     <name>SecureGraph: Accumulo</name>
 
     <properties>
-        <accumulo.version>1.5.0</accumulo.version>
+        <accumulo.version>1.5.2</accumulo.version>
         <zookeeper.version>3.4.5</zookeeper.version>
         <hadoop.version>0.23.10</hadoop.version>
     </properties>
