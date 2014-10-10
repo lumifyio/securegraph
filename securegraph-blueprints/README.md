@@ -2,7 +2,7 @@
 Setting up Gremlin command line interface
 -----------------------------------------
 
-1. [Download](https://github.com/tinkerpop/gremlin/wiki/Downloads) and extract Gremlin
+1. [Download](https://github.com/tinkerpop/gremlin/wiki/Downloads) and extract Gremlin (tested with 2.6.0)
 1. Create a file called `gremlin-sg-accumulo.config` with the following contents:
 
         storage=org.securegraph.accumulo.blueprints.AccumuloSecureGraphBlueprintsGraphFactory
@@ -39,37 +39,42 @@ Setting up Gremlin command line interface
         cp securegraph-accumulo/target/securegraph-accumulo-*.jar ${GREMLIN_HOME}/lib
         cp securegraph-accumulo-blueprints/target/securegraph-accumulo-blueprints-*.jar ${GREMLIN_HOME}/lib
         cp securegraph-elasticsearch/target/securegraph-elasticsearch-*.jar ${GREMLIN_HOME}/lib
+        cp securegraph-elasticsearch-base/target/securegraph-elasticsearch-*.jar ${GREMLIN_HOME}/lib
 
 1. Copy other dependencies accumulo, hadoop, etc. to ${GREMLIN_HOME}/lib
 
-        accumulo-core-1.5.0.jar
-        accumulo-fate-1.5.0.jar
-        accumulo-trace-1.5.0.jar
-        commons-io-2.4.jar
-        hadoop-client-0.23.10.jar
-        hadoop-common-0.23.10.jar
-        hadoop-core-0.20.2.jar
-        hadoop-auth-0.23.10.jar
-        guava-14.0.1.jar
-        libthrift-0.9.0.jar
+        cp ~/.m2/repository/org/apache/accumulo/accumulo-core/1.5.2/accumulo-core-1.5.2.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/accumulo/accumulo-fate/1.5.2/accumulo-fate-1.5.2.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/accumulo/accumulo-trace/1.5.2/accumulo-trace-1.5.2.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/commons-io/commons-io/2.4/commons-io-2.4.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/hadoop/hadoop-client/0.23.10/hadoop-client-0.23.10.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/hadoop/hadoop-common/0.23.10/hadoop-common-0.23.10.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/hadoop/hadoop-core/0.20.2/hadoop-core-0.20.2.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/hadoop/hadoop-auth/0.23.10/hadoop-auth-0.23.10.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/com/google/guava/guava/14.0.1/guava-14.0.1.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/thrift/libthrift/0.9.0/libthrift-0.9.0.jar ${GREMLIN_HOME}/lib
 
-        elasticsearch-0.90.0.jar
-        lucene-analyzers-common-4.2.1.jar
-        lucene-codecs-4.2.1.jar
-        lucene-core-4.2.1.jar
-        lucene-grouping-4.2.1.jar
-        lucene-highlighter-4.2.1.jar
-        lucene-join-4.2.1.jar
-        lucene-memory-4.2.1.jar
-        lucene-queries-4.2.1.jar
-        lucene-queryparser-4.2.1.jar
-        lucene-sandbox-4.2.1.jar
-        lucene-spatial-4.2.1.jar
-        lucene-suggest-4.2.1.jar
+        cp ~/.m2/repository/org/elasticsearch/elasticsearch/1.2.0/elasticsearch-1.2.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-analyzers-common/4.9.0/lucene-analyzers-common-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-codecs/4.9.0/lucene-codecs-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-core/4.9.0/lucene-core-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-grouping/4.9.0/lucene-grouping-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-highlighter/4.9.0/lucene-highlighter-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-join/4.9.0/lucene-join-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-memory/4.9.0/lucene-memory-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-queries/4.9.0/lucene-queries-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-queryparser/4.9.0/lucene-queryparser-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-sandbox/4.9.0/lucene-sandbox-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-spatial/4.9.0/lucene-spatial-4.9.0.jar ${GREMLIN_HOME}/lib
+        cp ~/.m2/repository/org/apache/lucene/lucene-suggest/4.9.0/lucene-suggest-4.9.0.jar ${GREMLIN_HOME}/lib
 
         rm lucene-core-3.6.2.jar
 
 1. Run `${GREMLIN_HOME}/bin/gremlin.sh gremlin-sg.script`
+1. Test is out:
+        
+        v = g.addVertex()
+        g.V
 
 Setting up Rexster
 ------------------
