@@ -1005,6 +1005,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     public Iterable<String> findRelatedEdges(Iterable<String> vertexIds, Authorizations authorizations) {
         Set<String> vertexIdsSet = toSet(vertexIds);
 
+        if (vertexIdsSet.size() == 0) {
+            return new HashSet<String>();
+        }
+
         List<Range> ranges = new ArrayList<Range>();
         for (String vertexId : vertexIdsSet) {
             Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId);
