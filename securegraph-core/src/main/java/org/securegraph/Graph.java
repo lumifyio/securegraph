@@ -316,6 +316,18 @@ public interface Graph {
     Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);
 
     /**
+     * Finds all paths between two vertices.
+     *
+     * @param sourceVertex     The source vertex to start the search from.
+     * @param destVertex       The destination vertex to get to.
+     * @param maxHops          The maximum number of hops to make before giving up.
+     * @param progressCallback Callback used to report progress.
+     * @param authorizations   The authorizations required to load all edges and vertices.
+     * @return An Iterable of lists of paths.
+     */
+    Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, ProgressCallback progressCallback, Authorizations authorizations);
+
+    /**
      * Gets the id generator used by this graph to create ids.
      *
      * @return the id generator.

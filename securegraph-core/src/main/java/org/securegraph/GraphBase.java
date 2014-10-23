@@ -189,7 +189,18 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
-        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, authorizations);
+        ProgressCallback progressCallback = new ProgressCallback() {
+            @Override
+            public void progress(double progressPercent, String message) {
+                LOGGER.debug(String.format("findPaths progress %d%%: %s", (int) (progressPercent * 100.0), message));
+            }
+        };
+        return findPaths(sourceVertex, destVertex, maxHops, progressCallback, authorizations);
+    }
+
+    @Override
+    public Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, ProgressCallback progressCallback, Authorizations authorizations) {
+        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, progressCallback, authorizations);
     }
 
     @Override
