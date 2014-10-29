@@ -33,9 +33,6 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
             LOGGER.trace("addElement: " + element.getId());
         }
         if (!isIndexEdges() && element instanceof Edge) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("skipping edge: " + element.getId());
-            }
             return;
         }
 
