@@ -7,11 +7,13 @@ import org.securegraph.*;
 import org.securegraph.elasticsearch.helpers.TestHelpers;
 import org.securegraph.inmemory.InMemoryAuthorizations;
 import org.securegraph.test.GraphTestBase;
+import org.securegraph.type.GeoPoint;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 
 public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
@@ -36,6 +38,23 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
     public void after() throws Exception {
         super.after();
         TestHelpers.after();
+    }
+
+    @Test
+    public void testGeoPointLoadDefinition() {
+        ElasticSearchParentChildSearchIndex searchIndex = (ElasticSearchParentChildSearchIndex) ((GraphBaseWithSearchIndex) graph).getSearchIndex();
+
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("location", new GeoPoint(38.9186, -77.2297, "Reston, VA"), VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        searchIndex.loadPropertyDefinitions();
+
+        Map<String, PropertyDefinition> propertyDefinitions = searchIndex.getAllPropertyDefinitions();
+        PropertyDefinition locationPropertyDef = propertyDefinitions.get("location");
+        assertNotNull(locationPropertyDef);
+        assertEquals(GeoPoint.class, locationPropertyDef.getDataType());
     }
 
     @Test

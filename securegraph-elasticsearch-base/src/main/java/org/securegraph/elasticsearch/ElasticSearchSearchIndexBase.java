@@ -293,7 +293,10 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         Set<TextIndexHint> indexHints = new HashSet<TextIndexHint>();
 
         if (dataType == String.class) {
-            if (propertyName.endsWith(EXACT_MATCH_PROPERTY_NAME_SUFFIX)) {
+            if (propertyTypes.containsKey(propertyName + GEO_PROPERTY_NAME_SUFFIX)) {
+                dataType = GeoPoint.class;
+                indexHints.add(TextIndexHint.FULL_TEXT);
+            } else if (propertyName.endsWith(EXACT_MATCH_PROPERTY_NAME_SUFFIX)) {
                 indexHints.add(TextIndexHint.EXACT_MATCH);
                 if (propertyTypes.containsKey(propertyName.substring(0, propertyName.length() - EXACT_MATCH_PROPERTY_NAME_SUFFIX.length()))) {
                     indexHints.add(TextIndexHint.FULL_TEXT);
@@ -419,7 +422,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         return new DefaultVertexQuery(graph, vertex, queryString, getAllPropertyDefinitions(), authorizations);
     }
 
-    protected Map<String, PropertyDefinition> getAllPropertyDefinitions() {
+    public Map<String, PropertyDefinition> getAllPropertyDefinitions() {
         Map<String, PropertyDefinition> allPropertyDefinitions = new HashMap<String, PropertyDefinition>();
         for (IndexInfo indexInfo : this.indexInfos.values()) {
             allPropertyDefinitions.putAll(indexInfo.getPropertyDefinitions());
