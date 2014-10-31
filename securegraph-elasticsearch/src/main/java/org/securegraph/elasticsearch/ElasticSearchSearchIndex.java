@@ -132,7 +132,11 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 Map<String, Object> propertyValueMap = new HashMap<String, Object>();
                 propertyValueMap.put("lat", geoPoint.getLatitude());
                 propertyValueMap.put("lon", geoPoint.getLongitude());
-                propertyValue = propertyValueMap;
+                jsonBuilder.field(property.getName() + ElasticSearchSearchIndexBase.GEO_PROPERTY_NAME_SUFFIX, propertyValueMap);
+                if (geoPoint.getDescription() != null) {
+                    jsonBuilder.field(property.getName(), geoPoint.getDescription());
+                }
+                continue;
             } else if (propertyValue instanceof StreamingPropertyValue) {
                 StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
                 if (!streamingPropertyValue.isSearchIndex()) {
