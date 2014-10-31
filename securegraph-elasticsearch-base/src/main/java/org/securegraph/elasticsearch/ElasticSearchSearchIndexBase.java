@@ -58,6 +58,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     public static final String SETTING_CLUSTER_NAME = "clusterName";
     public static final int DEFAULT_ES_PORT = 9300;
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
+    public static final String GEO_PROPERTY_NAME_SUFFIX = "_geo";
     private final TransportClient client;
     private final boolean autoflush;
     private final boolean storeSourceData;
@@ -303,6 +304,8 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
                     indexHints.add(TextIndexHint.EXACT_MATCH);
                 }
             }
+        } else if (dataType == GeoPoint.class) {
+            indexHints.add(TextIndexHint.FULL_TEXT);
         }
 
         return new PropertyDefinition(propertyName, dataType, indexHints);
@@ -455,6 +458,9 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
                 if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
                     addPropertyToIndex(indexInfo, propertyDefinition.getPropertyName(), String.class, true, propertyDefinition.getBoost());
                 }
+            } else if (propertyDefinition.getDataType() == GeoPoint.class) {
+                addPropertyToIndex(indexInfo, propertyDefinition.getPropertyName() + GEO_PROPERTY_NAME_SUFFIX, GeoPoint.class, true, propertyDefinition.getBoost());
+                addPropertyToIndex(indexInfo, propertyDefinition.getPropertyName(), String.class, true, propertyDefinition.getBoost());
             } else {
                 addPropertyToIndex(indexInfo, propertyDefinition);
             }
@@ -524,6 +530,9 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
             dataType = String.class;
             addPropertyToIndex(indexInfo, propertyName + EXACT_MATCH_PROPERTY_NAME_SUFFIX, dataType, false);
             addPropertyToIndex(indexInfo, propertyName, dataType, true);
+        } else if (propertyValue instanceof GeoPoint) {
+            addPropertyToIndex(indexInfo, propertyName + GEO_PROPERTY_NAME_SUFFIX, GeoPoint.class, true);
+            addPropertyToIndex(indexInfo, propertyName, String.class, true);
         } else {
             checkNotNull(propertyValue, "property value cannot be null for property: " + propertyName);
             dataType = propertyValue.getClass();
@@ -623,7 +632,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         if (response.hasFailures()) {
             for (BulkItemResponse bulkResponse : response) {
                 if (bulkResponse.isFailed()) {
-                    LOGGER.error("Failed to index " + bulkResponse.getId());
+                    LOGGER.error("Failed to index " + bulkResponse.getId() + " (message: " + bulkResponse.getFailureMessage() + ")");
                 }
             }
             throw new SecureGraphException("Could not add element.");

@@ -1132,7 +1132,11 @@ public abstract class GraphTestBase {
         vertices = toList(graph.query(AUTHORIZATIONS_A)
                 .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 25))
                 .vertices());
+        assertEquals(2, count(vertices));
 
+        vertices = toList(graph.query(AUTHORIZATIONS_A)
+                .has("location", TextPredicate.CONTAINS, "Reston")
+                .vertices());
         assertEquals(2, count(vertices));
     }
 
