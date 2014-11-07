@@ -34,6 +34,11 @@ public class ElementMapperGraph extends GraphBase {
     }
 
     @Override
+    public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
+        return this.elementMapper.prepareEdge(edgeId, outVertexId, inVertexId, label, visibility);
+    }
+
+    @Override
     public Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         throw new SecureGraphException("Not supported");
     }

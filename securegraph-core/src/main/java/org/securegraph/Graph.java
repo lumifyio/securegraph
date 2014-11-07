@@ -173,6 +173,31 @@ public interface Graph {
     Edge addEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations);
 
     /**
+     * Adds an edge between two vertices.
+     *
+     * @param outVertexId    The source vertex id. The "out" side of the edge.
+     * @param inVertexId     The destination vertex id. The "in" side of the edge.
+     * @param label          The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility     The visibility to assign to the new edge.
+     * @param authorizations The authorizations required to add and retrieve the new edge.
+     * @return The newly created edge.
+     */
+    Edge addEdge(String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Adds an edge between two vertices.
+     *
+     * @param edgeId         The id to assign the new edge.
+     * @param outVertexId    The source vertex id. The "out" side of the edge.
+     * @param inVertexId     The destination vertex id. The "in" side of the edge.
+     * @param label          The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility     The visibility to assign to the new edge.
+     * @param authorizations The authorizations required to add and retrieve the new edge.
+     * @return The newly created edge.
+     */
+    Edge addEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations);
+
+    /**
      * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
      * with a single operation. The id of the new edge will be generated using an org.securegraph.id.IdGenerator.
      *
@@ -196,6 +221,31 @@ public interface Graph {
      * @return The edge builder.
      */
     EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility);
+
+    /**
+     * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
+     * with a single operation.
+     *
+     * @param outVertexId The source vertex id. The "out" side of the edge.
+     * @param inVertexId  The destination vertex id. The "in" side of the edge.
+     * @param label       The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility  The visibility to assign to the new edge.
+     * @return The edge builder.
+     */
+    EdgeBuilderByVertexId prepareEdge(String outVertexId, String inVertexId, String label, Visibility visibility);
+
+    /**
+     * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
+     * with a single operation.
+     *
+     * @param edgeId      The id to assign the new edge.
+     * @param outVertexId The source vertex id. The "out" side of the edge.
+     * @param inVertexId  The destination vertex id. The "in" side of the edge.
+     * @param label       The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility  The visibility to assign to the new edge.
+     * @return The edge builder.
+     */
+    EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility);
 
     /**
      * Get an edge from the graph.

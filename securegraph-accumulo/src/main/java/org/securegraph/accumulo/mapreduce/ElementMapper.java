@@ -93,6 +93,21 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save(authorizations);
     }
 
+    public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
+        if (edgeId == null) {
+            edgeId = getIdGenerator().nextId();
+        }
+
+        return new EdgeBuilderByVertexId(edgeId, outVertexId, inVertexId, label, visibility) {
+            @Override
+            public Edge save(Authorizations authorizations) {
+                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertexId(), getInVertexId(), getLabel(), getVisibility(), getProperties(), authorizations);
+                elementMutationBuilder.saveEdge(edge);
+                return edge;
+            }
+        };
+    }
+
     public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();

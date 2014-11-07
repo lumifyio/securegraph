@@ -302,6 +302,20 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     @Override
+    public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
+        if (edgeId == null) {
+            edgeId = getIdGenerator().nextId();
+        }
+
+        return new EdgeBuilderByVertexId(edgeId, outVertexId, inVertexId, label, visibility) {
+            @Override
+            public Edge save(Authorizations authorizations) {
+                return savePreparedEdge(this, getOutVertexId(), getInVertexId(), null, authorizations);
+            }
+        };
+    }
+
+    @Override
     public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (outVertex == null) {
             throw new IllegalArgumentException("outVertex is required");
@@ -316,30 +330,46 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties(), authorizations);
-                elementMutationBuilder.saveEdge(edge);
-
-                if (getOutVertex() instanceof AccumuloVertex) {
-                    ((AccumuloVertex) getOutVertex()).addOutEdge(edge);
-                }
-                if (getInVertex() instanceof AccumuloVertex) {
-                    ((AccumuloVertex) getInVertex()).addInEdge(edge);
-                }
-
-                if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
-                    getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
-                }
-
-                if (hasEventListeners()) {
-                    queueEvent(new AddEdgeEvent(AccumuloGraph.this, edge));
-                    for (Property property : getProperties()) {
-                        queueEvent(new AddPropertyEvent(AccumuloGraph.this, edge, property));
+                AddEdgeToVertexRunnable addEdgeToVertex = new AddEdgeToVertexRunnable() {
+                    @Override
+                    public void run(AccumuloEdge edge) {
+                        if (getOutVertex() instanceof AccumuloVertex) {
+                            ((AccumuloVertex) getOutVertex()).addOutEdge(edge);
+                        }
+                        if (getInVertex() instanceof AccumuloVertex) {
+                            ((AccumuloVertex) getInVertex()).addInEdge(edge);
+                        }
                     }
-                }
-
-                return edge;
+                };
+                return savePreparedEdge(this, getOutVertex().getId(), getInVertex().getId(), addEdgeToVertex, authorizations);
             }
         };
+    }
+
+    private Edge savePreparedEdge(EdgeBuilderBase edgeBuilder, String outVertexId, String inVertexId, AddEdgeToVertexRunnable addEdgeToVertex, Authorizations authorizations) {
+        AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), edgeBuilder.getProperties(), authorizations);
+        elementMutationBuilder.saveEdge(edge);
+
+        if (addEdgeToVertex != null) {
+            addEdgeToVertex.run(edge);
+        }
+
+        if (edgeBuilder.getIndexHint() != IndexHint.DO_NOT_INDEX) {
+            getSearchIndex().addElement(AccumuloGraph.this, edge, authorizations);
+        }
+
+        if (hasEventListeners()) {
+            queueEvent(new AddEdgeEvent(AccumuloGraph.this, edge));
+            for (Property property : edgeBuilder.getProperties()) {
+                queueEvent(new AddPropertyEvent(AccumuloGraph.this, edge, property));
+            }
+        }
+
+        return edge;
+    }
+
+    private static abstract class AddEdgeToVertexRunnable {
+        public abstract void run(AccumuloEdge edge);
     }
 
     @Override

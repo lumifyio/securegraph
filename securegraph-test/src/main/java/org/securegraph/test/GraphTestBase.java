@@ -607,7 +607,7 @@ public abstract class GraphTestBase {
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("e1to2label1", v1, v2, "label1", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("e1to2label2", v1, v2, "label2", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge("e2to1", v2, v1, "label1", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("e2to1", v2.getId(), v1.getId(), "label1", VISIBILITY_A, AUTHORIZATIONS_A);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
 

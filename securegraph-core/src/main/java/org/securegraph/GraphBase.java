@@ -130,6 +130,21 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public Edge addEdge(String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(outVertexId, inVertexId, label, visibility).save(authorizations);
+    }
+
+    @Override
+    public Edge addEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(edgeId, outVertexId, inVertexId, label, visibility).save(authorizations);
+    }
+
+    @Override
+    public EdgeBuilderByVertexId prepareEdge(String outVertexId, String inVertexId, String label, Visibility visibility) {
+        return prepareEdge(getIdGenerator().nextId(), outVertexId, inVertexId, label, visibility);
+    }
+
+    @Override
     public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility);
     }

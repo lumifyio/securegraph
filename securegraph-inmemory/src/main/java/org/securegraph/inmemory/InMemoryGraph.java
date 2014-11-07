@@ -128,6 +128,20 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     }
 
     @Override
+    public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
+        if (edgeId == null) {
+            edgeId = getIdGenerator().nextId();
+        }
+
+        return new EdgeBuilderByVertexId(edgeId, outVertexId, inVertexId, label, visibility) {
+            @Override
+            public Edge save(Authorizations authorizations) {
+                return savePreparedEdge(this, getOutVertexId(), getInVertexId(), authorizations);
+            }
+        };
+    }
+
+    @Override
     public EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
@@ -136,38 +150,42 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                Edge existingEdge = getEdge(getEdgeId(), authorizations);
-
-                Iterable<Property> properties;
-                if (existingEdge == null) {
-                    properties = getProperties();
-                } else {
-                    Iterable<Property> existingProperties = existingEdge.getProperties();
-                    Iterable<Property> newProperties = getProperties();
-                    properties = new TreeSet<Property>(toList(existingProperties));
-                    for (Property p : newProperties) {
-                        ((TreeSet<Property>) properties).remove(p);
-                        ((TreeSet<Property>) properties).add(p);
-                    }
-                }
-
-                InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), properties, authorizations);
-                edges.put(getEdgeId(), edge);
-
-                if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
-                    getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
-                }
-
-                if (hasEventListeners()) {
-                    fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, edge));
-                    for (Property property : getProperties()) {
-                        fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, edge, property));
-                    }
-                }
-
-                return edge;
+                return savePreparedEdge(this, getOutVertex().getId(), getInVertex().getId(), authorizations);
             }
         };
+    }
+
+    private Edge savePreparedEdge(EdgeBuilderBase edgeBuilder, String outVertexId, String inVertexId, Authorizations authorizations) {
+        Edge existingEdge = getEdge(edgeBuilder.getEdgeId(), authorizations);
+
+        Iterable<Property> properties;
+        if (existingEdge == null) {
+            properties = edgeBuilder.getProperties();
+        } else {
+            Iterable<Property> existingProperties = existingEdge.getProperties();
+            Iterable<Property> newProperties = edgeBuilder.getProperties();
+            properties = new TreeSet<Property>(toList(existingProperties));
+            for (Property p : newProperties) {
+                ((TreeSet<Property>) properties).remove(p);
+                ((TreeSet<Property>) properties).add(p);
+            }
+        }
+
+        InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), properties, authorizations);
+        edges.put(edgeBuilder.getEdgeId(), edge);
+
+        if (edgeBuilder.getIndexHint() != IndexHint.DO_NOT_INDEX) {
+            getSearchIndex().addElement(InMemoryGraph.this, edge, authorizations);
+        }
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, edge));
+            for (Property property : edgeBuilder.getProperties()) {
+                fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, edge, property));
+            }
+        }
+
+        return edge;
     }
 
     @Override
