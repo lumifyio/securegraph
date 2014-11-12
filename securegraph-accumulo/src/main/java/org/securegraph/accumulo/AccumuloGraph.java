@@ -302,6 +302,26 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     @Override
+    public void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        if (vertex == null) {
+            throw new IllegalArgumentException("vertex cannot be null");
+        }
+
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
+
+        // Remove all edges that this vertex participates.
+        for (Edge edge : vertex.getEdges(Direction.BOTH, authorizations)) {
+            markEdgeHidden(edge, visibility, authorizations);
+        }
+
+        addMutations(getVerticesWriter(), getMarkHiddenRowMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId(), columnVisibility));
+
+        if (hasEventListeners()) {
+            queueEvent(new MarkHiddenVertexEvent(this, vertex));
+        }
+    }
+
+    @Override
     public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
@@ -414,6 +434,40 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     @Override
+    public void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations) {
+        checkNotNull(edge);
+
+        Vertex out = edge.getVertex(Direction.OUT, authorizations);
+        checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
+        Vertex in = edge.getVertex(Direction.IN, authorizations);
+        checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
+
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
+
+        Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + out.getId());
+        outMutation.put(AccumuloVertex.CF_OUT_EDGE_HIDDEN, new Text(edge.getId()), columnVisibility, AccumuloElement.HIDDEN_VALUE);
+
+        Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + in.getId());
+        inMutation.put(AccumuloVertex.CF_IN_EDGE_HIDDEN, new Text(edge.getId()), columnVisibility, AccumuloElement.HIDDEN_VALUE);
+
+        addMutations(getVerticesWriter(), outMutation, inMutation);
+
+        // Remove everything else related to edge.
+        addMutations(getEdgesWriter(), getMarkHiddenRowMutation(AccumuloConstants.EDGE_ROW_KEY_PREFIX + edge.getId(), columnVisibility));
+
+        if (out instanceof AccumuloVertex) {
+            ((AccumuloVertex) out).removeOutEdge(edge);
+        }
+        if (in instanceof AccumuloVertex) {
+            ((AccumuloVertex) in).removeInEdge(edge);
+        }
+
+        if (hasEventListeners()) {
+            queueEvent(new MarkHiddenEdgeEvent(this, edge));
+        }
+    }
+
+    @Override
     public void flush() {
         if (hasEventListeners()) {
             synchronized (this.graphEventQueue) {
@@ -474,6 +528,12 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private Mutation getDeleteRowMutation(String rowKey) {
         Mutation m = new Mutation(rowKey);
         m.put(DELETE_ROW_COLUMN_FAMILY, DELETE_ROW_COLUMN_QUALIFIER, RowDeletingIterator.DELETE_ROW_VALUE);
+        return m;
+    }
+
+    private Mutation getMarkHiddenRowMutation(String rowKey, ColumnVisibility visibility) {
+        Mutation m = new Mutation(rowKey);
+        m.put(AccumuloElement.CF_HIDDEN, AccumuloElement.CQ_HIDDEN, visibility, AccumuloElement.HIDDEN_VALUE);
         return m;
     }
 
@@ -675,6 +735,8 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             return;
         }
 
+        scanner.fetchColumnFamily(AccumuloElement.CF_HIDDEN);
+
         if (elementType == ElementType.VERTEX) {
             scanner.fetchColumnFamily(AccumuloVertex.CF_SIGNAL);
         } else if (elementType == ElementType.EDGE) {
@@ -687,9 +749,11 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
         if (fetchHints.contains(FetchHint.IN_EDGE_REFS)) {
             scanner.fetchColumnFamily(AccumuloVertex.CF_IN_EDGE);
+            scanner.fetchColumnFamily(AccumuloVertex.CF_IN_EDGE_HIDDEN);
         }
         if (fetchHints.contains(FetchHint.OUT_EDGE_REFS)) {
             scanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE);
+            scanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE_HIDDEN);
         }
         if (fetchHints.contains(FetchHint.PROPERTIES)) {
             scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY);

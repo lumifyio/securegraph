@@ -49,6 +49,10 @@ public abstract class ElementMaker<T> {
                 return null;
             }
 
+            if (columnFamily.equals(AccumuloElement.CF_HIDDEN)) {
+                return null;
+            }
+
             if (AccumuloElement.CF_PROPERTY.compareTo(columnFamily) == 0) {
                 extractPropertyData(columnQualifier, columnVisibility, value);
                 continue;

@@ -7,8 +7,12 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.util.StreamUtils;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
+    private Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
+
     protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
         super(graph, id, visibility, properties, authorizations);
     }
@@ -84,5 +88,24 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
 
     void setVisibilityInternal(Visibility visibility) {
         super.setVisibility(visibility);
+    }
+
+    public void markHidden(Visibility visibility) {
+        this.hiddenVisibilities.add(visibility);
+    }
+
+    public boolean canRead(Authorizations authorizations) {
+        // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
+        if (getVisibility().getVisibilityString().length() > 0 && !authorizations.canRead(getVisibility())) {
+            return false;
+        }
+
+        for (Visibility softDelete : this.hiddenVisibilities) {
+            if (authorizations.canRead(softDelete)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

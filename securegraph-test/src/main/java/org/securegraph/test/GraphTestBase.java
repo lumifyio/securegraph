@@ -37,6 +37,7 @@ import static org.securegraph.util.IterableUtils.*;
 public abstract class GraphTestBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphTestBase.class);
     public static final Visibility VISIBILITY_A = new Visibility("a");
+    public static final Visibility VISIBILITY_A_AND_B = new Visibility("a&b");
     public static final Visibility VISIBILITY_B = new Visibility("b");
     public static final Visibility VISIBILITY_MIXEDCASE_a = new Visibility("((MIXEDCASE_a))|b");
     public static final Visibility VISIBILITY_EMPTY = new Visibility("");
@@ -533,6 +534,65 @@ public abstract class GraphTestBase {
 
         graph.removeVertex(v1, AUTHORIZATIONS_A);
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_A)));
+    }
+
+    @Test
+    public void testMarkVertexHidden() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        graph.markVertexHidden(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        graph.markVertexHidden(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        v1.prepareMutation()
+                .alterElementVisibility(VISIBILITY_B)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+    }
+
+    @Test
+    public void testMarkEdgeHidden() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        Edge e1 = graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        Edge e2 = graph.addEdge("v2tov3", v2, v3, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
+
+        graph.markEdgeHidden(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_B)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(0, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(0, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A)));
     }
 
     @Test

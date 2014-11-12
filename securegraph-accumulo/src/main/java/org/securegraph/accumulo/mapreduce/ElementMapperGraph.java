@@ -107,4 +107,14 @@ public class ElementMapperGraph extends GraphBase {
     public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
         throw new SecureGraphException("Not supported");
     }
+
+    @Override
+    public void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
 }

@@ -93,7 +93,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
             protected boolean isIncluded(InMemoryVertex src, Vertex vertex) {
-                return canRead(src.getVisibility(), authorizations);
+                return src.canRead(authorizations);
             }
 
             @Override
@@ -110,7 +110,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public void removeVertex(Vertex vertex, Authorizations authorizations) {
-        if (!canRead(vertex.getVisibility(), authorizations)) {
+        if (!((InMemoryVertex) vertex).canRead(authorizations)) {
             return;
         }
 
@@ -124,6 +124,25 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         if (hasEventListeners()) {
             fireGraphEvent(new RemoveVertexEvent(this, vertex));
+        }
+    }
+
+    @Override
+    public void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        if (!((InMemoryVertex) vertex).canRead(authorizations)) {
+            return;
+        }
+
+        List<Edge> edgesToMarkHidden = toList(vertex.getEdges(Direction.BOTH, authorizations));
+        for (Edge edgeToRemove : edgesToMarkHidden) {
+            markEdgeHidden(edgeToRemove, visibility, authorizations);
+        }
+
+        this.vertices.get(vertex.getId()).markHidden(visibility);
+        getSearchIndex().addElement(this, vertex, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkHiddenVertexEvent(this, vertex));
         }
     }
 
@@ -193,7 +212,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {
-                return canRead(src.getVisibility(), authorizations);
+                return src.canRead(authorizations);
             }
 
             @Override
@@ -210,7 +229,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public void removeEdge(Edge edge, Authorizations authorizations) {
-        if (!canRead(edge.getVisibility(), authorizations)) {
+        if (!((InMemoryEdge) edge).canRead(authorizations)) {
             return;
         }
 
@@ -227,6 +246,25 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    @Override
+    public void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations) {
+        if (!((InMemoryEdge) edge).canRead(authorizations)) {
+            return;
+        }
+
+        Vertex inVertex = getVertex(edge.getVertexId(Direction.IN), authorizations);
+        checkNotNull(inVertex, "Could not find in vertex: " + edge.getVertexId(Direction.IN));
+        Vertex outVertex = getVertex(edge.getVertexId(Direction.OUT), authorizations);
+        checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
+
+        this.edges.get(edge.getId()).markHidden(visibility);
+        getSearchIndex().addElement(this, edge, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkHiddenEdgeEvent(this, edge));
+        }
+    }
+
     public Iterable<Edge> getEdgesFromVertex(final String vertexId, final Authorizations authorizations) {
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
@@ -239,7 +277,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 if (!inVertexId.equals(vertexId) && !outVertexId.equals(vertexId)) {
                     return false;
                 }
-                return canRead(src.getVisibility(), authorizations);
+                return src.canRead(authorizations);
             }
 
             @Override
