@@ -467,6 +467,29 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    public void markPropertyHidden(AccumuloElement element, Property property, Visibility visibility, Authorizations authorizations) {
+        checkNotNull(element);
+
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
+
+        if (element instanceof Vertex) {
+            addMutations(getVerticesWriter(), getMarkHiddenPropertyMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + element.getId(), property, columnVisibility));
+        } else if (element instanceof Edge) {
+            addMutations(getVerticesWriter(), getMarkHiddenPropertyMutation(AccumuloConstants.EDGE_ROW_KEY_PREFIX + element.getId(), property, columnVisibility));
+        }
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkHiddenPropertyEvent(this, element, property, visibility));
+        }
+    }
+
+    private Mutation getMarkHiddenPropertyMutation(String rowKey, Property property, ColumnVisibility visibility) {
+        Mutation m = new Mutation(rowKey);
+        Text columnQualifier = ElementMutationBuilder.getPropertyColumnQualifierWithVisibilityString(property);
+        m.put(AccumuloElement.CF_PROPERTY_HIDDEN, columnQualifier, visibility, AccumuloElement.HIDDEN_VALUE);
+        return m;
+    }
+
     @Override
     public void flush() {
         if (hasEventListeners()) {
@@ -756,9 +779,11 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             scanner.fetchColumnFamily(AccumuloVertex.CF_OUT_EDGE_HIDDEN);
         }
         if (fetchHints.contains(FetchHint.PROPERTIES)) {
+            scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY_HIDDEN);
             scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY);
         }
         if (fetchHints.contains(FetchHint.PROPERTY_METADATA)) {
+            scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY_HIDDEN);
             scanner.fetchColumnFamily(AccumuloElement.CF_PROPERTY_METADATA);
         }
     }

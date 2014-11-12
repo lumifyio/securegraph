@@ -210,7 +210,7 @@ public abstract class ElementBase<T extends Element> implements Element {
         if (this instanceof Edge) {
             return getId() + ":[" + ((Edge) this).getVertexId(Direction.OUT) + "->" + ((Edge) this).getVertexId(Direction.IN) + "]";
         }
-        return getId().toString();
+        return getId();
     }
 
     @Override

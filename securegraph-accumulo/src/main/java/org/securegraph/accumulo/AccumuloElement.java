@@ -13,6 +13,7 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
     public static final Text CQ_HIDDEN = new Text("H");
     public static final Value HIDDEN_VALUE = new Value("".getBytes());
     public static final Text CF_PROPERTY = new Text("PROP");
+    public static final Text CF_PROPERTY_HIDDEN = new Text("PROPH");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
 
     protected AccumuloElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
@@ -33,6 +34,18 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
         for (Property property : properties) {
             getGraph().removeProperty(this, property, authorizations);
         }
+    }
+
+    @Override
+    public void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations) {
+        Iterable<Property> properties = getProperties(key, name);
+        for (Property property : properties) {
+            if (property.getVisibility().equals(propertyVisibility)) {
+                getGraph().markPropertyHidden(this, property, visibility, authorizations);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Could not find property " + key + " : " + name + " : " + propertyVisibility);
     }
 
     @Override

@@ -146,6 +146,22 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    public void markPropertyHidden(InMemoryElement element, Property property, Visibility visibility, Authorizations authorizations) {
+        if (!element.canRead(authorizations)) {
+            return;
+        }
+
+        if (element instanceof Vertex) {
+            this.vertices.get(element.getId()).markPropertyHiddenInternal(property, visibility, authorizations);
+        } else if (element instanceof Edge) {
+            this.edges.get(element.getId()).markPropertyHiddenInternal(property, visibility, authorizations);
+        }
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkHiddenPropertyEvent(this, element, property, visibility));
+        }
+    }
+
     @Override
     public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
         if (edgeId == null) {
@@ -340,21 +356,21 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         String inVertexId = edge.getVertexId(Direction.IN);
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
-        List<Property> properties = filterProperties(edge.getProperties(), authorizations);
+        List<Property> properties = filterProperties(edge, edge.getProperties(), authorizations);
         return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, authorizations);
     }
 
     private Vertex filteredVertex(InMemoryVertex vertex, Authorizations authorizations) {
         String vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
-        List<Property> properties = filterProperties(vertex.getProperties(), authorizations);
+        List<Property> properties = filterProperties(vertex, vertex.getProperties(), authorizations);
         return new InMemoryVertex(this, vertexId, visibility, properties, authorizations);
     }
 
-    private List<Property> filterProperties(Iterable<Property> properties, Authorizations authorizations) {
+    private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, Authorizations authorizations) {
         List<Property> filteredProperties = new ArrayList<Property>();
         for (Property p : properties) {
-            if (canRead(p.getVisibility(), authorizations)) {
+            if (canRead(p.getVisibility(), authorizations) && !element.isPropertyHidden(p, authorizations)) {
                 filteredProperties.add(p);
             }
         }

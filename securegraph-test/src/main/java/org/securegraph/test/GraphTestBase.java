@@ -596,6 +596,44 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testMarkPropertyHidden() {
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
+                .addPropertyValue("key1", "prop1", "value1", VISIBILITY_A)
+                .addPropertyValue("key1", "prop1", "value1", VISIBILITY_B)
+                .addPropertyValue("key2", "prop1", "value1", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A);
+
+        assertEquals(3, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1")));
+
+        v1.markPropertyHidden("key1", "prop1", VISIBILITY_A, VISIBILITY_A_AND_B, AUTHORIZATIONS_A_AND_B);
+
+        List<Property> properties = toList(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1"));
+        assertEquals(2, count(properties));
+        boolean foundProp1Key2 = false;
+        boolean foundProp1Key1VisB = false;
+        for (Property property : properties) {
+            if (property.getName().equals("prop1")) {
+                if (property.getKey().equals("key2")) {
+                    foundProp1Key2 = true;
+                } else if (property.getKey().equals("key1")) {
+                    if (property.getVisibility().equals(VISIBILITY_B)) {
+                        foundProp1Key1VisB = true;
+                    } else {
+                        throw new RuntimeException("Unexpected visibility " + property.getVisibility());
+                    }
+                } else {
+                    throw new RuntimeException("Unexpected property key " + property.getKey());
+                }
+            } else {
+                throw new RuntimeException("Unexpected property name " + property.getName());
+            }
+        }
+
+        assertTrue(foundProp1Key2);
+        assertTrue(foundProp1Key1VisB);
+    }
+
+    @Test
     public void testRemoveVertexWithProperties() {
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", VISIBILITY_B)

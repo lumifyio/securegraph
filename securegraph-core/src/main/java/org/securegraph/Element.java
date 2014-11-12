@@ -230,4 +230,17 @@ public interface Element {
      * @param element The element to merge properties from.
      */
     void mergeProperties(Element element);
+
+    /**
+     * Marks a property as hidden for a given visibility.
+     *
+     * @param key                The key of the property.
+     * @param name               The name of the property.
+     * @param propertyVisibility The visibility of the property.
+     * @param visibility         The visibility string under which this property is hidden.
+     *                           This visibility can be a superset of the property visibility to mark
+     *                           it as hidden for only a subset of authorizations.
+     * @param authorizations     The authorizations used.
+     */
+    void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations);
 }
