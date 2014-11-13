@@ -143,7 +143,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties(), authorizations);
+                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties(), null, authorizations);
 
                 elementMutationBuilder.saveVertex(vertex);
 
@@ -367,7 +367,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     private Edge savePreparedEdge(EdgeBuilderBase edgeBuilder, String outVertexId, String inVertexId, AddEdgeToVertexRunnable addEdgeToVertex, Authorizations authorizations) {
-        AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), edgeBuilder.getProperties(), authorizations);
+        AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), edgeBuilder.getProperties(), null, authorizations);
         elementMutationBuilder.saveEdge(edge);
 
         if (addEdgeToVertex != null) {
@@ -581,6 +581,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     @Override
     public CloseableIterable<Vertex> getVertices(Iterable<String> ids, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
 
         final List<Range> ranges = new ArrayList<Range>();
         for (String id : ids) {
@@ -604,7 +605,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 try {
                     SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
                     VertexMaker maker = new VertexMaker(graph, row.entrySet().iterator(), authorizations);
-                    return maker.make();
+                    return maker.make(includeHidden);
                 } catch (IOException ex) {
                     throw new SecureGraphException("Could not recreate row", ex);
                 }
@@ -645,6 +646,8 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     private CloseableIterable<Vertex> getVerticesInRange(final Range range, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
+
         return new LookAheadIterable<Iterator<Map.Entry<Key, Value>>, Vertex>() {
             public Scanner scanner;
 
@@ -656,7 +659,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             @Override
             protected Vertex convert(Iterator<Map.Entry<Key, Value>> next) {
                 VertexMaker maker = new VertexMaker(AccumuloGraph.this, next, authorizations);
-                return maker.make();
+                return maker.make(includeHidden);
             }
 
             @Override
@@ -837,6 +840,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     @Override
     public CloseableIterable<Edge> getEdges(Iterable<String> ids, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         final AccumuloGraph graph = this;
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
 
         final List<Range> ranges = new ArrayList<Range>();
         for (String id : ids) {
@@ -860,7 +864,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 try {
                     SortedMap<Key, Value> row = WholeRowIterator.decodeRow(wholeRow.getKey(), wholeRow.getValue());
                     EdgeMaker maker = new EdgeMaker(graph, row.entrySet().iterator(), authorizations);
-                    return maker.make();
+                    return maker.make(includeHidden);
                 } catch (IOException ex) {
                     throw new SecureGraphException("Could not recreate row", ex);
                 }
@@ -883,6 +887,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
     private CloseableIterable<Edge> getEdgesInRange(String startId, String endId, final EnumSet<FetchHint> fetchHints, final Authorizations authorizations) throws SecureGraphException {
         final AccumuloGraph graph = this;
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
 
         final Key startKey;
         if (startId == null) {
@@ -909,7 +914,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             @Override
             protected Edge convert(Iterator<Map.Entry<Key, Value>> next) {
                 EdgeMaker maker = new EdgeMaker(graph, next, authorizations);
-                return maker.make();
+                return maker.make(includeHidden);
             }
 
             @Override

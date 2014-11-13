@@ -558,6 +558,10 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
         assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertNull("found v1 but shouldn't have", graph.getVertex("v1", FetchHint.ALL, AUTHORIZATIONS_A));
+        Vertex v1Hidden = graph.getVertex("v1", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A);
+        assertNotNull("did not find v1 but should have", v1Hidden);
+        assertTrue("v1 should be hidden", v1Hidden.isHidden(AUTHORIZATIONS_A));
 
         v1.prepareMutation()
                 .alterElementVisibility(VISIBILITY_B)
@@ -593,6 +597,10 @@ public abstract class GraphTestBase {
         assertEquals(0, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
         assertEquals(0, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
         assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A)));
+        assertNull("found e1 but shouldn't have", graph.getEdge("v1tov2", FetchHint.ALL, AUTHORIZATIONS_A_AND_B));
+        Edge e1Hidden = graph.getEdge("v1tov2", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B);
+        assertNotNull("did not find e1 but should have", e1Hidden);
+        assertTrue("e1 should be hidden", e1Hidden.isHidden(AUTHORIZATIONS_A_AND_B));
     }
 
     @Test

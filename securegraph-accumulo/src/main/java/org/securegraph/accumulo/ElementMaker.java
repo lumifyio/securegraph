@@ -20,6 +20,7 @@ public abstract class ElementMaker<T> {
     private final Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
     private final Map<String, byte[]> propertyMetadata = new HashMap<String, byte[]>();
     private final Set<HiddenProperty> hiddenProperties = new HashSet<HiddenProperty>();
+    private final Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
     private final AccumuloGraph graph;
     private final Authorizations authorizations;
     private String id;
@@ -31,7 +32,7 @@ public abstract class ElementMaker<T> {
         this.authorizations = authorizations;
     }
 
-    public T make() {
+    public T make(boolean includeHidden) {
         while (row.hasNext()) {
             Map.Entry<Key, Value> col = row.next();
 
@@ -51,7 +52,11 @@ public abstract class ElementMaker<T> {
             }
 
             if (columnFamily.equals(AccumuloElement.CF_HIDDEN)) {
-                return null;
+                if (includeHidden) {
+                    this.hiddenVisibilities.add(accumuloVisibilityToVisibility(columnVisibility));
+                } else {
+                    return null;
+                }
             }
 
             if (columnFamily.equals(AccumuloElement.CF_PROPERTY_HIDDEN)) {
@@ -101,6 +106,10 @@ public abstract class ElementMaker<T> {
 
     public AccumuloGraph getGraph() {
         return graph;
+    }
+
+    protected Set<Visibility> getHiddenVisibilities() {
+        return hiddenVisibilities;
     }
 
     protected List<Property> getProperties() {

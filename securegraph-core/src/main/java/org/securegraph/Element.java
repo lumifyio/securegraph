@@ -243,4 +243,12 @@ public interface Element {
      * @param authorizations     The authorizations used.
      */
     void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Given the supplied authorizations is this element hidden?
+     *
+     * @param authorizations the authorizations to check against.
+     * @return true, if it would be hidden from those authorizations.
+     */
+    boolean isHidden(Authorizations authorizations);
 }

@@ -11,11 +11,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
-    private Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
     private Set<HiddenProperty> hiddenProperties = new HashSet<HiddenProperty>();
 
-    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
-        super(graph, id, visibility, properties, authorizations);
+    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     @Override
@@ -103,20 +102,14 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         super.setVisibility(visibility);
     }
 
-    public void markHidden(Visibility visibility) {
-        this.hiddenVisibilities.add(visibility);
+    public void addHiddenVisibility(Visibility visibility) {
+        super.addHiddenVisibility(visibility);
     }
 
     public boolean canRead(Authorizations authorizations) {
         // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
         if (getVisibility().getVisibilityString().length() > 0 && !authorizations.canRead(getVisibility())) {
             return false;
-        }
-
-        for (Visibility softDelete : this.hiddenVisibilities) {
-            if (authorizations.canRead(softDelete)) {
-                return false;
-            }
         }
 
         return true;

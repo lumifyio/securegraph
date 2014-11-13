@@ -74,6 +74,7 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.getId(),
                 this.getVisibility(),
                 this.getProperties(),
+                this.getHiddenVisibilities(),
                 this.inEdges,
                 this.outEdges,
                 this.getAuthorizations());

@@ -16,8 +16,8 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
     public static final Text CF_PROPERTY_HIDDEN = new Text("PROPH");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
 
-    protected AccumuloElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
-        super(graph, id, visibility, properties, authorizations);
+    protected AccumuloElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     @Override

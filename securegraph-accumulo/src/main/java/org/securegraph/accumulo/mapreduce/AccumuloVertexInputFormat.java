@@ -22,7 +22,7 @@ public class AccumuloVertexInputFormat extends AccumuloElementInputFormatBase<Ve
     @Override
     protected Vertex createElementFromRow(AccumuloGraph graph, PeekingIterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
         VertexMaker maker = new VertexMaker(graph, row, authorizations);
-        return maker.make();
+        return maker.make(false);
     }
 }
 

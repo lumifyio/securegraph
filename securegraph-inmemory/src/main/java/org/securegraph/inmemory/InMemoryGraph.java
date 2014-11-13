@@ -69,7 +69,12 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                     }
                 }
 
-                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties, authorizations);
+                Iterable<Visibility> hiddenVisibilities = null;
+                if (existingVertex instanceof InMemoryVertex) {
+                    hiddenVisibilities = ((InMemoryVertex) existingVertex).getHiddenVisibilities();
+                }
+
+                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties, hiddenVisibilities, authorizations);
                 vertices.put(getVertexId(), vertex);
 
                 if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
@@ -90,10 +95,22 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, final Authorizations authorizations) throws SecureGraphException {
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
+
         return new LookAheadIterable<InMemoryVertex, Vertex>() {
             @Override
             protected boolean isIncluded(InMemoryVertex src, Vertex vertex) {
-                return src.canRead(authorizations);
+                if (!src.canRead(authorizations)) {
+                    return false;
+                }
+
+                if (!includeHidden) {
+                    if (src.isHidden(authorizations)) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             @Override
@@ -138,7 +155,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             markEdgeHidden(edgeToRemove, visibility, authorizations);
         }
 
-        this.vertices.get(vertex.getId()).markHidden(visibility);
+        this.vertices.get(vertex.getId()).addHiddenVisibility(visibility);
         getSearchIndex().addElement(this, vertex, authorizations);
 
         if (hasEventListeners()) {
@@ -206,7 +223,12 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             }
         }
 
-        InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), properties, authorizations);
+        Iterable<Visibility> hiddenVisibilities = null;
+        if (existingEdge instanceof InMemoryEdge) {
+            hiddenVisibilities = ((InMemoryEdge) existingEdge).getHiddenVisibilities();
+        }
+
+        InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), properties, hiddenVisibilities, authorizations);
         edges.put(edgeBuilder.getEdgeId(), edge);
 
         if (edgeBuilder.getIndexHint() != IndexHint.DO_NOT_INDEX) {
@@ -225,10 +247,22 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
+
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {
-                return src.canRead(authorizations);
+                if (!src.canRead(authorizations)) {
+                    return false;
+                }
+
+                if (!includeHidden) {
+                    if (src.isHidden(authorizations)) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             @Override
@@ -273,7 +307,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         Vertex outVertex = getVertex(edge.getVertexId(Direction.OUT), authorizations);
         checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
 
-        this.edges.get(edge.getId()).markHidden(visibility);
+        this.edges.get(edge.getId()).addHiddenVisibility(visibility);
         getSearchIndex().addElement(this, edge, authorizations);
 
         if (hasEventListeners()) {
@@ -281,7 +315,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
     }
 
-    public Iterable<Edge> getEdgesFromVertex(final String vertexId, final Authorizations authorizations) {
+    public Iterable<Edge> getEdgesFromVertex(final String vertexId, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
+        final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
+
         return new LookAheadIterable<InMemoryEdge, Edge>() {
             @Override
             protected boolean isIncluded(InMemoryEdge src, Edge edge) {
@@ -293,7 +329,18 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 if (!inVertexId.equals(vertexId) && !outVertexId.equals(vertexId)) {
                     return false;
                 }
-                return src.canRead(authorizations);
+
+                if (!src.canRead(authorizations)) {
+                    return false;
+                }
+
+                if (!includeHidden) {
+                    if (src.isHidden(authorizations)) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             @Override
@@ -356,15 +403,17 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         String inVertexId = edge.getVertexId(Direction.IN);
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
+        Iterable<Visibility> hiddenVisibilities = edge.getHiddenVisibilities();
         List<Property> properties = filterProperties(edge, edge.getProperties(), authorizations);
-        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, authorizations);
+        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     private Vertex filteredVertex(InMemoryVertex vertex, Authorizations authorizations) {
         String vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
+        Iterable<Visibility> hiddenVisibilities = vertex.getHiddenVisibilities();
         List<Property> properties = filterProperties(vertex, vertex.getProperties(), authorizations);
-        return new InMemoryVertex(this, vertexId, visibility, properties, authorizations);
+        return new InMemoryVertex(this, vertexId, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, Authorizations authorizations) {
