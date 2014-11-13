@@ -7,12 +7,8 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.util.StreamUtils;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
-    private Set<HiddenProperty> hiddenProperties = new HashSet<HiddenProperty>();
-
     protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
         super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
     }
@@ -116,72 +112,10 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     void markPropertyHiddenInternal(Property property, Visibility visibility, Authorizations authorizations) {
-        this.hiddenProperties.add(new HiddenProperty(property, visibility));
-    }
-
-    boolean isPropertyHidden(Property property, Authorizations authorizations) {
-        for (HiddenProperty hiddenProperty : this.hiddenProperties) {
-            if (hiddenProperty.matches(property, authorizations)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected static class HiddenProperty {
-        private final String key;
-        private final String name;
-        private final Visibility propertyVisibility;
-        private final Visibility hiddenVisibility;
-
-        public HiddenProperty(Property property, Visibility hiddenVisibility) {
-            this.key = property.getKey();
-            this.name = property.getName();
-            this.propertyVisibility = property.getVisibility();
-            this.hiddenVisibility = hiddenVisibility;
-        }
-
-        public boolean matches(Property prop, Authorizations authorizations) {
-            if (!prop.getName().equals(this.name)
-                    || !prop.getKey().equals(this.key)
-                    || !prop.getVisibility().equals(this.propertyVisibility)) {
-                return false;
-            }
-            return authorizations.canRead(hiddenVisibility);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            HiddenProperty that = (HiddenProperty) o;
-
-            if (key != null ? !key.equals(that.key) : that.key != null) {
-                return false;
-            }
-            if (name != null ? !name.equals(that.name) : that.name != null) {
-                return false;
-            }
-            if (propertyVisibility != null ? !propertyVisibility.equals(that.propertyVisibility) : that.propertyVisibility != null) {
-                return false;
-            }
-            if (hiddenVisibility != null ? !hiddenVisibility.equals(that.hiddenVisibility) : that.hiddenVisibility != null) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = key != null ? key.hashCode() : 0;
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            return result;
+        if (property instanceof MutableProperty) {
+            ((MutableProperty) property).addHiddenVisibility(visibility);
+        } else {
+            throw new SecureGraphException("Could not mark property hidden. Must be of type " + MutableProperty.class.getName());
         }
     }
 }

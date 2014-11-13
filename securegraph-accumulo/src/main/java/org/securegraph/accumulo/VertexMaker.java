@@ -63,7 +63,7 @@ public class VertexMaker extends ElementMaker<Vertex> {
     }
 
     @Override
-    protected Vertex makeElement() {
+    protected Vertex makeElement(boolean includeHidden) {
         for (String edgeId : this.hiddenEdges) {
             this.inEdges.remove(edgeId);
             this.outEdges.remove(edgeId);
@@ -73,7 +73,7 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.graph,
                 this.getId(),
                 this.getVisibility(),
-                this.getProperties(),
+                this.getProperties(includeHidden),
                 this.getHiddenVisibilities(),
                 this.inEdges,
                 this.outEdges,

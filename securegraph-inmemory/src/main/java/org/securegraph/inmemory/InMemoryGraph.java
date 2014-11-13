@@ -115,7 +115,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
             @Override
             protected Vertex convert(InMemoryVertex vertex) {
-                return filteredVertex(vertex, authorizations);
+                return filteredVertex(vertex, includeHidden, authorizations);
             }
 
             @Override
@@ -267,7 +267,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
             @Override
             protected Edge convert(InMemoryEdge edge) {
-                return filteredEdge(edge, authorizations);
+                return filteredEdge(edge, includeHidden, authorizations);
             }
 
             @Override
@@ -345,7 +345,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
             @Override
             protected Edge convert(InMemoryEdge edge) {
-                return filteredEdge(edge, authorizations);
+                return filteredEdge(edge, includeHidden, authorizations);
             }
 
             @Override
@@ -397,29 +397,29 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
     }
 
-    private Edge filteredEdge(InMemoryEdge edge, Authorizations authorizations) {
+    private Edge filteredEdge(InMemoryEdge edge, boolean includeHidden, Authorizations authorizations) {
         String edgeId = edge.getId();
         String outVertexId = edge.getVertexId(Direction.OUT);
         String inVertexId = edge.getVertexId(Direction.IN);
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
         Iterable<Visibility> hiddenVisibilities = edge.getHiddenVisibilities();
-        List<Property> properties = filterProperties(edge, edge.getProperties(), authorizations);
+        List<Property> properties = filterProperties(edge, edge.getProperties(), includeHidden, authorizations);
         return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, hiddenVisibilities, authorizations);
     }
 
-    private Vertex filteredVertex(InMemoryVertex vertex, Authorizations authorizations) {
+    private Vertex filteredVertex(InMemoryVertex vertex, boolean includeHidden, Authorizations authorizations) {
         String vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
         Iterable<Visibility> hiddenVisibilities = vertex.getHiddenVisibilities();
-        List<Property> properties = filterProperties(vertex, vertex.getProperties(), authorizations);
+        List<Property> properties = filterProperties(vertex, vertex.getProperties(), includeHidden, authorizations);
         return new InMemoryVertex(this, vertexId, visibility, properties, hiddenVisibilities, authorizations);
     }
 
-    private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, Authorizations authorizations) {
+    private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, boolean includeHidden, Authorizations authorizations) {
         List<Property> filteredProperties = new ArrayList<Property>();
         for (Property p : properties) {
-            if (canRead(p.getVisibility(), authorizations) && !element.isPropertyHidden(p, authorizations)) {
+            if (canRead(p.getVisibility(), authorizations) && (includeHidden || !p.isHidden(authorizations))) {
                 filteredProperties.add(p);
             }
         }

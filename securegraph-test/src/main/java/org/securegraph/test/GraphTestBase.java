@@ -636,9 +636,40 @@ public abstract class GraphTestBase {
                 throw new RuntimeException("Unexpected property name " + property.getName());
             }
         }
+        assertTrue("Prop1Key2 not found", foundProp1Key2);
+        assertTrue("Prop1Key1VisB not found", foundProp1Key1VisB);
 
-        assertTrue(foundProp1Key2);
-        assertTrue(foundProp1Key1VisB);
+        List<Property> hiddenProperties = toList(graph.getVertex("v1", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B).getProperties());
+        assertEquals(3, hiddenProperties.size());
+        boolean foundProp1Key1VisA = false;
+        foundProp1Key2 = false;
+        foundProp1Key1VisB = false;
+        for (Property property : hiddenProperties) {
+            if (property.getName().equals("prop1")) {
+                if (property.getKey().equals("key2")) {
+                    foundProp1Key2 = true;
+                    assertFalse("should not be hidden", property.isHidden(AUTHORIZATIONS_A_AND_B));
+                } else if (property.getKey().equals("key1")) {
+                    if (property.getVisibility().equals(VISIBILITY_A)) {
+                        foundProp1Key1VisA = true;
+                        assertFalse("should not be hidden", property.isHidden(AUTHORIZATIONS_A));
+                        assertTrue("should be hidden", property.isHidden(AUTHORIZATIONS_A_AND_B));
+                    } else if (property.getVisibility().equals(VISIBILITY_B)) {
+                        foundProp1Key1VisB = true;
+                        assertFalse("should not be hidden", property.isHidden(AUTHORIZATIONS_A_AND_B));
+                    } else {
+                        throw new RuntimeException("Unexpected visibility " + property.getVisibility());
+                    }
+                } else {
+                    throw new RuntimeException("Unexpected property key " + property.getKey());
+                }
+            } else {
+                throw new RuntimeException("Unexpected property name " + property.getName());
+            }
+        }
+        assertTrue("Prop1Key2 not found", foundProp1Key2);
+        assertTrue("Prop1Key1VisB not found", foundProp1Key1VisB);
+        assertTrue("Prop1Key1VisA not found", foundProp1Key1VisA);
     }
 
     @Test

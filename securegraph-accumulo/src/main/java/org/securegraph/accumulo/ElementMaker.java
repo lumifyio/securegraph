@@ -60,7 +60,7 @@ public abstract class ElementMaker<T> {
             }
 
             if (columnFamily.equals(AccumuloElement.CF_PROPERTY_HIDDEN)) {
-                extractPropertyHidden(columnQualifier);
+                extractPropertyHidden(columnQualifier, columnVisibility);
             }
 
             if (AccumuloElement.CF_PROPERTY.compareTo(columnFamily) == 0) {
@@ -85,7 +85,7 @@ public abstract class ElementMaker<T> {
             return null;
         }
 
-        return makeElement();
+        return makeElement(includeHidden);
     }
 
     protected abstract void processColumn(Key key, Value value);
@@ -94,7 +94,7 @@ public abstract class ElementMaker<T> {
 
     protected abstract String getVisibilitySignal();
 
-    protected abstract T makeElement();
+    protected abstract T makeElement(boolean includeHidden);
 
     protected String getId() {
         return this.id;
@@ -112,21 +112,35 @@ public abstract class ElementMaker<T> {
         return hiddenVisibilities;
     }
 
-    protected List<Property> getProperties() {
+    protected List<Property> getProperties(boolean includeHidden) {
         List<Property> results = new ArrayList<Property>(propertyValues.size());
         for (Map.Entry<String, byte[]> propertyValueEntry : propertyValues.entrySet()) {
             String key = propertyValueEntry.getKey();
             String propertyKey = getPropertyKeyFromColumnQualifier(propertyColumnQualifier.get(key));
             String propertyName = propertyNames.get(key);
             byte[] propertyValue = propertyValueEntry.getValue();
-            Visibility visibility = propertyVisibilities.get(key);
-            if (isHidden(propertyKey, propertyName, visibility)) {
+            Visibility propertyVisibility = propertyVisibilities.get(key);
+            Set<Visibility> propertyHiddenVisibilities = getPropertyHiddenVisibilities(propertyKey, propertyName, propertyVisibility);
+            if (!includeHidden && isHidden(propertyKey, propertyName, propertyVisibility)) {
                 continue;
             }
             byte[] metadata = propertyMetadata.get(key);
-            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, visibility));
+            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, propertyHiddenVisibilities, propertyVisibility));
         }
         return results;
+    }
+
+    private Set<Visibility> getPropertyHiddenVisibilities(String propertyKey, String propertyName, Visibility propertyVisibility) {
+        Set<Visibility> hiddenVisibilities = null;
+        for (HiddenProperty hiddenProperty : hiddenProperties) {
+            if (hiddenProperty.matches(propertyKey, propertyName, propertyVisibility)) {
+                if (hiddenVisibilities == null) {
+                    hiddenVisibilities = new HashSet<Visibility>();
+                }
+                hiddenVisibilities.add(hiddenProperty.getHiddenVisibility());
+            }
+        }
+        return hiddenVisibilities;
     }
 
     private boolean isHidden(String propertyKey, String propertyName, Visibility visibility) {
@@ -138,7 +152,7 @@ public abstract class ElementMaker<T> {
         return false;
     }
 
-    private void extractPropertyHidden(Text columnQualifier) {
+    private void extractPropertyHidden(Text columnQualifier, ColumnVisibility columnVisibility) {
         String columnQualifierStr = columnQualifier.toString();
         int nameKeySep = columnQualifierStr.indexOf(ElementMutationBuilder.VALUE_SEPARATOR);
         if (nameKeySep < 0) {
@@ -153,7 +167,7 @@ public abstract class ElementMaker<T> {
         String key = columnQualifierStr.substring(nameKeySep + 1, keyVisSep);
         String vis = columnQualifierStr.substring(keyVisSep + 1);
 
-        this.hiddenProperties.add(new HiddenProperty(key, name, vis));
+        this.hiddenProperties.add(new HiddenProperty(key, name, vis, accumuloVisibilityToVisibility(columnVisibility)));
     }
 
     private void extractPropertyMetadata(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
@@ -184,6 +198,10 @@ public abstract class ElementMaker<T> {
 
     private Visibility accumuloVisibilityToVisibility(ColumnVisibility columnVisibility) {
         String columnVisibilityString = columnVisibility.toString();
+        return accumuloVisibilityToVisibility(columnVisibilityString);
+    }
+
+    private Visibility accumuloVisibilityToVisibility(String columnVisibilityString) {
         if (columnVisibilityString.startsWith("[") && columnVisibilityString.endsWith("]")) {
             return new Visibility(columnVisibilityString.substring(1, columnVisibilityString.length() - 1));
         }
@@ -206,17 +224,23 @@ public abstract class ElementMaker<T> {
         private final String key;
         private final String name;
         private final String visibility;
+        private final Visibility hiddenVisibility;
 
-        public HiddenProperty(String key, String name, String visibility) {
+        public HiddenProperty(String key, String name, String visibility, Visibility hiddenVisibility) {
             this.key = key;
             this.name = name;
             this.visibility = visibility;
+            this.hiddenVisibility = hiddenVisibility;
         }
 
         public boolean matches(String propertyKey, String propertyName, Visibility visibility) {
             return propertyKey.equals(this.key)
                     && propertyName.equals(this.name)
                     && visibility.getVisibilityString().equals(this.visibility);
+        }
+
+        public Visibility getHiddenVisibility() {
+            return hiddenVisibility;
         }
 
         @Override

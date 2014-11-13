@@ -14,6 +14,10 @@ public abstract class Property implements Comparable<Property> {
 
     public abstract Map<String, Object> getMetadata();
 
+    public abstract Iterable<Visibility> getHiddenVisibilities();
+
+    public abstract boolean isHidden(Authorizations authorizations);
+
     @Override
     public int compareTo(Property o) {
         int i = getName().compareTo(o.getName());
