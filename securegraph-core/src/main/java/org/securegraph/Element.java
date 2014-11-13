@@ -245,6 +245,17 @@ public interface Element {
     void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations);
 
     /**
+     * Marks a property as hidden for a given visibility.
+     *
+     * @param property       The property.
+     * @param visibility     The visibility string under which this property is hidden.
+     *                       This visibility can be a superset of the property visibility to mark
+     *                       it as hidden for only a subset of authorizations.
+     * @param authorizations The authorizations used.
+     */
+    void markPropertyHidden(Property property, Visibility visibility, Authorizations authorizations);
+
+    /**
      * Given the supplied authorizations is this element hidden?
      *
      * @param authorizations the authorizations to check against.

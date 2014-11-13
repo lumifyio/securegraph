@@ -252,6 +252,18 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
+    public void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations) {
+        Iterable<Property> properties = getProperties(key, name);
+        for (Property property : properties) {
+            if (property.getVisibility().equals(propertyVisibility)) {
+                markPropertyHidden(property, visibility, authorizations);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Could not find property " + key + " : " + name + " : " + propertyVisibility);
+    }
+
+    @Override
     public abstract void removeProperty(String name, Authorizations authorizations);
 
     @Override

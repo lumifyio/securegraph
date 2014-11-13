@@ -30,15 +30,8 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    public void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations) {
-        Iterable<Property> properties = getProperties(key, name);
-        for (Property property : properties) {
-            if (property.getVisibility().equals(propertyVisibility)) {
-                getGraph().markPropertyHidden(this, property, visibility, authorizations);
-                return;
-            }
-        }
-        throw new IllegalArgumentException("Could not find property " + key + " : " + name + " : " + propertyVisibility);
+    public void markPropertyHidden(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyHidden(this, property, visibility, authorizations);
     }
 
     @Override
