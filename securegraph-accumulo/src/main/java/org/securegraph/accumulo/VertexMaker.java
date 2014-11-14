@@ -64,9 +64,11 @@ public class VertexMaker extends ElementMaker<Vertex> {
 
     @Override
     protected Vertex makeElement(boolean includeHidden) {
-        for (String edgeId : this.hiddenEdges) {
-            this.inEdges.remove(edgeId);
-            this.outEdges.remove(edgeId);
+        if (!includeHidden) {
+            for (String edgeId : this.hiddenEdges) {
+                this.inEdges.remove(edgeId);
+                this.outEdges.remove(edgeId);
+            }
         }
 
         return new AccumuloVertex(

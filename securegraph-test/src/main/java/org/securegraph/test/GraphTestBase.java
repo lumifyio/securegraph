@@ -594,6 +594,7 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A_AND_B)));
         assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertex("v1", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B)));
         assertEquals(0, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
         assertEquals(0, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
         assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A)));
