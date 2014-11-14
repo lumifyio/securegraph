@@ -163,6 +163,25 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    @Override
+    public void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        if (!((InMemoryVertex) vertex).canRead(authorizations)) {
+            return;
+        }
+
+        List<Edge> edgesToMarkVisible = toList(vertex.getEdges(Direction.BOTH, FetchHint.ALL_INCLUDING_HIDDEN, authorizations));
+        for (Edge edgeToMarkVisible : edgesToMarkVisible) {
+            markEdgeVisible(edgeToMarkVisible, visibility, authorizations);
+        }
+
+        this.vertices.get(vertex.getId()).removeHiddenVisibility(visibility);
+        getSearchIndex().addElement(this, vertex, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkVisibleVertexEvent(this, vertex));
+        }
+    }
+
     public void markPropertyHidden(InMemoryElement element, Property property, Visibility visibility, Authorizations authorizations) {
         if (!element.canRead(authorizations)) {
             return;
@@ -176,6 +195,22 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         if (hasEventListeners()) {
             fireGraphEvent(new MarkHiddenPropertyEvent(this, element, property, visibility));
+        }
+    }
+
+    public void markPropertyVisible(InMemoryElement element, Property property, Visibility visibility, Authorizations authorizations) {
+        if (!element.canRead(authorizations)) {
+            return;
+        }
+
+        if (element instanceof Vertex) {
+            this.vertices.get(element.getId()).markPropertyVisibleInternal(property, visibility, authorizations);
+        } else if (element instanceof Edge) {
+            this.edges.get(element.getId()).markPropertyVisibleInternal(property, visibility, authorizations);
+        }
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkVisiblePropertyEvent(this, element, property, visibility));
         }
     }
 
@@ -312,6 +347,25 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
 
         if (hasEventListeners()) {
             fireGraphEvent(new MarkHiddenEdgeEvent(this, edge));
+        }
+    }
+
+    @Override
+    public void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations) {
+        if (!((InMemoryEdge) edge).canRead(authorizations)) {
+            return;
+        }
+
+        Vertex inVertex = getVertex(edge.getVertexId(Direction.IN), FetchHint.ALL_INCLUDING_HIDDEN, authorizations);
+        checkNotNull(inVertex, "Could not find in vertex: " + edge.getVertexId(Direction.IN));
+        Vertex outVertex = getVertex(edge.getVertexId(Direction.OUT), FetchHint.ALL_INCLUDING_HIDDEN, authorizations);
+        checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
+
+        this.edges.get(edge.getId()).removeHiddenVisibility(visibility);
+        getSearchIndex().addElement(this, edge, authorizations);
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkVisibleEdgeEvent(this, edge));
         }
     }
 

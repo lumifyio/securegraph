@@ -81,4 +81,12 @@ public class MutablePropertyImpl extends MutableProperty {
         }
         this.hiddenVisibilities.add(visibility);
     }
+
+    @Override
+    public void removeHiddenVisibility(Visibility visibility) {
+        if (this.hiddenVisibilities == null) {
+            this.hiddenVisibilities = new HashSet<Visibility>();
+        }
+        this.hiddenVisibilities.remove(visibility);
+    }
 }

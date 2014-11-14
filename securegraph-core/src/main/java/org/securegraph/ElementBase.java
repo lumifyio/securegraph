@@ -264,6 +264,18 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
+    public void markPropertyVisible(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations) {
+        Iterable<Property> properties = getProperties(key, name);
+        for (Property property : properties) {
+            if (property.getVisibility().equals(propertyVisibility)) {
+                markPropertyVisible(property, visibility, authorizations);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Could not find property " + key + " : " + name + " : " + propertyVisibility);
+    }
+
+    @Override
     public abstract void removeProperty(String name, Authorizations authorizations);
 
     @Override
@@ -295,5 +307,9 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     protected void addHiddenVisibility(Visibility visibility) {
         this.hiddenVisibilities.add(visibility);
+    }
+
+    protected void removeHiddenVisibility(Visibility visibility) {
+        this.hiddenVisibilities.remove(visibility);
     }
 }

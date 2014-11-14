@@ -42,6 +42,11 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
+    public void markPropertyVisible(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyVisible(this, property, visibility, authorizations);
+    }
+
+    @Override
     public AccumuloGraph getGraph() {
         return (AccumuloGraph) super.getGraph();
     }

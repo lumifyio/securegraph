@@ -256,6 +256,26 @@ public interface Element {
     void markPropertyHidden(Property property, Visibility visibility, Authorizations authorizations);
 
     /**
+     * Marks a property as visible for a given visibility, effectively undoing markPropertyHidden.
+     *
+     * @param key                The key of the property.
+     * @param name               The name of the property.
+     * @param propertyVisibility The visibility of the property.
+     * @param visibility         The visibility string under which this property is now visible.
+     * @param authorizations     The authorizations used.
+     */
+    void markPropertyVisible(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks a property as visible for a given visibility, effectively undoing markPropertyHidden.
+     *
+     * @param property       The property.
+     * @param visibility     The visibility string under which this property is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markPropertyVisible(Property property, Visibility visibility, Authorizations authorizations);
+
+    /**
      * Given the supplied authorizations is this element hidden?
      *
      * @param authorizations the authorizations to check against.

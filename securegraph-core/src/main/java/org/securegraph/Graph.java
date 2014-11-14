@@ -467,6 +467,15 @@ public interface Graph {
     void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations);
 
     /**
+     * Marks a vertex as visible for a given visibility, effectively undoing markVertexHidden.
+     *
+     * @param vertex         The vertex to mark visible.
+     * @param visibility     The visibility string under which this vertex is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations);
+
+    /**
      * Marks an edge as hidden for a given visibility.
      *
      * @param edge           The edge to mark hidden.
@@ -476,4 +485,13 @@ public interface Graph {
      * @param authorizations The authorizations used.
      */
     void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks an edge as visible for a given visibility, effectively undoing markEdgeHidden.
+     *
+     * @param edge           The edge to mark visible.
+     * @param visibility     The visibility string under which this edge is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations);
 }

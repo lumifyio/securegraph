@@ -9,4 +9,6 @@ public abstract class MutableProperty extends Property {
     public abstract void setVisibility(Visibility visibility);
 
     public abstract void addHiddenVisibility(Visibility visibility);
+
+    public abstract void removeHiddenVisibility(Visibility visibility);
 }

@@ -114,7 +114,17 @@ public class ElementMapperGraph extends GraphBase {
     }
 
     @Override
+    public void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
     public void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations) {
         throw new SecureGraphException("Not supported");
     }
 }

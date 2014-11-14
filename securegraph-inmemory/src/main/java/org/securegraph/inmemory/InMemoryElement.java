@@ -35,6 +35,11 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
+    public void markPropertyVisible(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyVisible(this, property, visibility, authorizations);
+    }
+
+    @Override
     public InMemoryGraph getGraph() {
         return (InMemoryGraph) super.getGraph();
     }
@@ -95,6 +100,10 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         super.addHiddenVisibility(visibility);
     }
 
+    public void removeHiddenVisibility(Visibility visibility) {
+        super.removeHiddenVisibility(visibility);
+    }
+
     public boolean canRead(Authorizations authorizations) {
         // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
         if (getVisibility().getVisibilityString().length() > 0 && !authorizations.canRead(getVisibility())) {
@@ -109,6 +118,14 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
             ((MutableProperty) property).addHiddenVisibility(visibility);
         } else {
             throw new SecureGraphException("Could not mark property hidden. Must be of type " + MutableProperty.class.getName());
+        }
+    }
+
+    void markPropertyVisibleInternal(Property property, Visibility visibility, Authorizations authorizations) {
+        if (property instanceof MutableProperty) {
+            ((MutableProperty) property).removeHiddenVisibility(visibility);
+        } else {
+            throw new SecureGraphException("Could not mark property visible. Must be of type " + MutableProperty.class.getName());
         }
     }
 }

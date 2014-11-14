@@ -322,6 +322,26 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     @Override
+    public void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        if (vertex == null) {
+            throw new IllegalArgumentException("vertex cannot be null");
+        }
+
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
+
+        // Remove all edges that this vertex participates.
+        for (Edge edge : vertex.getEdges(Direction.BOTH, FetchHint.ALL_INCLUDING_HIDDEN, authorizations)) {
+            markEdgeVisible(edge, visibility, authorizations);
+        }
+
+        addMutations(getVerticesWriter(), getMarkVisibleRowMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId(), columnVisibility));
+
+        if (hasEventListeners()) {
+            queueEvent(new MarkVisibleVertexEvent(this, vertex));
+        }
+    }
+
+    @Override
     public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
@@ -467,6 +487,40 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    @Override
+    public void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations) {
+        checkNotNull(edge);
+
+        Vertex out = edge.getVertex(Direction.OUT, FetchHint.ALL_INCLUDING_HIDDEN, authorizations);
+        checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
+        Vertex in = edge.getVertex(Direction.IN, FetchHint.ALL_INCLUDING_HIDDEN, authorizations);
+        checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
+
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
+
+        Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + out.getId());
+        outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE_HIDDEN, new Text(edge.getId()), columnVisibility);
+
+        Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + in.getId());
+        inMutation.putDelete(AccumuloVertex.CF_IN_EDGE_HIDDEN, new Text(edge.getId()), columnVisibility);
+
+        addMutations(getVerticesWriter(), outMutation, inMutation);
+
+        // Remove everything else related to edge.
+        addMutations(getEdgesWriter(), getMarkVisibleRowMutation(AccumuloConstants.EDGE_ROW_KEY_PREFIX + edge.getId(), columnVisibility));
+
+        if (out instanceof AccumuloVertex) {
+            ((AccumuloVertex) out).addOutEdge(edge);
+        }
+        if (in instanceof AccumuloVertex) {
+            ((AccumuloVertex) in).addInEdge(edge);
+        }
+
+        if (hasEventListeners()) {
+            queueEvent(new MarkVisibleEdgeEvent(this, edge));
+        }
+    }
+
     public void markPropertyHidden(AccumuloElement element, Property property, Visibility visibility, Authorizations authorizations) {
         checkNotNull(element);
 
@@ -487,6 +541,29 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         Mutation m = new Mutation(rowKey);
         Text columnQualifier = ElementMutationBuilder.getPropertyColumnQualifierWithVisibilityString(property);
         m.put(AccumuloElement.CF_PROPERTY_HIDDEN, columnQualifier, visibility, AccumuloElement.HIDDEN_VALUE);
+        return m;
+    }
+
+    public void markPropertyVisible(AccumuloElement element, Property property, Visibility visibility, Authorizations authorizations) {
+        checkNotNull(element);
+
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
+
+        if (element instanceof Vertex) {
+            addMutations(getVerticesWriter(), getMarkVisiblePropertyMutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + element.getId(), property, columnVisibility));
+        } else if (element instanceof Edge) {
+            addMutations(getVerticesWriter(), getMarkVisiblePropertyMutation(AccumuloConstants.EDGE_ROW_KEY_PREFIX + element.getId(), property, columnVisibility));
+        }
+
+        if (hasEventListeners()) {
+            fireGraphEvent(new MarkVisiblePropertyEvent(this, element, property, visibility));
+        }
+    }
+
+    private Mutation getMarkVisiblePropertyMutation(String rowKey, Property property, ColumnVisibility visibility) {
+        Mutation m = new Mutation(rowKey);
+        Text columnQualifier = ElementMutationBuilder.getPropertyColumnQualifierWithVisibilityString(property);
+        m.putDelete(AccumuloElement.CF_PROPERTY_HIDDEN, columnQualifier, visibility);
         return m;
     }
 
@@ -557,6 +634,12 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private Mutation getMarkHiddenRowMutation(String rowKey, ColumnVisibility visibility) {
         Mutation m = new Mutation(rowKey);
         m.put(AccumuloElement.CF_HIDDEN, AccumuloElement.CQ_HIDDEN, visibility, AccumuloElement.HIDDEN_VALUE);
+        return m;
+    }
+
+    private Mutation getMarkVisibleRowMutation(String rowKey, ColumnVisibility visibility) {
+        Mutation m = new Mutation(rowKey);
+        m.putDelete(AccumuloElement.CF_HIDDEN, AccumuloElement.CQ_HIDDEN, visibility);
         return m;
     }
 

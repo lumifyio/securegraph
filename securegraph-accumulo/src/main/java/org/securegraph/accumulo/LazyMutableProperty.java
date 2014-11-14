@@ -54,6 +54,14 @@ public class LazyMutableProperty extends MutableProperty {
     }
 
     @Override
+    public void removeHiddenVisibility(Visibility visibility) {
+        if (hiddenVisibilities == null) {
+            hiddenVisibilities = new HashSet<Visibility>();
+        }
+        hiddenVisibilities.remove(visibility);
+    }
+
+    @Override
     public String getKey() {
         return this.propertyKey;
     }

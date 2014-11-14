@@ -563,14 +563,17 @@ public abstract class GraphTestBase {
         assertNotNull("did not find v1 but should have", v1Hidden);
         assertTrue("v1 should be hidden", v1Hidden.isHidden(AUTHORIZATIONS_A));
 
-        v1.prepareMutation()
-                .alterElementVisibility(VISIBILITY_B)
-                .save(AUTHORIZATIONS_A_AND_B);
+        graph.markVertexVisible(v1, VISIBILITY_A, AUTHORIZATIONS_A);
 
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
-        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
-        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_B)));
-        assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        graph.markVertexVisible(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
     }
 
     @Test
@@ -602,6 +605,14 @@ public abstract class GraphTestBase {
         Edge e1Hidden = graph.getEdge("v1tov2", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B);
         assertNotNull("did not find e1 but should have", e1Hidden);
         assertTrue("e1 should be hidden", e1Hidden.isHidden(AUTHORIZATIONS_A_AND_B));
+
+        graph.markEdgeVisible(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
     }
 
     @Test
@@ -671,6 +682,10 @@ public abstract class GraphTestBase {
         assertTrue("Prop1Key2 not found", foundProp1Key2);
         assertTrue("Prop1Key1VisB not found", foundProp1Key1VisB);
         assertTrue("Prop1Key1VisA not found", foundProp1Key1VisA);
+
+        v1.markPropertyVisible("key1", "prop1", VISIBILITY_A, VISIBILITY_A_AND_B, AUTHORIZATIONS_A_AND_B);
+
+        assertEquals(3, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1")));
     }
 
     @Test
