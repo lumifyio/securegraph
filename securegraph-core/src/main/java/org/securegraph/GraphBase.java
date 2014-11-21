@@ -219,6 +219,34 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, ProgressCallback progressCallback, Authorizations authorizations) {
+        EnumSet<FetchHint> fetchHints = FetchHint.EDGE_REFS;
+        Vertex sourceVertex = getVertex(sourceVertexId, fetchHints, authorizations);
+        if (sourceVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + sourceVertexId);
+        }
+        Vertex destVertex = getVertex(destVertexId, fetchHints, authorizations);
+        if (destVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + destVertexId);
+        }
+        return findPaths(sourceVertex, destVertex, maxHops, progressCallback, authorizations);
+    }
+
+    @Override
+    public Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, Authorizations authorizations) {
+        EnumSet<FetchHint> fetchHints = FetchHint.EDGE_REFS;
+        Vertex sourceVertex = getVertex(sourceVertexId, fetchHints, authorizations);
+        if (sourceVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + sourceVertexId);
+        }
+        Vertex destVertex = getVertex(destVertexId, fetchHints, authorizations);
+        if (destVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + destVertexId);
+        }
+        return findPaths(sourceVertex, destVertex, maxHops, authorizations);
+    }
+
+    @Override
     public Iterable<String> findRelatedEdges(Iterable<String> vertexIds, Authorizations authorizations) {
         Set<String> results = new HashSet<String>();
         List<Vertex> vertices = toList(getVertices(vertexIds, authorizations));

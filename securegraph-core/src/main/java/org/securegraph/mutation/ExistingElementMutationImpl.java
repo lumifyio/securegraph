@@ -43,7 +43,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     public ElementMutation<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
         checkNotNull(name, "property name cannot be null for property: " + name + ":" + key);
         checkNotNull(value, "property value cannot be null for property: " + name + ":" + key);
-        properties.add(new MutablePropertyImpl(key, name, value, metadata, visibility));
+        properties.add(new MutablePropertyImpl(key, name, value, metadata, null, visibility));
         return this;
     }
 

@@ -368,6 +368,17 @@ public interface Graph {
     /**
      * Finds all paths between two vertices.
      *
+     * @param sourceVertexId The source vertex id to start the search from.
+     * @param destVertexId   The destination vertex id to get to.
+     * @param maxHops        The maximum number of hops to make before giving up.
+     * @param authorizations The authorizations required to load all edges and vertices.
+     * @return An Iterable of lists of paths.
+     */
+    Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, Authorizations authorizations);
+
+    /**
+     * Finds all paths between two vertices.
+     *
      * @param sourceVertex     The source vertex to start the search from.
      * @param destVertex       The destination vertex to get to.
      * @param maxHops          The maximum number of hops to make before giving up.
@@ -376,6 +387,18 @@ public interface Graph {
      * @return An Iterable of lists of paths.
      */
     Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, ProgressCallback progressCallback, Authorizations authorizations);
+
+    /**
+     * Finds all paths between two vertices.
+     *
+     * @param sourceVertexId   The source vertex id to start the search from.
+     * @param destVertexId     The destination vertex id to get to.
+     * @param maxHops          The maximum number of hops to make before giving up.
+     * @param progressCallback Callback used to report progress.
+     * @param authorizations   The authorizations required to load all edges and vertices.
+     * @return An Iterable of lists of paths.
+     */
+    Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, ProgressCallback progressCallback, Authorizations authorizations);
 
     /**
      * Gets the id generator used by this graph to create ids.
@@ -431,4 +454,44 @@ public interface Graph {
      * Adds a graph event listener that will be called when graph events occur.
      */
     void addGraphEventListener(GraphEventListener graphEventListener);
+
+    /**
+     * Marks a vertex as hidden for a given visibility.
+     *
+     * @param vertex         The vertex to mark hidden.
+     * @param visibility     The visibility string under which this vertex is hidden.
+     *                       This visibility can be a superset of the vertex visibility to mark
+     *                       it as hidden for only a subset of authorizations.
+     * @param authorizations The authorizations used.
+     */
+    void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks a vertex as visible for a given visibility, effectively undoing markVertexHidden.
+     *
+     * @param vertex         The vertex to mark visible.
+     * @param visibility     The visibility string under which this vertex is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks an edge as hidden for a given visibility.
+     *
+     * @param edge           The edge to mark hidden.
+     * @param visibility     The visibility string under which this edge is hidden.
+     *                       This visibility can be a superset of the edge visibility to mark
+     *                       it as hidden for only a subset of authorizations.
+     * @param authorizations The authorizations used.
+     */
+    void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks an edge as visible for a given visibility, effectively undoing markEdgeHidden.
+     *
+     * @param edge           The edge to mark visible.
+     * @param visibility     The visibility string under which this edge is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations);
 }

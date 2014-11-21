@@ -1,25 +1,29 @@
 package org.securegraph.accumulo;
 
+import org.securegraph.Authorizations;
 import org.securegraph.SecureGraphException;
 import org.securegraph.Visibility;
 import org.securegraph.accumulo.serializer.ValueSerializer;
 import org.securegraph.property.MutableProperty;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class LazyMutableProperty extends MutableProperty {
     private final AccumuloGraph graph;
     private final ValueSerializer valueSerializer;
     private final String propertyKey;
     private final String propertyName;
+    private Set<Visibility> hiddenVisibilities;
     private byte[] propertyValue;
     private final byte[] metadata;
     private Visibility visibility;
     private transient Object cachedPropertyValue;
     private transient Map<String, Object> cachedMetadata;
 
-    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, byte[] metadata, Visibility visibility) {
+    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, byte[] metadata, Set<Visibility> hiddenVisibilities, Visibility visibility) {
         this.graph = graph;
         this.valueSerializer = valueSerializer;
         this.propertyKey = propertyKey;
@@ -27,6 +31,7 @@ public class LazyMutableProperty extends MutableProperty {
         this.propertyValue = propertyValue;
         this.metadata = metadata;
         this.visibility = visibility;
+        this.hiddenVisibilities = hiddenVisibilities;
     }
 
     @Override
@@ -38,6 +43,22 @@ public class LazyMutableProperty extends MutableProperty {
     @Override
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
+    }
+
+    @Override
+    public void addHiddenVisibility(Visibility visibility) {
+        if (hiddenVisibilities == null) {
+            hiddenVisibilities = new HashSet<Visibility>();
+        }
+        hiddenVisibilities.add(visibility);
+    }
+
+    @Override
+    public void removeHiddenVisibility(Visibility visibility) {
+        if (hiddenVisibilities == null) {
+            hiddenVisibilities = new HashSet<Visibility>();
+        }
+        hiddenVisibilities.remove(visibility);
     }
 
     @Override
@@ -86,5 +107,22 @@ public class LazyMutableProperty extends MutableProperty {
             }
         }
         return cachedMetadata;
+    }
+
+    @Override
+    public Iterable<Visibility> getHiddenVisibilities() {
+        return hiddenVisibilities;
+    }
+
+    @Override
+    public boolean isHidden(Authorizations authorizations) {
+        if (hiddenVisibilities != null) {
+            for (Visibility v : getHiddenVisibilities()) {
+                if (authorizations.canRead(v)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
