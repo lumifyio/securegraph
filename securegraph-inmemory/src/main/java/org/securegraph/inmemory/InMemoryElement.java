@@ -9,8 +9,8 @@ import org.securegraph.util.StreamUtils;
 import java.io.IOException;
 
 public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
-    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
-        super(graph, id, visibility, properties, authorizations);
+    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     @Override
@@ -27,6 +27,16 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         for (Property property : properties) {
             getGraph().removeProperty(this, property, authorizations);
         }
+    }
+
+    @Override
+    public void markPropertyHidden(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyHidden(this, property, visibility, authorizations);
+    }
+
+    @Override
+    public void markPropertyVisible(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyVisible(this, property, visibility, authorizations);
     }
 
     @Override
@@ -84,5 +94,38 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
 
     void setVisibilityInternal(Visibility visibility) {
         super.setVisibility(visibility);
+    }
+
+    public void addHiddenVisibility(Visibility visibility) {
+        super.addHiddenVisibility(visibility);
+    }
+
+    public void removeHiddenVisibility(Visibility visibility) {
+        super.removeHiddenVisibility(visibility);
+    }
+
+    public boolean canRead(Authorizations authorizations) {
+        // this is just a shortcut so that we don't need to construct evaluators and visibility objects to check for an empty string.
+        if (getVisibility().getVisibilityString().length() > 0 && !authorizations.canRead(getVisibility())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    void markPropertyHiddenInternal(Property property, Visibility visibility, Authorizations authorizations) {
+        if (property instanceof MutableProperty) {
+            ((MutableProperty) property).addHiddenVisibility(visibility);
+        } else {
+            throw new SecureGraphException("Could not mark property hidden. Must be of type " + MutableProperty.class.getName());
+        }
+    }
+
+    void markPropertyVisibleInternal(Property property, Visibility visibility, Authorizations authorizations) {
+        if (property instanceof MutableProperty) {
+            ((MutableProperty) property).removeHiddenVisibility(visibility);
+        } else {
+            throw new SecureGraphException("Could not mark property visible. Must be of type " + MutableProperty.class.getName());
+        }
     }
 }

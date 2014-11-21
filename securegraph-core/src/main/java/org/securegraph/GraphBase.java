@@ -18,6 +18,10 @@ public abstract class GraphBase implements Graph {
     private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
     private final List<GraphEventListener> graphEventListeners = new ArrayList<GraphEventListener>();
 
+    protected GraphBase() {
+
+    }
+
     @Override
     public Vertex addVertex(Visibility visibility, Authorizations authorizations) {
         return prepareVertex(visibility).save(authorizations);
@@ -126,6 +130,21 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public Edge addEdge(String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(outVertexId, inVertexId, label, visibility).save(authorizations);
+    }
+
+    @Override
+    public Edge addEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations) {
+        return prepareEdge(edgeId, outVertexId, inVertexId, label, visibility).save(authorizations);
+    }
+
+    @Override
+    public EdgeBuilderByVertexId prepareEdge(String outVertexId, String inVertexId, String label, Visibility visibility) {
+        return prepareEdge(getIdGenerator().nextId(), outVertexId, inVertexId, label, visibility);
+    }
+
+    @Override
     public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility);
     }
@@ -185,7 +204,46 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
-        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, authorizations);
+        ProgressCallback progressCallback = new ProgressCallback() {
+            @Override
+            public void progress(double progressPercent, String message) {
+                LOGGER.debug(String.format("findPaths progress %d%%: %s", (int) (progressPercent * 100.0), message));
+            }
+        };
+        return findPaths(sourceVertex, destVertex, maxHops, progressCallback, authorizations);
+    }
+
+    @Override
+    public Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, ProgressCallback progressCallback, Authorizations authorizations) {
+        return pathFindingAlgorithm.findPaths(this, sourceVertex, destVertex, maxHops, progressCallback, authorizations);
+    }
+
+    @Override
+    public Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, ProgressCallback progressCallback, Authorizations authorizations) {
+        EnumSet<FetchHint> fetchHints = FetchHint.EDGE_REFS;
+        Vertex sourceVertex = getVertex(sourceVertexId, fetchHints, authorizations);
+        if (sourceVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + sourceVertexId);
+        }
+        Vertex destVertex = getVertex(destVertexId, fetchHints, authorizations);
+        if (destVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + destVertexId);
+        }
+        return findPaths(sourceVertex, destVertex, maxHops, progressCallback, authorizations);
+    }
+
+    @Override
+    public Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, Authorizations authorizations) {
+        EnumSet<FetchHint> fetchHints = FetchHint.EDGE_REFS;
+        Vertex sourceVertex = getVertex(sourceVertexId, fetchHints, authorizations);
+        if (sourceVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + sourceVertexId);
+        }
+        Vertex destVertex = getVertex(destVertexId, fetchHints, authorizations);
+        if (destVertex == null) {
+            throw new IllegalArgumentException("Could not find vertex with id: " + destVertexId);
+        }
+        return findPaths(sourceVertex, destVertex, maxHops, authorizations);
     }
 
     @Override

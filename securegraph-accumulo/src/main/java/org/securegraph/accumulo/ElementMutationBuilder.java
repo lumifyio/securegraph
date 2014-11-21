@@ -140,7 +140,7 @@ public abstract class ElementMutationBuilder {
     }
 
     public void addPropertyToMutation(Mutation m, String rowKey, Property property) {
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
+        Text columnQualifier = getPropertyColumnQualifier(property);
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         Object propertyValue = property.getValue();
         if (propertyValue instanceof StreamingPropertyValue) {
@@ -154,9 +154,17 @@ public abstract class ElementMutationBuilder {
         addPropertyMetadataToMutation(m, property);
     }
 
+    static Text getPropertyColumnQualifier(Property property) {
+        return new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
+    }
+
+    static Text getPropertyColumnQualifierWithVisibilityString(Property property) {
+        return new Text(property.getName() + VALUE_SEPARATOR + property.getKey() + VALUE_SEPARATOR + property.getVisibility().getVisibilityString());
+    }
+
     public void addPropertyMetadataToMutation(Mutation m, Property property) {
         Map<String, Object> metadata = property.getMetadata();
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
+        Text columnQualifier = getPropertyColumnQualifier(property);
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         if (metadata != null && metadata.size() > 0) {
             Value metadataValue = new Value(valueSerializer.objectToValue(metadata));
@@ -190,7 +198,7 @@ public abstract class ElementMutationBuilder {
     public void addPropertyRemoveToMutation(Mutation m, Property property) {
         checkNotNull(m, "mutation cannot be null");
         checkNotNull(property, "property cannot be null");
-        Text columnQualifier = new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
+        Text columnQualifier = getPropertyColumnQualifier(property);
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
         m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);

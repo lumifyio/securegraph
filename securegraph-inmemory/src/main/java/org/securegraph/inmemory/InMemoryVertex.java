@@ -14,8 +14,8 @@ import static org.securegraph.util.IterableUtils.count;
 import static org.securegraph.util.IterableUtils.toSet;
 
 public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
-    public InMemoryVertex(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
-        super(graph, id, visibility, properties, authorizations);
+    public InMemoryVertex(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     @Override
@@ -25,7 +25,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(final Direction direction, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        return new FilterIterable<Edge>(getGraph().getEdgesFromVertex(getId(), authorizations)) {
+        return new FilterIterable<Edge>(getGraph().getEdgesFromVertex(getId(), fetchHints, authorizations)) {
             @Override
             protected boolean isIncluded(Edge edge) {
                 switch (direction) {
