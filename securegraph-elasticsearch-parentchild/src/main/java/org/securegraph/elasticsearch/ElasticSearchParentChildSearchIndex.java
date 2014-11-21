@@ -136,7 +136,13 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     @Override
     public void addElement(Graph graph, Element element, Authorizations authorizations) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("addElement: " + element.getId());
+        }
         if (!isIndexEdges() && element instanceof Edge) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("skipping edge: " + element.getId());
+            }
             return;
         }
 
@@ -300,7 +306,11 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             Map<String, Object> propertyValueMap = new HashMap<String, Object>();
             propertyValueMap.put("lat", geoPoint.getLatitude());
             propertyValueMap.put("lon", geoPoint.getLongitude());
-            propertyValue = propertyValueMap;
+
+            jsonBuilder.field(property.getName() + ElasticSearchSearchIndexBase.GEO_PROPERTY_NAME_SUFFIX, propertyValueMap);
+            if (geoPoint.getDescription() != null) {
+                jsonBuilder.field(property.getName(), geoPoint.getDescription());
+            }
         } else if (propertyValue instanceof StreamingPropertyValue) {
             StreamingPropertyValue streamingPropertyValue = (StreamingPropertyValue) propertyValue;
             if (!streamingPropertyValue.isSearchIndex()) {
@@ -322,13 +332,11 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             if (propertyDefinition == null || propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
                 jsonBuilder.field(property.getName(), propertyValue);
             }
-        }
+        } else {
+            if (propertyValue instanceof DateOnly) {
+                propertyValue = ((DateOnly) propertyValue).getDate();
+            }
 
-        if (propertyValue instanceof DateOnly) {
-            propertyValue = ((DateOnly) propertyValue).getDate();
-        }
-
-        if (!(propertyValue instanceof String)) {
             jsonBuilder.field(property.getName(), propertyValue);
         }
         jsonBuilder.field(VISIBILITY_FIELD_NAME, property.getVisibility().getVisibilityString());

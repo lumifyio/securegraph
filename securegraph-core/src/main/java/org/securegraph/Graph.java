@@ -173,6 +173,31 @@ public interface Graph {
     Edge addEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility, Authorizations authorizations);
 
     /**
+     * Adds an edge between two vertices.
+     *
+     * @param outVertexId    The source vertex id. The "out" side of the edge.
+     * @param inVertexId     The destination vertex id. The "in" side of the edge.
+     * @param label          The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility     The visibility to assign to the new edge.
+     * @param authorizations The authorizations required to add and retrieve the new edge.
+     * @return The newly created edge.
+     */
+    Edge addEdge(String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Adds an edge between two vertices.
+     *
+     * @param edgeId         The id to assign the new edge.
+     * @param outVertexId    The source vertex id. The "out" side of the edge.
+     * @param inVertexId     The destination vertex id. The "in" side of the edge.
+     * @param label          The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility     The visibility to assign to the new edge.
+     * @param authorizations The authorizations required to add and retrieve the new edge.
+     * @return The newly created edge.
+     */
+    Edge addEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility, Authorizations authorizations);
+
+    /**
      * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
      * with a single operation. The id of the new edge will be generated using an org.securegraph.id.IdGenerator.
      *
@@ -196,6 +221,31 @@ public interface Graph {
      * @return The edge builder.
      */
     EdgeBuilder prepareEdge(String edgeId, Vertex outVertex, Vertex inVertex, String label, Visibility visibility);
+
+    /**
+     * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
+     * with a single operation.
+     *
+     * @param outVertexId The source vertex id. The "out" side of the edge.
+     * @param inVertexId  The destination vertex id. The "in" side of the edge.
+     * @param label       The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility  The visibility to assign to the new edge.
+     * @return The edge builder.
+     */
+    EdgeBuilderByVertexId prepareEdge(String outVertexId, String inVertexId, String label, Visibility visibility);
+
+    /**
+     * Prepare an edge to be added to the graph. This method provides a way to build up an edge with it's properties to be inserted
+     * with a single operation.
+     *
+     * @param edgeId      The id to assign the new edge.
+     * @param outVertexId The source vertex id. The "out" side of the edge.
+     * @param inVertexId  The destination vertex id. The "in" side of the edge.
+     * @param label       The label to assign to the edge. eg knows, works at, etc.
+     * @param visibility  The visibility to assign to the new edge.
+     * @return The edge builder.
+     */
+    EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility);
 
     /**
      * Get an edge from the graph.
@@ -316,6 +366,41 @@ public interface Graph {
     Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations);
 
     /**
+     * Finds all paths between two vertices.
+     *
+     * @param sourceVertexId The source vertex id to start the search from.
+     * @param destVertexId   The destination vertex id to get to.
+     * @param maxHops        The maximum number of hops to make before giving up.
+     * @param authorizations The authorizations required to load all edges and vertices.
+     * @return An Iterable of lists of paths.
+     */
+    Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, Authorizations authorizations);
+
+    /**
+     * Finds all paths between two vertices.
+     *
+     * @param sourceVertex     The source vertex to start the search from.
+     * @param destVertex       The destination vertex to get to.
+     * @param maxHops          The maximum number of hops to make before giving up.
+     * @param progressCallback Callback used to report progress.
+     * @param authorizations   The authorizations required to load all edges and vertices.
+     * @return An Iterable of lists of paths.
+     */
+    Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, ProgressCallback progressCallback, Authorizations authorizations);
+
+    /**
+     * Finds all paths between two vertices.
+     *
+     * @param sourceVertexId   The source vertex id to start the search from.
+     * @param destVertexId     The destination vertex id to get to.
+     * @param maxHops          The maximum number of hops to make before giving up.
+     * @param progressCallback Callback used to report progress.
+     * @param authorizations   The authorizations required to load all edges and vertices.
+     * @return An Iterable of lists of paths.
+     */
+    Iterable<Path> findPaths(String sourceVertexId, String destVertexId, int maxHops, ProgressCallback progressCallback, Authorizations authorizations);
+
+    /**
      * Gets the id generator used by this graph to create ids.
      *
      * @return the id generator.
@@ -369,4 +454,44 @@ public interface Graph {
      * Adds a graph event listener that will be called when graph events occur.
      */
     void addGraphEventListener(GraphEventListener graphEventListener);
+
+    /**
+     * Marks a vertex as hidden for a given visibility.
+     *
+     * @param vertex         The vertex to mark hidden.
+     * @param visibility     The visibility string under which this vertex is hidden.
+     *                       This visibility can be a superset of the vertex visibility to mark
+     *                       it as hidden for only a subset of authorizations.
+     * @param authorizations The authorizations used.
+     */
+    void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks a vertex as visible for a given visibility, effectively undoing markVertexHidden.
+     *
+     * @param vertex         The vertex to mark visible.
+     * @param visibility     The visibility string under which this vertex is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks an edge as hidden for a given visibility.
+     *
+     * @param edge           The edge to mark hidden.
+     * @param visibility     The visibility string under which this edge is hidden.
+     *                       This visibility can be a superset of the edge visibility to mark
+     *                       it as hidden for only a subset of authorizations.
+     * @param authorizations The authorizations used.
+     */
+    void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks an edge as visible for a given visibility, effectively undoing markEdgeHidden.
+     *
+     * @param edge           The edge to mark visible.
+     * @param visibility     The visibility string under which this edge is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations);
 }

@@ -12,10 +12,7 @@ import org.securegraph.event.*;
 import org.securegraph.mutation.ElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
-import org.securegraph.query.Compare;
-import org.securegraph.query.DefaultGraphQuery;
-import org.securegraph.query.GeoCompare;
-import org.securegraph.query.TextPredicate;
+import org.securegraph.query.*;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.IndexHint;
@@ -43,6 +40,7 @@ import static org.securegraph.util.IterableUtils.*;
 public abstract class GraphTestBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphTestBase.class);
     public static final Visibility VISIBILITY_A = new Visibility("a");
+    public static final Visibility VISIBILITY_A_AND_B = new Visibility("a&b");
     public static final Visibility VISIBILITY_B = new Visibility("b");
     public static final Visibility VISIBILITY_MIXEDCASE_a = new Visibility("((MIXEDCASE_a))|b");
     public static final Visibility VISIBILITY_EMPTY = new Visibility("");
@@ -546,6 +544,158 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testMarkVertexHidden() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        graph.markVertexHidden(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        graph.markVertexHidden(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertNull("found v1 but shouldn't have", graph.getVertex("v1", FetchHint.ALL, AUTHORIZATIONS_A));
+        Vertex v1Hidden = graph.getVertex("v1", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A);
+        assertNotNull("did not find v1 but should have", v1Hidden);
+        assertTrue("v1 should be hidden", v1Hidden.isHidden(AUTHORIZATIONS_A));
+
+        graph.markVertexVisible(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+
+        graph.markVertexVisible(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
+    }
+
+    @Test
+    public void testMarkEdgeHidden() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
+        Edge e1 = graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        Edge e2 = graph.addEdge("v2tov3", v2, v3, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+
+        assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
+
+        graph.markEdgeHidden(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_B)));
+        assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(0, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.getVertex("v1", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B).getEdges(Direction.BOTH, FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(0, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(0, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A)));
+        assertNull("found e1 but shouldn't have", graph.getEdge("v1tov2", FetchHint.ALL, AUTHORIZATIONS_A_AND_B));
+        Edge e1Hidden = graph.getEdge("v1tov2", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B);
+        assertNotNull("did not find e1 but should have", e1Hidden);
+        assertTrue("e1 should be hidden", e1Hidden.isHidden(AUTHORIZATIONS_A_AND_B));
+
+        graph.markEdgeVisible(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+
+        assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 2, AUTHORIZATIONS_A_AND_B)));
+        assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
+    }
+
+    @Test
+    public void testMarkPropertyHidden() {
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
+                .addPropertyValue("key1", "prop1", "value1", VISIBILITY_A)
+                .addPropertyValue("key1", "prop1", "value1", VISIBILITY_B)
+                .addPropertyValue("key2", "prop1", "value1", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A);
+
+        assertEquals(3, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1")));
+
+        v1.markPropertyHidden("key1", "prop1", VISIBILITY_A, VISIBILITY_A_AND_B, AUTHORIZATIONS_A_AND_B);
+
+        List<Property> properties = toList(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1"));
+        assertEquals(2, count(properties));
+        boolean foundProp1Key2 = false;
+        boolean foundProp1Key1VisB = false;
+        for (Property property : properties) {
+            if (property.getName().equals("prop1")) {
+                if (property.getKey().equals("key2")) {
+                    foundProp1Key2 = true;
+                } else if (property.getKey().equals("key1")) {
+                    if (property.getVisibility().equals(VISIBILITY_B)) {
+                        foundProp1Key1VisB = true;
+                    } else {
+                        throw new RuntimeException("Unexpected visibility " + property.getVisibility());
+                    }
+                } else {
+                    throw new RuntimeException("Unexpected property key " + property.getKey());
+                }
+            } else {
+                throw new RuntimeException("Unexpected property name " + property.getName());
+            }
+        }
+        assertTrue("Prop1Key2 not found", foundProp1Key2);
+        assertTrue("Prop1Key1VisB not found", foundProp1Key1VisB);
+
+        List<Property> hiddenProperties = toList(graph.getVertex("v1", FetchHint.ALL_INCLUDING_HIDDEN, AUTHORIZATIONS_A_AND_B).getProperties());
+        assertEquals(3, hiddenProperties.size());
+        boolean foundProp1Key1VisA = false;
+        foundProp1Key2 = false;
+        foundProp1Key1VisB = false;
+        for (Property property : hiddenProperties) {
+            if (property.getName().equals("prop1")) {
+                if (property.getKey().equals("key2")) {
+                    foundProp1Key2 = true;
+                    assertFalse("should not be hidden", property.isHidden(AUTHORIZATIONS_A_AND_B));
+                } else if (property.getKey().equals("key1")) {
+                    if (property.getVisibility().equals(VISIBILITY_A)) {
+                        foundProp1Key1VisA = true;
+                        assertFalse("should not be hidden", property.isHidden(AUTHORIZATIONS_A));
+                        assertTrue("should be hidden", property.isHidden(AUTHORIZATIONS_A_AND_B));
+                    } else if (property.getVisibility().equals(VISIBILITY_B)) {
+                        foundProp1Key1VisB = true;
+                        assertFalse("should not be hidden", property.isHidden(AUTHORIZATIONS_A_AND_B));
+                    } else {
+                        throw new RuntimeException("Unexpected visibility " + property.getVisibility());
+                    }
+                } else {
+                    throw new RuntimeException("Unexpected property key " + property.getKey());
+                }
+            } else {
+                throw new RuntimeException("Unexpected property name " + property.getName());
+            }
+        }
+        assertTrue("Prop1Key2 not found", foundProp1Key2);
+        assertTrue("Prop1Key1VisB not found", foundProp1Key1VisB);
+        assertTrue("Prop1Key1VisA not found", foundProp1Key1VisA);
+
+        v1.markPropertyVisible("key1", "prop1", VISIBILITY_A, VISIBILITY_A_AND_B, AUTHORIZATIONS_A_AND_B);
+
+        assertEquals(3, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1")));
+    }
+
+    @Test
     public void testRemoveVertexWithProperties() {
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", VISIBILITY_B)
@@ -617,7 +767,7 @@ public abstract class GraphTestBase {
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("e1to2label1", v1, v2, "label1", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("e1to2label2", v1, v2, "label2", VISIBILITY_A, AUTHORIZATIONS_A);
-        graph.addEdge("e2to1", v2, v1, "label1", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("e2to1", v2.getId(), v1.getId(), "label1", VISIBILITY_A, AUTHORIZATIONS_A);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
 
@@ -1142,7 +1292,11 @@ public abstract class GraphTestBase {
         vertices = toList(graph.query(AUTHORIZATIONS_A)
                 .has("location", GeoCompare.WITHIN, new GeoCircle(38.9186, -77.2297, 25))
                 .vertices());
+        assertEquals(2, count(vertices));
 
+        vertices = toList(graph.query(AUTHORIZATIONS_A)
+                .has("location", TextPredicate.CONTAINS, "Reston")
+                .vertices());
         assertEquals(2, count(vertices));
     }
 
@@ -2021,6 +2175,105 @@ public abstract class GraphTestBase {
                 .has("prop1", "value1")
                 .edges();
         assertEdgeIds(edges, new String[]{});
+    }
+
+    @Test
+    public void testIteratorWtihLessThanPageSizeResultsPageOne() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(0);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(3), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(3, count);
+        assertEquals("2", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithPageSizeResultsPageOne() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(0);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(5), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(5, count);
+        assertEquals("4", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithMoreThanPageSizeResultsPageOne() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(0);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(7), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(5, count);
+        assertEquals("4", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithMoreThanPageSizeResultsPageTwo() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(5);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(12), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(5, count);
+        assertEquals("9", v.getId());
+    }
+
+    @Test
+    public void testIteratorWithMoreThanPageSizeResultsPageThree() {
+        QueryBase.Parameters parameters = new QueryBase.Parameters("*", AUTHORIZATIONS_EMPTY);
+        parameters.setSkip(10);
+        parameters.setLimit(5);
+        DefaultGraphQueryIterable<Vertex> iterable = new DefaultGraphQueryIterable<Vertex>(parameters, getVertices(12), false, false);
+        int count = 0;
+        Iterator<Vertex> iterator = iterable.iterator();
+        Vertex v = null;
+        while (iterator.hasNext()) {
+            count++;
+            v = iterator.next();
+            assertNotNull(v);
+        }
+        assertEquals(2, count);
+        assertEquals("11", v.getId());
+    }
+
+    private List<Vertex> getVertices(long count) {
+        List<Vertex> vertices = new ArrayList<Vertex>();
+        for (int i = 0; i < count; i++) {
+            Vertex vertex = graph.addVertex(Integer.toString(i), VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
+            vertices.add(vertex);
+        }
+        return vertices;
     }
 
     private boolean isDefaultSearchIndex() {

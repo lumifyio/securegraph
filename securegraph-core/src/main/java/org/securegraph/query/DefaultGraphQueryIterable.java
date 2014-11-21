@@ -51,7 +51,7 @@ public class DefaultGraphQueryIterable<T extends Element> implements Iterable<T>
                     return;
                 }
 
-                if (this.count >= parameters.getLimit()) {
+                if (this.count >= parameters.getSkip() + parameters.getLimit()) {
                     return;
                 }
 

@@ -23,7 +23,7 @@ public class AccumuloEdgeInputFormat extends AccumuloElementInputFormatBase<Edge
     @Override
     protected Edge createElementFromRow(AccumuloGraph graph, PeekingIterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
         EdgeMaker maker = new EdgeMaker(graph, row, authorizations);
-        return maker.make();
+        return maker.make(false);
     }
 }
 

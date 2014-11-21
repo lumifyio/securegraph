@@ -1,10 +1,7 @@
 package org.securegraph.path;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Graph;
-import org.securegraph.Path;
-import org.securegraph.Vertex;
+import org.securegraph.*;
 
 public interface PathFindingAlgorithm {
-    Iterable<Path> findPaths(Graph graph, Vertex sourceVertex, Vertex destVertex, int hops, Authorizations authorizations);
+    Iterable<Path> findPaths(Graph graph, Vertex sourceVertex, Vertex destVertex, int hops, ProgressCallback progressCallback, Authorizations authorizations);
 }

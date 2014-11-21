@@ -230,4 +230,56 @@ public interface Element {
      * @param element The element to merge properties from.
      */
     void mergeProperties(Element element);
+
+    /**
+     * Marks a property as hidden for a given visibility.
+     *
+     * @param key                The key of the property.
+     * @param name               The name of the property.
+     * @param propertyVisibility The visibility of the property.
+     * @param visibility         The visibility string under which this property is hidden.
+     *                           This visibility can be a superset of the property visibility to mark
+     *                           it as hidden for only a subset of authorizations.
+     * @param authorizations     The authorizations used.
+     */
+    void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks a property as hidden for a given visibility.
+     *
+     * @param property       The property.
+     * @param visibility     The visibility string under which this property is hidden.
+     *                       This visibility can be a superset of the property visibility to mark
+     *                       it as hidden for only a subset of authorizations.
+     * @param authorizations The authorizations used.
+     */
+    void markPropertyHidden(Property property, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks a property as visible for a given visibility, effectively undoing markPropertyHidden.
+     *
+     * @param key                The key of the property.
+     * @param name               The name of the property.
+     * @param propertyVisibility The visibility of the property.
+     * @param visibility         The visibility string under which this property is now visible.
+     * @param authorizations     The authorizations used.
+     */
+    void markPropertyVisible(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Marks a property as visible for a given visibility, effectively undoing markPropertyHidden.
+     *
+     * @param property       The property.
+     * @param visibility     The visibility string under which this property is now visible.
+     * @param authorizations The authorizations used.
+     */
+    void markPropertyVisible(Property property, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Given the supplied authorizations is this element hidden?
+     *
+     * @param authorizations the authorizations to check against.
+     * @return true, if it would be hidden from those authorizations.
+     */
+    boolean isHidden(Authorizations authorizations);
 }
