@@ -12,7 +12,7 @@
 
     <properties>
         <accumulo.version>1.6.1</accumulo.version>
-        <hadoop.version>2.5.1</hadoop.version>
+        <hadoop.version>2.5.2</hadoop.version>
     </properties>
 
     <dependencies>
