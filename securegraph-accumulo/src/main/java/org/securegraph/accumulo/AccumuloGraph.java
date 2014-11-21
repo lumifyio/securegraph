@@ -108,7 +108,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 connector.tableOperations().create(tableName);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Unable to create table " + tableName);
+            throw new RuntimeException("Unable to create table " + tableName, e);
         }
     }
 
