@@ -1,5 +1,6 @@
 package org.securegraph.accumulo;
 
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutationImpl;
@@ -8,11 +9,15 @@ import java.io.Serializable;
 
 public abstract class AccumuloElement<T extends Element> extends ElementBase<T> implements Serializable {
     private static final long serialVersionUID = 1L;
+    public static final Text CF_HIDDEN = new Text("H");
+    public static final Text CQ_HIDDEN = new Text("H");
+    public static final Value HIDDEN_VALUE = new Value("".getBytes());
     public static final Text CF_PROPERTY = new Text("PROP");
+    public static final Text CF_PROPERTY_HIDDEN = new Text("PROPH");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
 
-    protected AccumuloElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
-        super(graph, id, visibility, properties, authorizations);
+    protected AccumuloElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
     }
 
     @Override
@@ -29,6 +34,16 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
         for (Property property : properties) {
             getGraph().removeProperty(this, property, authorizations);
         }
+    }
+
+    @Override
+    public void markPropertyHidden(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyHidden(this, property, visibility, authorizations);
+    }
+
+    @Override
+    public void markPropertyVisible(Property property, Visibility visibility, Authorizations authorizations) {
+        getGraph().markPropertyVisible(this, property, visibility, authorizations);
     }
 
     @Override

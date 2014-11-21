@@ -195,7 +195,11 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
                             double lat = geoCircle.getLatitude();
                             double lon = geoCircle.getLongitude();
                             double distance = geoCircle.getRadius();
-                            filters.add(FilterBuilders.geoDistanceFilter(has.key).point(lat, lon).distance(distance, DistanceUnit.KILOMETERS));
+                            filters
+                                    .add(FilterBuilders
+                                            .geoDistanceFilter(has.key + ElasticSearchSearchIndexBase.GEO_PROPERTY_NAME_SUFFIX)
+                                            .point(lat, lon)
+                                            .distance(distance, DistanceUnit.KILOMETERS));
                         } else {
                             throw new SecureGraphException("Unexpected has value type " + has.value.getClass().getName());
                         }

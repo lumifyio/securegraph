@@ -34,6 +34,11 @@ public class ElementMapperGraph extends GraphBase {
     }
 
     @Override
+    public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
+        return this.elementMapper.prepareEdge(edgeId, outVertexId, inVertexId, label, visibility);
+    }
+
+    @Override
     public Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         throw new SecureGraphException("Not supported");
     }
@@ -100,6 +105,26 @@ public class ElementMapperGraph extends GraphBase {
 
     @Override
     public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void markEdgeHidden(Edge edge, Visibility visibility, Authorizations authorizations) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations) {
         throw new SecureGraphException("Not supported");
     }
 }

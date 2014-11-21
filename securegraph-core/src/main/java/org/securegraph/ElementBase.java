@@ -5,26 +5,29 @@ import org.securegraph.property.PropertyValue;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public abstract class ElementBase<T extends Element> implements Element {
     private final Graph graph;
     private final String id;
     private Visibility visibility;
+    private Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
 
     private final ConcurrentSkipListSet<Property> properties;
     private final Authorizations authorizations;
 
-    protected ElementBase(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Authorizations authorizations) {
+    protected ElementBase(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
         this.properties = new ConcurrentSkipListSet<Property>();
         this.authorizations = authorizations;
+        if (hiddenVisibilities != null) {
+            for (Visibility v : hiddenVisibilities) {
+                this.hiddenVisibilities.add(v);
+            }
+        }
         updatePropertiesInternal(properties);
     }
 
@@ -210,7 +213,7 @@ public abstract class ElementBase<T extends Element> implements Element {
         if (this instanceof Edge) {
             return getId() + ":[" + ((Edge) this).getVertexId(Direction.OUT) + "->" + ((Edge) this).getVertexId(Direction.IN) + "]";
         }
-        return getId().toString();
+        return getId();
     }
 
     @Override
@@ -249,6 +252,30 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
+    public void markPropertyHidden(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations) {
+        Iterable<Property> properties = getProperties(key, name);
+        for (Property property : properties) {
+            if (property.getVisibility().equals(propertyVisibility)) {
+                markPropertyHidden(property, visibility, authorizations);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Could not find property " + key + " : " + name + " : " + propertyVisibility);
+    }
+
+    @Override
+    public void markPropertyVisible(String key, String name, Visibility propertyVisibility, Visibility visibility, Authorizations authorizations) {
+        Iterable<Property> properties = getProperties(key, name);
+        for (Property property : properties) {
+            if (property.getVisibility().equals(propertyVisibility)) {
+                markPropertyVisible(property, visibility, authorizations);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Could not find property " + key + " : " + name + " : " + propertyVisibility);
+    }
+
+    @Override
     public abstract void removeProperty(String name, Authorizations authorizations);
 
     @Override
@@ -262,5 +289,27 @@ public abstract class ElementBase<T extends Element> implements Element {
             this.properties.remove(property);
             this.properties.add(property);
         }
+    }
+
+    public Iterable<Visibility> getHiddenVisibilities() {
+        return hiddenVisibilities;
+    }
+
+    @Override
+    public boolean isHidden(Authorizations authorizations) {
+        for (Visibility visibility : getHiddenVisibilities()) {
+            if (authorizations.canRead(visibility)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected void addHiddenVisibility(Visibility visibility) {
+        this.hiddenVisibilities.add(visibility);
+    }
+
+    protected void removeHiddenVisibility(Visibility visibility) {
+        this.hiddenVisibilities.remove(visibility);
     }
 }

@@ -56,7 +56,7 @@ public class EdgeMaker extends ElementMaker<Edge> {
     }
 
     @Override
-    protected Edge makeElement() {
+    protected Edge makeElement(boolean includeHidden) {
         return new AccumuloEdge(
                 this.graph,
                 this.getId(),
@@ -64,7 +64,8 @@ public class EdgeMaker extends ElementMaker<Edge> {
                 this.inVertexId,
                 this.label,
                 this.getVisibility(),
-                this.getProperties(),
+                this.getProperties(includeHidden),
+                this.getHiddenVisibilities(),
                 this.getAuthorizations());
     }
 }

@@ -7,9 +7,7 @@ import org.securegraph.Authorizations;
 import org.securegraph.SecureGraphException;
 import org.securegraph.Vertex;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class VertexMaker extends ElementMaker<Vertex> {
     private static final String VISIBILITY_SIGNAL = AccumuloVertex.CF_SIGNAL.toString();
@@ -17,6 +15,7 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private final AccumuloGraph graph;
     private final Map<String, EdgeInfo> outEdges = new HashMap<String, EdgeInfo>();
     private final Map<String, EdgeInfo> inEdges = new HashMap<String, EdgeInfo>();
+    private final Set<String> hiddenEdges = new HashSet<String>();
 
     public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
         super(graph, row, authorizations);
@@ -27,6 +26,13 @@ public class VertexMaker extends ElementMaker<Vertex> {
     protected void processColumn(Key key, Value value) {
         Text columnFamily = key.getColumnFamily();
         Text columnQualifier = key.getColumnQualifier();
+
+        if (AccumuloVertex.CF_OUT_EDGE_HIDDEN.compareTo(columnFamily) == 0
+                || AccumuloVertex.CF_IN_EDGE_HIDDEN.compareTo(columnFamily) == 0) {
+            String edgeId = columnQualifier.toString();
+            hiddenEdges.add(edgeId);
+            return;
+        }
 
         if (AccumuloVertex.CF_OUT_EDGE.compareTo(columnFamily) == 0) {
             String edgeId = columnQualifier.toString();
@@ -57,12 +63,20 @@ public class VertexMaker extends ElementMaker<Vertex> {
     }
 
     @Override
-    protected Vertex makeElement() {
+    protected Vertex makeElement(boolean includeHidden) {
+        if (!includeHidden) {
+            for (String edgeId : this.hiddenEdges) {
+                this.inEdges.remove(edgeId);
+                this.outEdges.remove(edgeId);
+            }
+        }
+
         return new AccumuloVertex(
                 this.graph,
                 this.getId(),
                 this.getVisibility(),
-                this.getProperties(),
+                this.getProperties(includeHidden),
+                this.getHiddenVisibilities(),
                 this.inEdges,
                 this.outEdges,
                 this.getAuthorizations());
