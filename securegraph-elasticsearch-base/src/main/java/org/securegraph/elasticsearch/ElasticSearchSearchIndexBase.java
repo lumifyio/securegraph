@@ -644,10 +644,12 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
 
     @Override
     public synchronized void clearData() {
-        for (String indexName : indexInfos.keySet()) {
+        Set<String> indexInfosSet = indexInfos.keySet();
+        for (String indexName : indexInfosSet) {
             try {
                 DeleteIndexRequest deleteRequest = new DeleteIndexRequest(indexName);
                 getClient().admin().indices().delete(deleteRequest).actionGet();
+                indexInfos.remove(indexName);
             } catch (Exception ex) {
                 throw new SecureGraphException("Could not delete index " + indexName, ex);
             }
