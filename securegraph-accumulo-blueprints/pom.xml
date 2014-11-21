@@ -11,7 +11,7 @@
     <name>SecureGraph: Accumulo: Blueprints</name>
 
     <properties>
-        <accumulo.version>1.5.2</accumulo.version>
+        <accumulo.version>1.6.1</accumulo.version>
     </properties>
 
     <dependencies>

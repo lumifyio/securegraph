@@ -3,6 +3,8 @@ package org.securegraph.query;
 import org.securegraph.type.GeoPoint;
 import org.securegraph.type.GeoRect;
 
+import java.lang.reflect.Method;
+
 public abstract class GeohashBucket {
     public final String key;
     public final long count;

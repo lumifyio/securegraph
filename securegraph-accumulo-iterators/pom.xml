@@ -11,8 +11,8 @@
     <name>SecureGraph: Accumulo: Iterators</name>
 
     <properties>
-        <accumulo.version>1.5.2</accumulo.version>
-        <hadoop.version>0.23.10</hadoop.version>
+        <accumulo.version>1.6.1</accumulo.version>
+        <hadoop.version>2.5.1</hadoop.version>
     </properties>
 
     <dependencies>

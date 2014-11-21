@@ -1,7 +1,6 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.geo.GeoHashUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -110,12 +109,11 @@ public class ElasticSearchGraphQueryIterable<T extends Element> extends DefaultG
             for (GeoHashGrid.Bucket b : h.getBuckets()) {
                 org.elasticsearch.common.geo.GeoPoint g = b.getKeyAsGeoPoint();
                 GeohashBucket geohashBucket = new GeohashBucket(b.getKey(), b.getDocCount(), new GeoPoint(g.getLat(), g.getLon())) {
-
                     @Override
                     public GeoRect getGeoCell() {
                         org.elasticsearch.common.geo.GeoPoint northWest = new org.elasticsearch.common.geo.GeoPoint();
                         org.elasticsearch.common.geo.GeoPoint southEast = new org.elasticsearch.common.geo.GeoPoint();
-                        GeoHashUtils.decodeCell(getKey(), northWest, southEast);
+                        GeohashUtils.decodeCell(getKey(), northWest, southEast);
                         return new GeoRect(new GeoPoint(northWest.getLat(), northWest.getLon()), new GeoPoint(southEast.getLat(), southEast.getLon()));
                     }
                 };

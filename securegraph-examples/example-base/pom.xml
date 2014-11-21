@@ -11,7 +11,7 @@
 
     <properties>
         <miniweb.version>0.3.0</miniweb.version>
-        <jetty.version>8.1.14.v20131031</jetty.version>
+        <jetty.version>9.2.5.v20141112</jetty.version>
         <jcommander.version>1.35</jcommander.version>
         <json.version>20130918</json.version>
     </properties>
@@ -26,6 +26,12 @@
             <groupId>org.securegraph</groupId>
             <artifactId>securegraph-accumulo</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.securegraph</groupId>
@@ -63,6 +69,12 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
+            <scope>compile</scope>
+            <version>${jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
             <scope>compile</scope>
             <version>${jetty.version}</version>
         </dependency>
