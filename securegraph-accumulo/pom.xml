@@ -10,12 +10,6 @@
     <artifactId>securegraph-accumulo</artifactId>
     <name>SecureGraph: Accumulo</name>
 
-    <properties>
-        <accumulo.version>1.6.1</accumulo.version>
-        <zookeeper.version>3.4.5</zookeeper.version>
-        <hadoop.version>2.5.2</hadoop.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.securegraph</groupId>

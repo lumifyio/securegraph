@@ -10,10 +10,6 @@
     <artifactId>securegraph-accumulo-blueprints</artifactId>
     <name>SecureGraph: Accumulo: Blueprints</name>
 
-    <properties>
-        <accumulo.version>1.6.1</accumulo.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.securegraph</groupId>

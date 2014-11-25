@@ -74,6 +74,10 @@
         <maven.plugin.scm.version>1.8.1</maven.plugin.scm.version>
 
         <elasticsearch.version>1.4.0</elasticsearch.version>
+
+        <accumulo.version>1.6.1</accumulo.version>
+        <zookeeper.version>3.4.5</zookeeper.version>
+        <hadoop.version>2.3.0</hadoop.version>
     </properties>
 
     <dependencyManagement>

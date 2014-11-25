@@ -10,11 +10,6 @@
     <artifactId>securegraph-accumulo-iterators</artifactId>
     <name>SecureGraph: Accumulo: Iterators</name>
 
-    <properties>
-        <accumulo.version>1.6.1</accumulo.version>
-        <hadoop.version>2.5.2</hadoop.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
