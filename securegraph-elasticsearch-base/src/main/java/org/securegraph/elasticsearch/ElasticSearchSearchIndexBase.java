@@ -435,13 +435,16 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         client.admin().indices().prepareFlush(getIndexNamesAsArray()).execute().actionGet();
     }
 
-    protected synchronized String[] getIndexNamesAsArray() {
-        if (indexInfos.size() != indexInfosLastSize) {
+    protected String[] getIndexNamesAsArray() {
+        if (indexInfos.size() == indexInfosLastSize) {
+            return indexNamesAsArray;
+        }
+        synchronized (this) {
             Set<String> keys = indexInfos.keySet();
             indexNamesAsArray = keys.toArray(new String[keys.size()]);
             indexInfosLastSize = indexInfos.size();
+            return indexNamesAsArray;
         }
-        return indexNamesAsArray;
     }
 
     @Override
