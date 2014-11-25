@@ -214,40 +214,50 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
     private void addMutations(BatchWriter writer, Mutation... mutations) {
         try {
-            synchronized (this.writerLock) {
-                for (Mutation m : mutations) {
-                    writer.addMutation(m);
-                }
-                if (getConfiguration().isAutoFlush()) {
-                    flush();
-                }
+            for (Mutation mutation : mutations) {
+                writer.addMutation(mutation);
+            }
+            if (getConfiguration().isAutoFlush()) {
+                flush();
             }
         } catch (MutationsRejectedException ex) {
             throw new RuntimeException("Could not add mutation", ex);
         }
     }
 
-    protected synchronized BatchWriter getVerticesWriter() {
+    protected BatchWriter getVerticesWriter() {
         try {
+            // to avoid a synchronized block check verticesWriter first and return it.
             if (this.verticesWriter != null) {
                 return this.verticesWriter;
             }
-            BatchWriterConfig writerConfig = new BatchWriterConfig();
-            this.verticesWriter = this.connector.createBatchWriter(getVerticesTableName(), writerConfig);
-            return this.verticesWriter;
+            synchronized (this) {
+                if (this.verticesWriter != null) {
+                    return this.verticesWriter;
+                }
+                BatchWriterConfig writerConfig = new BatchWriterConfig();
+                this.verticesWriter = this.connector.createBatchWriter(getVerticesTableName(), writerConfig);
+                return this.verticesWriter;
+            }
         } catch (TableNotFoundException ex) {
             throw new RuntimeException("Could not create batch writer", ex);
         }
     }
 
-    protected synchronized BatchWriter getEdgesWriter() {
+    protected BatchWriter getEdgesWriter() {
         try {
+            // to avoid a synchronized block check edgesWriter first and return it.
             if (this.edgesWriter != null) {
                 return this.edgesWriter;
             }
-            BatchWriterConfig writerConfig = new BatchWriterConfig();
-            this.edgesWriter = this.connector.createBatchWriter(getEdgesTableName(), writerConfig);
-            return this.edgesWriter;
+            synchronized (this) {
+                if (this.edgesWriter != null) {
+                    return this.edgesWriter;
+                }
+                BatchWriterConfig writerConfig = new BatchWriterConfig();
+                this.edgesWriter = this.connector.createBatchWriter(getEdgesTableName(), writerConfig);
+                return this.edgesWriter;
+            }
         } catch (TableNotFoundException ex) {
             throw new RuntimeException("Could not create batch writer", ex);
         }
@@ -263,14 +273,20 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
-    protected synchronized BatchWriter getDataWriter() {
+    protected BatchWriter getDataWriter() {
         try {
+            // to avoid a synchronized block check dataWriter first and return it.
             if (this.dataWriter != null) {
                 return this.dataWriter;
             }
-            BatchWriterConfig writerConfig = new BatchWriterConfig();
-            this.dataWriter = this.connector.createBatchWriter(getDataTableName(), writerConfig);
-            return this.dataWriter;
+            synchronized (this) {
+                if (this.dataWriter != null) {
+                    return this.dataWriter;
+                }
+                BatchWriterConfig writerConfig = new BatchWriterConfig();
+                this.dataWriter = this.connector.createBatchWriter(getDataTableName(), writerConfig);
+                return this.dataWriter;
+            }
         } catch (TableNotFoundException ex) {
             throw new RuntimeException("Could not create batch writer", ex);
         }
