@@ -33,7 +33,7 @@ public class TestHelpers {
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchParentChildSearchIndex.class.getName());
         if (TESTING) {
-            addr = "192.168.33.10";
+            addr = "localhost";
             config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_STORE_SOURCE_DATA, "true");
             config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_INDEX_NAME, "securegraph-test");
         } else {

@@ -33,7 +33,7 @@ public class TestHelpers {
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
         if (TESTING) {
-            addr = "192.168.33.10";
+            addr = "localhost";
             config.put(ElasticSearchSearchIndexBase.CONFIG_STORE_SOURCE_DATA, "true");
         } else {
             config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);

@@ -115,7 +115,8 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
                 .scriptFunction("_score "
                         + " * sqrt(inEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME + "'].value))"
-                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME + "'].value))")
+                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME + "'].value))"
+                        , "groovy")
                 .param("inEdgeMultiplier", inEdgeBoost)
                 .param("outEdgeMultiplier", outEdgeBoost);
 
