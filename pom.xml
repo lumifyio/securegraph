@@ -63,7 +63,7 @@
         <commons-io.version>2.4</commons-io.version>
         <json.version>20131018</json.version>
         <commons-codec.version>1.8</commons-codec.version>
-        <jcommander-version>1.32</jcommander-version>
+        <jcommander.version>1.35</jcommander.version>
 
         <maven.plugin.gpg.version>1.4</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>2.9.1</maven.plugin.javadoc.version>
@@ -73,11 +73,18 @@
         <maven.plugin.release.version>2.5</maven.plugin.release.version>
         <maven.plugin.scm.version>1.8.1</maven.plugin.scm.version>
 
+        <!-- used by: elasticsearch* -->
         <elasticsearch.version>1.4.0</elasticsearch.version>
 
+        <!-- used by: accumulo* -->
         <accumulo.version>1.6.1</accumulo.version>
         <zookeeper.version>3.4.5</zookeeper.version>
         <hadoop.version>2.3.0</hadoop.version>
+
+        <!-- used by: examples-base -->
+        <miniweb.version>0.3.0</miniweb.version>
+        <jetty.version>9.2.5.v20141112</jetty.version>
+        <json.version>20130918</json.version>
     </properties>
 
     <dependencyManagement>
@@ -118,7 +125,7 @@
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
-                <version>${jcommander-version}</version>
+                <version>${jcommander.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
