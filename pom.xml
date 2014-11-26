@@ -84,7 +84,6 @@
         <!-- used by: examples-base -->
         <miniweb.version>0.3.0</miniweb.version>
         <jetty.version>9.2.5.v20141112</jetty.version>
-        <json.version>20130918</json.version>
     </properties>
 
     <dependencyManagement>
