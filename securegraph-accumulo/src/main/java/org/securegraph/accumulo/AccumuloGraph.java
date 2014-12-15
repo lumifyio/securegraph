@@ -25,6 +25,8 @@ import org.securegraph.search.SearchIndex;
 import org.securegraph.util.CloseableIterable;
 import org.securegraph.util.EmptyClosableIterable;
 import org.securegraph.util.LookAheadIterable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -34,6 +36,7 @@ import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
 public class AccumuloGraph extends GraphBaseWithSearchIndex {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloGraph.class);
     private static final String ROW_DELETING_ITERATOR_NAME = RowDeletingIterator.class.getSimpleName();
     private static final int ROW_DELETING_ITERATOR_PRIORITY = 7;
     public static final Text DELETE_ROW_COLUMN_FAMILY = new Text("");
@@ -117,7 +120,17 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             synchronized (addIteratorLock) {
                 IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
                 if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
-                    connector.tableOperations().attachIterator(tableName, is);
+                    try {
+                        connector.tableOperations().attachIterator(tableName, is);
+                    } catch (Exception ex) {
+                        // If many processes are starting up at the same time (see YARN). It's possible that there will be a collision.
+                        final int SLEEP_TIME = 5000;
+                        LOGGER.warn("Failed to attach RowDeletingIterator. Retrying in " + SLEEP_TIME + "ms.");
+                        Thread.sleep(SLEEP_TIME);
+                        if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
+                            connector.tableOperations().attachIterator(tableName, is);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
