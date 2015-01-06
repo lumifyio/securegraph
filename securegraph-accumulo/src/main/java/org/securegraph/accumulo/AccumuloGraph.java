@@ -24,6 +24,7 @@ import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.util.CloseableIterable;
 import org.securegraph.util.EmptyClosableIterable;
+import org.securegraph.util.JavaSerializableUtils;
 import org.securegraph.util.LookAheadIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static org.securegraph.util.IterableUtils.singleOrDefault;
 import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
@@ -41,9 +43,14 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private static final int ROW_DELETING_ITERATOR_PRIORITY = 7;
     public static final Text DELETE_ROW_COLUMN_FAMILY = new Text("");
     public static final Text DELETE_ROW_COLUMN_QUALIFIER = new Text("");
+    public static final Text METADATA_COLUMN_FAMILY = new Text("");
+    public static final Text METADATA_COLUMN_QUALIFIER = new Text("");
     public static final String VERTEX_AFTER_ROW_KEY_PREFIX = "W";
     public static final String EDGE_AFTER_ROW_KEY_PREFIX = "F";
     private static final Object addIteratorLock = new Object();
+    private static final Integer METADATA_ACCUMULO_GRAPH_VERSION = 1;
+    private static final String METADATA_ACCUMULO_GRAPH_VERSION_KEY = "accumulo.graph.version";
+    private static final Authorizations METADATA_AUTHORIZATIONS = new AccumuloAuthorizations();
     private final Connector connector;
     private final ValueSerializer valueSerializer;
     private final FileSystem fileSystem;
@@ -51,9 +58,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private BatchWriter verticesWriter;
     private BatchWriter edgesWriter;
     private BatchWriter dataWriter;
-    private final Object writerLock = new Object();
+    private BatchWriter metadataWriter;
     private ElementMutationBuilder elementMutationBuilder;
     private final Queue<GraphEvent> graphEventQueue = new LinkedList<GraphEvent>();
+    private Integer accumuloGraphVersion;
 
     protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, FileSystem fileSystem, ValueSerializer valueSerializer) {
         super(config, idGenerator, searchIndex);
@@ -99,10 +107,36 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         ensureTableExists(connector, getVerticesTableName(config.getTableNamePrefix()));
         ensureTableExists(connector, getEdgesTableName(config.getTableNamePrefix()));
         ensureTableExists(connector, getDataTableName(config.getTableNamePrefix()));
+        ensureTableExists(connector, getMetadataTableName(config.getTableNamePrefix()));
         ensureRowDeletingIteratorIsAttached(connector, getVerticesTableName(config.getTableNamePrefix()));
         ensureRowDeletingIteratorIsAttached(connector, getEdgesTableName(config.getTableNamePrefix()));
         ensureRowDeletingIteratorIsAttached(connector, getDataTableName(config.getTableNamePrefix()));
-        return new AccumuloGraph(config, idGenerator, searchIndex, connector, fs, valueSerializer);
+        AccumuloGraph graph = new AccumuloGraph(config, idGenerator, searchIndex, connector, fs, valueSerializer);
+        graph.setup();
+        return graph;
+    }
+
+    @Override
+    protected void setup() {
+        super.setup();
+        if (accumuloGraphVersion == null) {
+            setMetadata(METADATA_ACCUMULO_GRAPH_VERSION_KEY, METADATA_ACCUMULO_GRAPH_VERSION);
+        } else if (!METADATA_ACCUMULO_GRAPH_VERSION.equals(accumuloGraphVersion)) {
+            throw new SecureGraphException("Invalid accumulo graph version. Expected " + METADATA_ACCUMULO_GRAPH_VERSION + " found " + accumuloGraphVersion);
+        }
+    }
+
+    @Override
+    protected void setupGraphMetadata(GraphMetadataEntry graphMetadataEntry) {
+        super.setupGraphMetadata(graphMetadataEntry);
+        if (graphMetadataEntry.getKey().equals(METADATA_ACCUMULO_GRAPH_VERSION_KEY)) {
+            if (graphMetadataEntry.getValue() instanceof Integer) {
+                accumuloGraphVersion = (Integer) graphMetadataEntry.getValue();
+                LOGGER.info(METADATA_ACCUMULO_GRAPH_VERSION_KEY + "=" + accumuloGraphVersion);
+            } else {
+                throw new SecureGraphException("Invalid accumulo version in metadata. " + graphMetadataEntry);
+            }
+        }
     }
 
     private static void ensureTableExists(Connector connector, String tableName) {
@@ -299,6 +333,25 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 BatchWriterConfig writerConfig = new BatchWriterConfig();
                 this.dataWriter = this.connector.createBatchWriter(getDataTableName(), writerConfig);
                 return this.dataWriter;
+            }
+        } catch (TableNotFoundException ex) {
+            throw new RuntimeException("Could not create batch writer", ex);
+        }
+    }
+
+    protected BatchWriter getMetadataWriter() {
+        try {
+            // to avoid a synchronized block check dataWriter first and return it.
+            if (this.metadataWriter != null) {
+                return this.metadataWriter;
+            }
+            synchronized (this) {
+                if (this.metadataWriter != null) {
+                    return this.metadataWriter;
+                }
+                BatchWriterConfig writerConfig = new BatchWriterConfig();
+                this.metadataWriter = this.connector.createBatchWriter(getMetadataTableName(), writerConfig);
+                return this.metadataWriter;
             }
         } catch (TableNotFoundException ex) {
             throw new RuntimeException("Could not create batch writer", ex);
@@ -1113,6 +1166,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         return tableNamePrefix + "_d";
     }
 
+    public static String getMetadataTableName(String tableNamePrefix) {
+        return tableNamePrefix + "_m";
+    }
+
     public String getVerticesTableName() {
         return getVerticesTableName(getConfiguration().getTableNamePrefix());
     }
@@ -1123,6 +1180,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
     public String getDataTableName() {
         return getDataTableName(getConfiguration().getTableNamePrefix());
+    }
+
+    public String getMetadataTableName() {
+        return getMetadataTableName(getConfiguration().getTableNamePrefix());
     }
 
     public FileSystem getFileSystem() {
@@ -1231,6 +1292,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             this.connector.tableOperations().deleteRows(getDataTableName(), null, null);
             this.connector.tableOperations().deleteRows(getEdgesTableName(), null, null);
             this.connector.tableOperations().deleteRows(getVerticesTableName(), null, null);
+            this.connector.tableOperations().deleteRows(getMetadataTableName(), null, null);
             getSearchIndex().clearData();
         } catch (Exception ex) {
             throw new SecureGraphException("Could not delete rows", ex);
@@ -1275,5 +1337,75 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         } finally {
             batchScanner.close();
         }
+    }
+
+    public Iterable<GraphMetadataEntry> getMetadataInRange(final Range range) {
+        return new LookAheadIterable<Map.Entry<Key, Value>, GraphMetadataEntry>() {
+            public BatchScanner batchScanner;
+
+            @Override
+            protected boolean isIncluded(Map.Entry<Key, Value> src, GraphMetadataEntry graphMetadataEntry) {
+                return true;
+            }
+
+            @Override
+            protected GraphMetadataEntry convert(Map.Entry<Key, Value> entry) {
+                String key = entry.getKey().getRow().toString();
+                Object value = JavaSerializableUtils.bytesToObject(entry.getValue().get());
+                return new GraphMetadataEntry(key, value);
+            }
+
+            @Override
+            protected Iterator<Map.Entry<Key, Value>> createIterator() {
+                try {
+                    batchScanner = connector.createBatchScanner(getMetadataTableName(), toAccumuloAuthorizations(METADATA_AUTHORIZATIONS), 1);
+                    Collection<Range> ranges = new ArrayList<Range>();
+                    if (range == null) {
+                        ranges.add(new Range());
+                    } else {
+                        ranges.add(range);
+                    }
+                    batchScanner.setRanges(ranges);
+                } catch (TableNotFoundException ex) {
+                    throw new SecureGraphException("Could not create metadata scanner", ex);
+                }
+                return batchScanner.iterator();
+            }
+
+            @Override
+            public void close() {
+                super.close();
+                this.batchScanner.close();
+            }
+        };
+    }
+
+    @Override
+    public Iterable<GraphMetadataEntry> getMetadata() {
+        return getMetadataInRange(null);
+    }
+
+    @Override
+    public void setMetadata(String key, Object value) {
+        try {
+            Mutation m = new Mutation(key);
+            byte[] valueBytes = JavaSerializableUtils.objectToBytes(value);
+            m.put(METADATA_COLUMN_FAMILY, METADATA_COLUMN_QUALIFIER, new Value(valueBytes));
+            BatchWriter writer = getMetadataWriter();
+            writer.addMutation(m);
+            writer.flush();
+        } catch (MutationsRejectedException ex) {
+            throw new SecureGraphException("Could not add metadata " + key, ex);
+        }
+    }
+
+    @Override
+    public Object getMetadata(String key) {
+        Range range = new Range(key);
+        GraphMetadataEntry entry = singleOrDefault(getMetadataInRange(range), null);
+        if (entry == null) {
+            return null;
+        }
+        return entry.getValue();
     }
 }

@@ -2217,6 +2217,20 @@ public abstract class GraphTestBase {
         assertEquals("11", v.getId());
     }
 
+    @Test
+    public void testGraphMetadata() {
+        List<GraphMetadataEntry> existingMetadata = toList(graph.getMetadata());
+
+        graph.setMetadata("test1", "value1");
+        graph.setMetadata("test2", "value2");
+
+        assertEquals("value1", graph.getMetadata("test1"));
+        assertEquals("value2", graph.getMetadata("test2"));
+
+        List<GraphMetadataEntry> newMetadata = toList(graph.getMetadata());
+        assertEquals(existingMetadata.size() + 2, newMetadata.size());
+    }
+
     private List<Vertex> getVertices(long count) {
         List<Vertex> vertices = new ArrayList<Vertex>();
         for (int i = 0; i < count; i++) {

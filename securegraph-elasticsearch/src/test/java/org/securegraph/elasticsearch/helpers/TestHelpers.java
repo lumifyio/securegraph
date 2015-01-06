@@ -40,7 +40,7 @@ public class TestHelpers {
         }
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_ES_LOCATIONS, addr);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
-        return new InMemoryGraph(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
+        return InMemoryGraph.create(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }
 
     public static void before() throws IOException {

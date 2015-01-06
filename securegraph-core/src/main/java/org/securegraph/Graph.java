@@ -431,6 +431,29 @@ public interface Graph {
     DefinePropertyBuilder defineProperty(String propertyName);
 
     /**
+     * Sets metadata on the graph.
+     *
+     * @param key   The key to the metadata.
+     * @param value The value to set.
+     */
+    void setMetadata(String key, Object value);
+
+    /**
+     * Gets metadata from the graph.
+     *
+     * @param key The key to the metadata.
+     * @return The metadata value, or null.
+     */
+    Object getMetadata(String key);
+
+    /**
+     * Gets all metadata.
+     *
+     * @return Iterable of all metadata.
+     */
+    Iterable<GraphMetadataEntry> getMetadata();
+
+    /**
      * Determine if field boost is support.
      */
     boolean isFieldBoostSupported();

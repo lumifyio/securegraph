@@ -280,6 +280,22 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public abstract Iterable<GraphMetadataEntry> getMetadata();
+
+    @Override
+    public Object getMetadata(String key) {
+        for (GraphMetadataEntry e : getMetadata()) {
+            if (e.getKey().equals(key)) {
+                return e.getValue();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public abstract void setMetadata(String key, Object value);
+
+    @Override
     public abstract GraphQuery query(Authorizations authorizations);
 
     @Override

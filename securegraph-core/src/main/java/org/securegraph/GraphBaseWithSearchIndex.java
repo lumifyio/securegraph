@@ -13,6 +13,7 @@ import java.io.IOException;
 
 public abstract class GraphBaseWithSearchIndex extends GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBaseWithSearchIndex.class);
+    public static final String METADATA_DEFINE_PROPERTY_PREFIX = "defineProperty.";
     private final GraphConfiguration configuration;
     private final IdGenerator idGenerator;
     private SearchIndex searchIndex;
@@ -22,6 +23,35 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
         this.configuration = configuration;
         this.idGenerator = idGenerator;
         this.searchIndex = searchIndex;
+    }
+
+    protected void setup() {
+        setupGraphMetadata();
+    }
+
+    private void setupGraphMetadata() {
+        for (GraphMetadataEntry graphMetadataEntry : getMetadata()) {
+            setupGraphMetadata(graphMetadataEntry);
+        }
+    }
+
+    protected void setupGraphMetadata(GraphMetadataEntry graphMetadataEntry) {
+        Object v = graphMetadataEntry.getValue();
+        if (graphMetadataEntry.getKey().startsWith(METADATA_DEFINE_PROPERTY_PREFIX)) {
+            if (v instanceof PropertyDefinition) {
+                setupPropertyDefinition((PropertyDefinition) v);
+            } else {
+                throw new SecureGraphException("Invalid property metadata: " + graphMetadataEntry.getKey());
+            }
+        }
+    }
+
+    protected void setupPropertyDefinition(PropertyDefinition propertyDefinition) {
+        try {
+            getSearchIndex().addPropertyDefinition(propertyDefinition);
+        } catch (IOException e) {
+            throw new SecureGraphException("Could not add property definition to search index", e);
+        }
     }
 
     @Override
@@ -77,7 +107,7 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
     }
 
     @Override
-    public DefinePropertyBuilder defineProperty(String propertyName) {
+    public DefinePropertyBuilder defineProperty(final String propertyName) {
         return new DefinePropertyBuilder(propertyName) {
             @Override
             public PropertyDefinition define() {
@@ -87,6 +117,7 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
                 } catch (IOException e) {
                     throw new SecureGraphException("Could not add property definition to search index", e);
                 }
+                setMetadata(METADATA_DEFINE_PROPERTY_PREFIX + propertyName, propertyDefinition);
                 return propertyDefinition;
             }
         };

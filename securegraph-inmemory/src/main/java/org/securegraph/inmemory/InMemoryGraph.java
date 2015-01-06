@@ -9,6 +9,7 @@ import org.securegraph.mutation.SetPropertyMetadata;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
+import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.LookAheadIterable;
 
 import java.util.*;
@@ -20,12 +21,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<String, InMemoryVertex> vertices;
     private final Map<String, InMemoryEdge> edges;
+    private final Map<String, Object> metadata = new HashMap<String, Object>();
 
-    public InMemoryGraph() {
+    protected InMemoryGraph() {
         this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION.getConfig()), new DefaultSearchIndex(DEFAULT_CONFIGURATION.getConfig()));
     }
 
-    public InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
+    protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this(configuration, idGenerator, searchIndex, new HashMap<String, InMemoryVertex>(), new HashMap<String, InMemoryEdge>());
     }
 
@@ -38,7 +40,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     public static InMemoryGraph create(InMemoryGraphConfiguration config) {
         IdGenerator idGenerator = config.createIdGenerator();
         SearchIndex searchIndex = config.createSearchIndex();
-        return new InMemoryGraph(config, idGenerator, searchIndex);
+        return create(config, idGenerator, searchIndex);
+    }
+
+    public static InMemoryGraph create(InMemoryGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex) {
+        InMemoryGraph graph = new InMemoryGraph(config, idGenerator, searchIndex);
+        graph.setup();
+        return graph;
     }
 
     public static InMemoryGraph create(Map config) {
@@ -310,6 +318,26 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         if (hasEventListeners()) {
             fireGraphEvent(new RemoveEdgeEvent(this, edge));
         }
+    }
+
+    @Override
+    public Iterable<GraphMetadataEntry> getMetadata() {
+        return new ConvertingIterable<Map.Entry<String, Object>, GraphMetadataEntry>(this.metadata.entrySet()) {
+            @Override
+            protected GraphMetadataEntry convert(Map.Entry<String, Object> o) {
+                return new GraphMetadataEntry(o.getKey(), o.getValue());
+            }
+        };
+    }
+
+    @Override
+    public Object getMetadata(String key) {
+        return this.metadata.get(key);
+    }
+
+    @Override
+    public void setMetadata(String key, Object value) {
+        this.metadata.put(key, value);
     }
 
     @Override
