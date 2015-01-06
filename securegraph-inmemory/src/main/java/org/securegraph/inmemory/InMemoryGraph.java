@@ -37,6 +37,10 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         this.edges = edges;
     }
 
+    public static InMemoryGraph create() {
+        return create(DEFAULT_CONFIGURATION);
+    }
+
     public static InMemoryGraph create(InMemoryGraphConfiguration config) {
         IdGenerator idGenerator = config.createIdGenerator();
         SearchIndex searchIndex = config.createSearchIndex();
