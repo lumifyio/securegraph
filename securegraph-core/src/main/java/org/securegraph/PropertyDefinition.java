@@ -45,4 +45,14 @@ public class PropertyDefinition {
     public Double getBoost() {
         return boost;
     }
+
+    @Override
+    public String toString() {
+        return "PropertyDefinition{" +
+                "propertyName='" + propertyName + '\'' +
+                ", dataType=" + dataType +
+                ", textIndexHints=" + textIndexHints +
+                ", boost=" + boost +
+                '}';
+    }
 }

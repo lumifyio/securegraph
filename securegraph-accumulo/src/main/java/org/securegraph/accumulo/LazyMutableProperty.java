@@ -1,12 +1,12 @@
 package org.securegraph.accumulo;
 
 import org.securegraph.Authorizations;
+import org.securegraph.Metadata;
 import org.securegraph.SecureGraphException;
 import org.securegraph.Visibility;
 import org.securegraph.accumulo.serializer.ValueSerializer;
 import org.securegraph.property.MutableProperty;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -18,18 +18,20 @@ public class LazyMutableProperty extends MutableProperty {
     private final String propertyName;
     private Set<Visibility> hiddenVisibilities;
     private byte[] propertyValue;
-    private final byte[] metadata;
+    private final Map<String, byte[]> metadata;
+    private final Map<String, Visibility> metadataVisibilities;
     private Visibility visibility;
     private transient Object cachedPropertyValue;
-    private transient Map<String, Object> cachedMetadata;
+    private transient Metadata cachedMetadata;
 
-    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, byte[] metadata, Set<Visibility> hiddenVisibilities, Visibility visibility) {
+    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, Map<String, byte[]> metadata, Map<String, Visibility> metadataVisibilities, Set<Visibility> hiddenVisibilities, Visibility visibility) {
         this.graph = graph;
         this.valueSerializer = valueSerializer;
         this.propertyKey = propertyKey;
         this.propertyName = propertyName;
         this.propertyValue = propertyValue;
         this.metadata = metadata;
+        this.metadataVisibilities = metadataVisibilities;
         this.visibility = visibility;
         this.hiddenVisibilities = hiddenVisibilities;
     }
@@ -62,6 +64,16 @@ public class LazyMutableProperty extends MutableProperty {
     }
 
     @Override
+    protected void addMetadata(String key, Object value, Visibility visibility) {
+        getMetadata().add(key, value, visibility);
+    }
+
+    @Override
+    protected void removeMetadata(String key, Visibility visibility) {
+        getMetadata().remove(key, visibility);
+    }
+
+    @Override
     public String getKey() {
         return this.propertyKey;
     }
@@ -91,18 +103,17 @@ public class LazyMutableProperty extends MutableProperty {
     }
 
     @Override
-    public Map<String, Object> getMetadata() {
+    public Metadata getMetadata() {
         if (cachedMetadata == null) {
-            if (metadata.length == 0) {
-                cachedMetadata = new HashMap<String, Object>();
-            } else {
-                Object o = this.valueSerializer.valueToObject(metadata);
-                if (o == null) {
-                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found null.");
-                } else if (o instanceof Map) {
-                    cachedMetadata = (Map) o;
-                } else {
-                    throw new SecureGraphException("Invalid metadata found. Expected " + Map.class.getName() + ". Found " + o.getClass().getName() + ".");
+            cachedMetadata = new Metadata();
+            if (metadata != null) {
+                for (Map.Entry<String, byte[]> metadataItem : metadata.entrySet()) {
+                    Object metadataValue = this.valueSerializer.valueToObject(metadataItem.getValue());
+                    Visibility metadataVisibility = metadataVisibilities.get(metadataItem.getKey());
+                    if (metadataValue == null) {
+                        throw new SecureGraphException("Invalid metadata found.");
+                    }
+                    cachedMetadata.add(metadataItem.getKey(), metadataValue, metadataVisibility);
                 }
             }
         }

@@ -4,8 +4,8 @@ import org.securegraph.*;
 import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.id.UUIDIdGenerator;
-import org.securegraph.mutation.AlterPropertyMetadata;
 import org.securegraph.mutation.AlterPropertyVisibility;
+import org.securegraph.mutation.SetPropertyMetadata;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
@@ -54,27 +54,8 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                Vertex existingVertex = getVertex(getVertexId(), authorizations);
-
-                Iterable<Property> properties;
-                if (existingVertex == null) {
-                    properties = getProperties();
-                } else {
-                    Iterable<Property> existingProperties = existingVertex.getProperties();
-                    Iterable<Property> newProperties = getProperties();
-                    properties = new TreeSet<Property>(toList(existingProperties));
-                    for (Property p : newProperties) {
-                        ((TreeSet<Property>) properties).remove(p);
-                        ((TreeSet<Property>) properties).add(p);
-                    }
-                }
-
-                Iterable<Visibility> hiddenVisibilities = null;
-                if (existingVertex instanceof InMemoryVertex) {
-                    hiddenVisibilities = ((InMemoryVertex) existingVertex).getHiddenVisibilities();
-                }
-
-                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties, hiddenVisibilities, authorizations);
+                InMemoryVertex existingVertex = (InMemoryVertex) getVertex(getVertexId(), authorizations);
+                InMemoryVertex vertex = InMemoryVertex.updateOrCreate(InMemoryGraph.this, existingVertex, this, authorizations);
                 vertices.put(getVertexId(), vertex);
 
                 if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
@@ -511,29 +492,29 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
             }
             Object value = property.getValue();
-            Map<String, Object> metadata = property.getMetadata();
+            Metadata metadata = property.getMetadata();
 
             element.removeProperty(apv.getKey(), apv.getName(), authorizations);
             element.addPropertyValue(apv.getKey(), apv.getName(), value, metadata, apv.getVisibility(), authorizations);
         }
     }
 
-    public void alterEdgePropertyMetadata(String edgeId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        alterElementPropertyMetadata(this.edges.get(edgeId), alterPropertyMetadatas);
+    public void alterEdgePropertyMetadata(String edgeId, List<SetPropertyMetadata> setPropertyMetadatas) {
+        alterElementPropertyMetadata(this.edges.get(edgeId), setPropertyMetadatas);
     }
 
-    public void alterVertexPropertyMetadata(String vertexId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        alterElementPropertyMetadata(this.vertices.get(vertexId), alterPropertyMetadatas);
+    public void alterVertexPropertyMetadata(String vertexId, List<SetPropertyMetadata> setPropertyMetadatas) {
+        alterElementPropertyMetadata(this.vertices.get(vertexId), setPropertyMetadatas);
     }
 
-    private void alterElementPropertyMetadata(Element element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
+    private void alterElementPropertyMetadata(Element element, List<SetPropertyMetadata> setPropertyMetadatas) {
+        for (SetPropertyMetadata apm : setPropertyMetadatas) {
             Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apm.getPropertyKey() + ":" + apm.getPropertyName());
             }
 
-            property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
+            property.getMetadata().add(apm.getMetadataName(), apm.getNewValue(), apm.getMetadataVisibility());
         }
     }
 

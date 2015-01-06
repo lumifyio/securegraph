@@ -1,16 +1,11 @@
 package org.securegraph.mutation;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Element;
-import org.securegraph.Property;
-import org.securegraph.Visibility;
+import org.securegraph.*;
 import org.securegraph.property.MutablePropertyImpl;
 import org.securegraph.search.IndexHint;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.securegraph.util.Preconditions.checkNotNull;
 
@@ -18,7 +13,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     private final List<Property> properties = new ArrayList<Property>();
     private Visibility newElementVisibility;
     private final List<AlterPropertyVisibility> alterPropertyVisibilities = new ArrayList<AlterPropertyVisibility>();
-    private final List<AlterPropertyMetadata> alterPropertyMetadatas = new ArrayList<AlterPropertyMetadata>();
+    private final List<SetPropertyMetadata> setPropertyMetadatas = new ArrayList<SetPropertyMetadata>();
     private final T element;
     private IndexHint indexHint = IndexHint.INDEX;
 
@@ -29,18 +24,18 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     public abstract T save(Authorizations authorizations);
 
     public ElementMutation<T> setProperty(String name, Object value, Visibility visibility) {
-        return setProperty(name, value, new HashMap<String, Object>(), visibility);
+        return setProperty(name, value, new Metadata(), visibility);
     }
 
-    public ElementMutation<T> setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public ElementMutation<T> setProperty(String name, Object value, Metadata metadata, Visibility visibility) {
         return addPropertyValue(DEFAULT_KEY, name, value, metadata, visibility);
     }
 
     public ElementMutation<T> addPropertyValue(String key, String name, Object value, Visibility visibility) {
-        return addPropertyValue(key, name, value, new HashMap<String, Object>(), visibility);
+        return addPropertyValue(key, name, value, new Metadata(), visibility);
     }
 
-    public ElementMutation<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility) {
+    public ElementMutation<T> addPropertyValue(String key, String name, Object value, Metadata metadata, Visibility visibility) {
         checkNotNull(name, "property name cannot be null for property: " + name + ":" + key);
         checkNotNull(value, "property value cannot be null for property: " + name + ":" + key);
         properties.add(new MutablePropertyImpl(key, name, value, metadata, null, visibility));
@@ -75,19 +70,19 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
     }
 
     @Override
-    public ExistingElementMutation<T> alterPropertyMetadata(Property property, String metadataName, Object newValue) {
-        this.alterPropertyMetadatas.add(new AlterPropertyMetadata(property.getKey(), property.getName(), property.getVisibility(), metadataName, newValue));
+    public ExistingElementMutation<T> setPropertyMetadata(Property property, String metadataName, Object newValue, Visibility visibility) {
+        this.setPropertyMetadatas.add(new SetPropertyMetadata(property.getKey(), property.getName(), property.getVisibility(), metadataName, newValue, visibility));
         return this;
     }
 
     @Override
-    public ExistingElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue) {
-        return alterPropertyMetadata(DEFAULT_KEY, propertyName, metadataName, newValue);
+    public ExistingElementMutation<T> setPropertyMetadata(String propertyName, String metadataName, Object newValue, Visibility visibility) {
+        return setPropertyMetadata(DEFAULT_KEY, propertyName, metadataName, newValue, visibility);
     }
 
     @Override
-    public ExistingElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue) {
-        this.alterPropertyMetadatas.add(new AlterPropertyMetadata(propertyKey, propertyName, null, metadataName, newValue));
+    public ExistingElementMutation<T> setPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue, Visibility visibility) {
+        this.setPropertyMetadatas.add(new SetPropertyMetadata(propertyKey, propertyName, null, metadataName, newValue, visibility));
         return this;
     }
 
@@ -104,8 +99,8 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
         return alterPropertyVisibilities;
     }
 
-    public List<AlterPropertyMetadata> getAlterPropertyMetadatas() {
-        return alterPropertyMetadatas;
+    public List<SetPropertyMetadata> getSetPropertyMetadatas() {
+        return setPropertyMetadatas;
     }
 
     public IndexHint getIndexHint() {

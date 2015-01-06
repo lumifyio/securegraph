@@ -16,8 +16,8 @@ import org.securegraph.accumulo.iterator.ElementVisibilityRowFilter;
 import org.securegraph.accumulo.serializer.ValueSerializer;
 import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
-import org.securegraph.mutation.AlterPropertyMetadata;
 import org.securegraph.mutation.AlterPropertyVisibility;
+import org.securegraph.mutation.SetPropertyMetadata;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.search.IndexHint;
@@ -1194,18 +1194,18 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
-    void alterPropertyMetadatas(AccumuloElement element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        if (alterPropertyMetadatas.size() == 0) {
+    void alterPropertyMetadatas(AccumuloElement element, List<SetPropertyMetadata> setPropertyMetadatas) {
+        if (setPropertyMetadatas.size() == 0) {
             return;
         }
 
         List<Property> propertiesToSave = new ArrayList<Property>();
-        for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
+        for (SetPropertyMetadata apm : setPropertyMetadatas) {
             Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
             if (property == null) {
                 throw new SecureGraphException(String.format("Could not find property %s:%s(%s)", apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility()));
             }
-            property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
+            property.getMetadata().add(apm.getMetadataName(), apm.getNewValue(), apm.getMetadataVisibility());
             propertiesToSave.add(property);
         }
 

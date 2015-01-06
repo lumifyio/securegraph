@@ -2,8 +2,6 @@ package org.securegraph;
 
 import org.securegraph.mutation.ExistingElementMutation;
 
-import java.util.Map;
-
 /**
  * An element on the graph. This can be either a vertex or edge.
  * <p/>
@@ -192,7 +190,7 @@ public interface Element {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations);
+    void addPropertyValue(String key, String name, Object value, Metadata metadata, Visibility visibility, Authorizations authorizations);
 
     /**
      * Sets or updates a property value. The property key will be set to a constant. This is a convenience method
@@ -217,7 +215,7 @@ public interface Element {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations);
+    void setProperty(String name, Object value, Metadata metadata, Visibility visibility, Authorizations authorizations);
 
     /**
      * Gets the authorizations used to get this element.

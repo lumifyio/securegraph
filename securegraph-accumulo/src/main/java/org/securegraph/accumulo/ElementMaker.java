@@ -18,7 +18,8 @@ public abstract class ElementMaker<T> {
     private final Map<String, String> propertyColumnQualifier = new HashMap<String, String>();
     private final Map<String, byte[]> propertyValues = new HashMap<String, byte[]>();
     private final Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
-    private final Map<String, byte[]> propertyMetadata = new HashMap<String, byte[]>();
+    private final Map<String, Map<String, byte[]>> propertyMetadata = new HashMap<String, Map<String, byte[]>>();
+    private final Map<String, Map<String, Visibility>> propertyMetadataVisibilities = new HashMap<String, Map<String, Visibility>>();
     private final Set<HiddenProperty> hiddenProperties = new HashSet<HiddenProperty>();
     private final Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
     private final AccumuloGraph graph;
@@ -124,8 +125,9 @@ public abstract class ElementMaker<T> {
             if (!includeHidden && isHidden(propertyKey, propertyName, propertyVisibility)) {
                 continue;
             }
-            byte[] metadata = propertyMetadata.get(key);
-            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, propertyHiddenVisibilities, propertyVisibility));
+            Map<String, byte[]> metadata = propertyMetadata.get(key);
+            Map<String, Visibility> metadataVisibilities = propertyMetadataVisibilities.get(key);
+            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, metadataVisibilities, propertyHiddenVisibilities, propertyVisibility));
         }
         return results;
     }
@@ -171,21 +173,58 @@ public abstract class ElementMaker<T> {
     }
 
     private void extractPropertyMetadata(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
-        String key = toKey(columnQualifier, columnVisibility);
-        propertyMetadata.put(key, value.get());
+        PropertyMetadataColumnQualifier propertyMetadataColumnQualifier = new PropertyMetadataColumnQualifier(columnQualifier, columnVisibility);
+
+        Map<String, byte[]> values = propertyMetadata.get(propertyMetadataColumnQualifier.getPropertyKey());
+        if (values == null) {
+            values = new HashMap<String, byte[]>();
+            propertyMetadata.put(propertyMetadataColumnQualifier.getPropertyKey(), values);
+        }
+        values.put(propertyMetadataColumnQualifier.getMetadataKey(), value.get());
+
+        Map<String, Visibility> visibilities = propertyMetadataVisibilities.get(propertyMetadataColumnQualifier.getPropertyKey());
+        if (visibilities == null) {
+            visibilities = new HashMap<String, Visibility>();
+            propertyMetadataVisibilities.put(propertyMetadataColumnQualifier.getPropertyKey(), visibilities);
+        }
+        visibilities.put(propertyMetadataColumnQualifier.getMetadataKey(), accumuloVisibilityToVisibility(columnVisibility));
     }
 
     private void extractPropertyData(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
         String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
-        String key = toKey(columnQualifier, columnVisibility);
+        String key = propertyColumnQualifierToKey(columnQualifier, columnVisibility);
         propertyColumnQualifier.put(key, columnQualifier.toString());
         propertyNames.put(key, propertyName);
         propertyValues.put(key, value.get());
         propertyVisibilities.put(key, accumuloVisibilityToVisibility(columnVisibility));
     }
 
-    private String toKey(Text columnQualifier, ColumnVisibility columnVisibility) {
+    private String propertyColumnQualifierToKey(Text columnQualifier, ColumnVisibility columnVisibility) {
         return columnQualifier.toString() + ":" + columnVisibility.toString();
+    }
+
+    private static class PropertyMetadataColumnQualifier {
+        private final String propertyKey;
+        private final String metadataKey;
+
+        public PropertyMetadataColumnQualifier(Text columnQualifier, ColumnVisibility columnVisibility) {
+            String columnQualifierString = columnQualifier.toString();
+            int i = columnQualifierString.lastIndexOf(ElementMutationBuilder.VALUE_SEPARATOR);
+            if (i < 0) {
+                throw new SecureGraphException("Invalid property metadata column qualifier: " + columnQualifierString);
+            }
+            String propertyKeyPart = columnQualifierString.substring(0, i);
+            metadataKey = columnQualifierString.substring(i + 1);
+            propertyKey = propertyKeyPart + ":" + columnVisibility.toString();
+        }
+
+        public String getPropertyKey() {
+            return propertyKey;
+        }
+
+        public String getMetadataKey() {
+            return metadataKey;
+        }
     }
 
     private String getPropertyNameFromColumnQualifier(String columnQualifier) {

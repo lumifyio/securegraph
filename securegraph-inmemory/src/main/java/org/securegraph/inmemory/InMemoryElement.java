@@ -80,13 +80,13 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
                 getGraph().alterEdgeVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
             getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
-            getGraph().alterEdgePropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
+            getGraph().alterEdgePropertyMetadata(mutation.getElement().getId(), mutation.getSetPropertyMetadatas());
         } else if (mutation.getElement() instanceof Vertex) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterVertexVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());
             }
             getGraph().alterVertexPropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
-            getGraph().alterVertexPropertyMetadata(mutation.getElement().getId(), mutation.getAlterPropertyMetadatas());
+            getGraph().alterVertexPropertyMetadata(mutation.getElement().getId(), mutation.getSetPropertyMetadatas());
         } else {
             throw new IllegalStateException("Unexpected element type: " + mutation.getElement());
         }
@@ -127,5 +127,9 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         } else {
             throw new SecureGraphException("Could not mark property visible. Must be of type " + MutableProperty.class.getName());
         }
+    }
+
+    protected void updateExisting(ElementBuilder elementBuilder) {
+        updatePropertiesInternal(elementBuilder.getProperties());
     }
 }

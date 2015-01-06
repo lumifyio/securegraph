@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static org.securegraph.util.Preconditions.checkNotNull;
 
@@ -158,19 +157,25 @@ public abstract class ElementMutationBuilder {
         return new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
     }
 
+    static Text getPropertyMetadataColumnQualifier(Property property, String metadataKey) {
+        return new Text(property.getName() + VALUE_SEPARATOR + property.getKey() + VALUE_SEPARATOR + metadataKey);
+    }
+
     static Text getPropertyColumnQualifierWithVisibilityString(Property property) {
         return new Text(property.getName() + VALUE_SEPARATOR + property.getKey() + VALUE_SEPARATOR + property.getVisibility().getVisibilityString());
     }
 
     public void addPropertyMetadataToMutation(Mutation m, Property property) {
-        Map<String, Object> metadata = property.getMetadata();
-        Text columnQualifier = getPropertyColumnQualifier(property);
-        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
-        if (metadata != null && metadata.size() > 0) {
-            Value metadataValue = new Value(valueSerializer.objectToValue(metadata));
-            m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, metadataValue);
-        } else {
-            m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility, EMPTY_VALUE);
+        Metadata metadata = property.getMetadata();
+        for (Metadata.Entry metadataItem : metadata.entrySet()) {
+            Text columnQualifier = getPropertyMetadataColumnQualifier(property, metadataItem.getKey());
+            ColumnVisibility metadataVisibility = visibilityToAccumuloVisibility(metadataItem.getVisibility());
+            if (metadataItem.getValue() == null) {
+                m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, metadataVisibility);
+            } else {
+                Value metadataValue = new Value(valueSerializer.objectToValue(metadataItem.getValue()));
+                m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, metadataVisibility, metadataValue);
+            }
         }
     }
 

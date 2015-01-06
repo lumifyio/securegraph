@@ -1,6 +1,7 @@
 package org.securegraph;
 
 import org.securegraph.mutation.ExistingElementMutation;
+import org.securegraph.property.MutableProperty;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
@@ -171,8 +172,16 @@ public abstract class ElementBase<T extends Element> implements Element {
             if (propertyValue instanceof PropertyValue && !((PropertyValue) propertyValue).isStore()) {
                 continue;
             }
-            this.properties.remove(property);
-            this.properties.add(property);
+            Property existingProperty = getProperty(property.getKey(), property.getName(), property.getVisibility());
+            if (existingProperty == null) {
+                this.properties.add(property);
+            } else {
+                if (existingProperty instanceof MutableProperty) {
+                    ((MutableProperty) existingProperty).update(property);
+                } else {
+                    throw new SecureGraphException("Could not update property of type: " + existingProperty.getClass().getName());
+                }
+            }
         }
     }
 
@@ -237,7 +246,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public void addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations) {
+    public void addPropertyValue(String key, String name, Object value, Metadata metadata, Visibility visibility, Authorizations authorizations) {
         prepareMutation().addPropertyValue(key, name, value, metadata, visibility).save(authorizations);
     }
 
@@ -247,7 +256,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public void setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility, Authorizations authorizations) {
+    public void setProperty(String name, Object value, Metadata metadata, Visibility visibility, Authorizations authorizations) {
         prepareMutation().setProperty(name, value, metadata, visibility).save(authorizations);
     }
 

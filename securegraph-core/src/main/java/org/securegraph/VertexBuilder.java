@@ -17,11 +17,11 @@ public abstract class VertexBuilder extends ElementBuilder<Vertex> {
     @Override
     public abstract Vertex save(Authorizations authorizations);
 
-    protected String getVertexId() {
+    public String getVertexId() {
         return vertexId;
     }
 
-    protected Visibility getVisibility() {
+    public Visibility getVisibility() {
         return visibility;
     }
 }

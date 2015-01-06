@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
+import org.securegraph.Metadata;
 import org.securegraph.Vertex;
 import org.securegraph.elasticsearch.helpers.TestHelpers;
 import org.securegraph.inmemory.InMemoryAuthorizations;
@@ -18,8 +19,6 @@ import org.securegraph.test.util.LargeStringInputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static junit.framework.TestCase.assertNotNull;
 
@@ -53,8 +52,8 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
 
     @Test
     public void testCreateJsonForElement() throws IOException {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("metadata1", "metadata1Value");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("metadata1", "metadata1Value", VISIBILITY_A);
 
         String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(LARGE_PROPERTY_VALUE_SIZE));
         PropertyValue propSmall = new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), String.class);

@@ -260,4 +260,16 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
             }
         };
     }
+
+    public static InMemoryVertex updateOrCreate(InMemoryGraph graph, InMemoryVertex existingVertex, VertexBuilder vertexBuilder, Authorizations authorizations) {
+        Iterable<Property> properties;
+        if (existingVertex == null) {
+            properties = vertexBuilder.getProperties();
+            return new InMemoryVertex(graph, vertexBuilder.getVertexId(), vertexBuilder.getVisibility(), properties, null, authorizations);
+        }
+
+        existingVertex.updateExisting(vertexBuilder);
+
+        return existingVertex;
+    }
 }

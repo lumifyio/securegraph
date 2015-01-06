@@ -10,6 +10,7 @@ import org.junit.runners.JUnit4;
 import org.securegraph.*;
 import org.securegraph.event.*;
 import org.securegraph.mutation.ElementMutation;
+import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.*;
@@ -182,8 +183,8 @@ public abstract class GraphTestBase {
 
     @Test
     public void testAddVertexPropertyWithMetadata() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("metadata1", "metadata1Value");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("metadata1", "metadata1Value", VISIBILITY_A);
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
@@ -194,10 +195,10 @@ public abstract class GraphTestBase {
         Property prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
         assertNotNull(prop1Metadata);
-        assertEquals(1, prop1Metadata.keySet().size());
-        assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
+        assertEquals(1, prop1Metadata.entrySet().size());
+        assertEquals("metadata1Value", prop1Metadata.getEntry("metadata1", VISIBILITY_A).getValue());
 
-        prop1Metadata.put("metadata2", "metadata2Value");
+        prop1Metadata.add("metadata2", "metadata2Value", VISIBILITY_A);
         v.prepareMutation()
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
@@ -206,19 +207,19 @@ public abstract class GraphTestBase {
         assertEquals(1, count(v.getProperties("prop1")));
         prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
-        assertEquals(2, prop1Metadata.keySet().size());
-        assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
-        assertEquals("metadata2Value", prop1Metadata.get("metadata2"));
+        assertEquals(2, prop1Metadata.entrySet().size());
+        assertEquals("metadata1Value", prop1Metadata.getEntry("metadata1", VISIBILITY_A).getValue());
+        assertEquals("metadata2Value", prop1Metadata.getEntry("metadata2", VISIBILITY_A).getValue());
 
-        // make sure we clear out old values
-        prop1Metadata = new HashMap<String, Object>();
+        // make sure that when we update the value the metadata does not get destroyed
+        prop1Metadata = new Metadata();
         v.setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A, AUTHORIZATIONS_A_AND_B);
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(1, count(v.getProperties("prop1")));
         prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
-        assertEquals(0, prop1Metadata.keySet().size());
+        assertEquals(2, prop1Metadata.entrySet().size());
     }
 
     @Test
@@ -1841,11 +1842,11 @@ public abstract class GraphTestBase {
 
     @Test
     public void testChangeVisibilityVertexProperties() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("prop1_key1", "value1");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("prop1_key1", "value1", VISIBILITY_EMPTY);
 
-        Map<String, Object> prop2Metadata = new HashMap<String, Object>();
-        prop2Metadata.put("prop2_key1", "value1");
+        Metadata prop2Metadata = new Metadata();
+        prop2Metadata.add("prop2_key1", "value1", VISIBILITY_EMPTY);
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
@@ -1981,8 +1982,8 @@ public abstract class GraphTestBase {
 
     @Test
     public void testChangePropertyMetadata() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("prop1_key1", "valueOld");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("prop1_key1", "valueOld", VISIBILITY_EMPTY);
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
@@ -1991,21 +1992,32 @@ public abstract class GraphTestBase {
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         v1.prepareMutation()
-                .alterPropertyMetadata("prop1", "prop1_key1", "valueNew")
+                .setPropertyMetadata("prop1", "prop1_key1", "valueNew", VISIBILITY_EMPTY)
                 .save(AUTHORIZATIONS_A_AND_B);
-        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
+        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().getEntry("prop1_key1", VISIBILITY_EMPTY).getValue());
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
+        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().getEntry("prop1_key1", VISIBILITY_EMPTY).getValue());
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         v1.prepareMutation()
-                .alterPropertyMetadata("prop2", "prop2_key1", "valueNew")
+                .setPropertyMetadata("prop2", "prop2_key1", "valueNew", VISIBILITY_EMPTY)
                 .save(AUTHORIZATIONS_A_AND_B);
-        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().get("prop2_key1"));
+        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().getEntry("prop2_key1", VISIBILITY_EMPTY).getValue());
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().get("prop2_key1"));
+        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().getEntry("prop2_key1", VISIBILITY_EMPTY).getValue());
+    }
+
+    @Test
+    public void testMetadata() {
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        ExistingElementMutation<Vertex> m = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).prepareMutation();
+        m.setPropertyMetadata("prop1", "metadata1", "value1", VISIBILITY_B);
+        m.save(AUTHORIZATIONS_A_AND_B);
     }
 
     @Test

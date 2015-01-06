@@ -454,6 +454,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
 
     @Override
     public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
+        LOGGER.debug("adding property definition: " + propertyDefinition);
         for (String indexName : getIndexNames(propertyDefinition)) {
             IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, storeSourceData);
 

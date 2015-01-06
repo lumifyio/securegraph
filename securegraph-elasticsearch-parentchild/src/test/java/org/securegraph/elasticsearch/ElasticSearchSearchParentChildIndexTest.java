@@ -10,7 +10,6 @@ import org.securegraph.test.GraphTestBase;
 import org.securegraph.type.GeoPoint;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
@@ -59,8 +58,8 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
 
     @Test
     public void testGetIndexRequests() throws IOException {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("metadata1", "metadata1Value");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("metadata1", "metadata1Value", VISIBILITY_A);
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
