@@ -5,9 +5,7 @@ import org.apache.accumulo.core.cli.ClientOpts;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.Text;
@@ -81,7 +79,7 @@ public abstract class MRMigrationBase extends Configured implements Tool {
         }
     }
 
-    protected abstract static class MRMigrationMapperBase extends Mapper<Key, Value, Text, Mutation> {
+    protected abstract static class MRMigrationMapperBase<TKey, TValue> extends Mapper<TKey, TValue, Text, Mutation> {
         private ValueSerializer valueSerializer;
         private Text outputTableNameText;
 
@@ -93,7 +91,7 @@ public abstract class MRMigrationBase extends Configured implements Tool {
         }
 
         @Override
-        protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
+        protected void map(TKey key, TValue value, Context context) throws IOException, InterruptedException {
             try {
                 safeMap(key, value, context);
             } catch (Throwable ex) {
@@ -101,7 +99,7 @@ public abstract class MRMigrationBase extends Configured implements Tool {
             }
         }
 
-        protected abstract void safeMap(Key key, Value value, Context context) throws Exception;
+        protected abstract void safeMap(TKey key, TValue value, Context context) throws Exception;
 
         public ValueSerializer getValueSerializer() {
             return valueSerializer;
@@ -121,7 +119,7 @@ public abstract class MRMigrationBase extends Configured implements Tool {
         job.setJarByClass(getClass());
         opts.setAccumuloConfigs(job);
 
-        job.setInputFormatClass(AccumuloInputFormat.class);
+        job.setInputFormatClass(getInputFormatClass());
 
         job.setMapperClass(getMigrationMapperClass());
         job.setMapOutputKeyClass(Text.class);
@@ -133,6 +131,10 @@ public abstract class MRMigrationBase extends Configured implements Tool {
 
         job.waitForCompletion(true);
         return job.isSuccessful() ? 0 : 1;
+    }
+
+    protected Class getInputFormatClass() {
+        return AccumuloInputFormat.class;
     }
 
     protected Opts createOpts() {

@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class Metadata {
     private Map<String, Entry> entries = new HashMap<String, Entry>();
+    public static final String KEY_SEPARATOR = "\u001f";
 
     public void add(String key, Object value, Visibility visibility) {
         entries.put(toMapKey(key, visibility), new Entry(key, value, visibility));
@@ -75,7 +76,7 @@ public class Metadata {
     }
 
     private String toMapKey(String key, Visibility visibility) {
-        return key + visibility.getVisibilityString();
+        return key + KEY_SEPARATOR + visibility.getVisibilityString();
     }
 
     public static class Entry {
@@ -99,6 +100,15 @@ public class Metadata {
 
         public Visibility getVisibility() {
             return visibility;
+        }
+
+        @Override
+        public String toString() {
+            return "Entry{" +
+                    "key='" + key + '\'' +
+                    ", value=" + value +
+                    ", visibility=" + visibility +
+                    '}';
         }
     }
 }

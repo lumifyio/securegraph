@@ -158,7 +158,7 @@ public abstract class ElementMutationBuilder {
     }
 
     static Text getPropertyMetadataColumnQualifier(Property property, String metadataKey) {
-        return new Text(property.getName() + VALUE_SEPARATOR + property.getKey() + VALUE_SEPARATOR + metadataKey);
+        return new Text(property.getName() + VALUE_SEPARATOR + property.getKey() + VALUE_SEPARATOR + property.getVisibility().getVisibilityString() + VALUE_SEPARATOR + metadataKey);
     }
 
     static Text getPropertyColumnQualifierWithVisibilityString(Property property) {
@@ -206,7 +206,11 @@ public abstract class ElementMutationBuilder {
         Text columnQualifier = getPropertyColumnQualifier(property);
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(property.getVisibility());
         m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
-        m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, columnVisibility);
+        for (Metadata.Entry metadataEntry : property.getMetadata().entrySet()) {
+            Text metadataEntryColumnQualifier = getPropertyMetadataColumnQualifier(property, metadataEntry.getKey());
+            ColumnVisibility metadataEntryVisibility = visibilityToAccumuloVisibility(metadataEntry.getVisibility());
+            m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, metadataEntryColumnQualifier, metadataEntryVisibility);
+        }
     }
 
     private StreamingPropertyValueRef saveStreamingPropertyValueSmall(String rowKey, Property property, byte[] data, StreamingPropertyValue propertyValue) {

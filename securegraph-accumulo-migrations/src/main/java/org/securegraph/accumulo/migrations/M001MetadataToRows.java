@@ -12,19 +12,19 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MetadataToRowsMR extends MRMigrationBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MetadataToRowsMR.class);
+public class M001MetadataToRows extends MRMigrationBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(M001MetadataToRows.class);
 
     public static void main(String[] args) throws Exception {
-        run(new MetadataToRowsMR(), args);
+        run(new M001MetadataToRows(), args);
     }
 
     @Override
     protected Class<? extends Mapper> getMigrationMapperClass() {
-        return MetadataToRowsMRMapper.class;
+        return MigrationMapper.class;
     }
 
-    public static class MetadataToRowsMRMapper extends MRMigrationMapperBase {
+    public static class MigrationMapper extends MRMigrationMapperBase<Key, Value> {
         @Override
         protected void safeMap(Key key, Value value, Context context) throws IOException, InterruptedException {
             context.setStatus(key.getRow().toString());

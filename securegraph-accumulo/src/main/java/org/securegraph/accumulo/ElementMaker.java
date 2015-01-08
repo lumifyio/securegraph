@@ -18,8 +18,7 @@ public abstract class ElementMaker<T> {
     private final Map<String, String> propertyColumnQualifier = new HashMap<String, String>();
     private final Map<String, byte[]> propertyValues = new HashMap<String, byte[]>();
     private final Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
-    private final Map<String, Map<String, byte[]>> propertyMetadata = new HashMap<String, Map<String, byte[]>>();
-    private final Map<String, Map<String, Visibility>> propertyMetadataVisibilities = new HashMap<String, Map<String, Visibility>>();
+    private final Map<String, LazyPropertyMetadata> propertyMetadata = new HashMap<String, LazyPropertyMetadata>();
     private final Set<HiddenProperty> hiddenProperties = new HashSet<HiddenProperty>();
     private final Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
     private final AccumuloGraph graph;
@@ -54,7 +53,7 @@ public abstract class ElementMaker<T> {
 
             if (columnFamily.equals(AccumuloElement.CF_HIDDEN)) {
                 if (includeHidden) {
-                    this.hiddenVisibilities.add(accumuloVisibilityToVisibility(columnVisibility));
+                    this.hiddenVisibilities.add(AccumuloGraph.accumuloVisibilityToVisibility(columnVisibility));
                 } else {
                     return null;
                 }
@@ -75,7 +74,7 @@ public abstract class ElementMaker<T> {
             }
 
             if (getVisibilitySignal().equals(columnFamily.toString())) {
-                this.visibility = accumuloVisibilityToVisibility(columnVisibility);
+                this.visibility = AccumuloGraph.accumuloVisibilityToVisibility(columnVisibility);
             }
 
             processColumn(col.getKey(), col.getValue());
@@ -125,9 +124,8 @@ public abstract class ElementMaker<T> {
             if (!includeHidden && isHidden(propertyKey, propertyName, propertyVisibility)) {
                 continue;
             }
-            Map<String, byte[]> metadata = propertyMetadata.get(key);
-            Map<String, Visibility> metadataVisibilities = propertyMetadataVisibilities.get(key);
-            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, metadataVisibilities, propertyHiddenVisibilities, propertyVisibility));
+            LazyPropertyMetadata metadata = propertyMetadata.get(key);
+            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, propertyHiddenVisibilities, propertyVisibility));
         }
         return results;
     }
@@ -169,62 +167,44 @@ public abstract class ElementMaker<T> {
         String key = columnQualifierStr.substring(nameKeySep + 1, keyVisSep);
         String vis = columnQualifierStr.substring(keyVisSep + 1);
 
-        this.hiddenProperties.add(new HiddenProperty(key, name, vis, accumuloVisibilityToVisibility(columnVisibility)));
+        this.hiddenProperties.add(new HiddenProperty(key, name, vis, AccumuloGraph.accumuloVisibilityToVisibility(columnVisibility)));
     }
 
     private void extractPropertyMetadata(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
-        PropertyMetadataColumnQualifier propertyMetadataColumnQualifier = new PropertyMetadataColumnQualifier(columnQualifier, columnVisibility);
-
-        Map<String, byte[]> values = propertyMetadata.get(propertyMetadataColumnQualifier.getPropertyKey());
-        if (values == null) {
-            values = new HashMap<String, byte[]>();
-            propertyMetadata.put(propertyMetadataColumnQualifier.getPropertyKey(), values);
+        Visibility metadataVisibility = AccumuloGraph.accumuloVisibilityToVisibility(columnVisibility);
+        String columnQualifierString = columnQualifier.toString();
+        int i = columnQualifierString.lastIndexOf(ElementMutationBuilder.VALUE_SEPARATOR);
+        if (i < 0) {
+            throw new SecureGraphException("Invalid property metadata column qualifier: " + columnQualifierString);
         }
-        values.put(propertyMetadataColumnQualifier.getMetadataKey(), value.get());
+        String propertyKey = columnQualifierString.substring(0, i);
+        String metadataKey = columnQualifierString.substring(i + 1);
 
-        Map<String, Visibility> visibilities = propertyMetadataVisibilities.get(propertyMetadataColumnQualifier.getPropertyKey());
-        if (visibilities == null) {
-            visibilities = new HashMap<String, Visibility>();
-            propertyMetadataVisibilities.put(propertyMetadataColumnQualifier.getPropertyKey(), visibilities);
+        LazyPropertyMetadata lazyPropertyMetadata = getOrCreatePropertyMetadata(propertyKey);
+        lazyPropertyMetadata.add(metadataKey, metadataVisibility, value.get());
+    }
+
+    private LazyPropertyMetadata getOrCreatePropertyMetadata(String propertyKey) {
+        LazyPropertyMetadata lazyPropertyMetadata = propertyMetadata.get(propertyKey);
+        if (lazyPropertyMetadata == null) {
+            lazyPropertyMetadata = new LazyPropertyMetadata();
+            propertyMetadata.put(propertyKey, lazyPropertyMetadata);
         }
-        visibilities.put(propertyMetadataColumnQualifier.getMetadataKey(), accumuloVisibilityToVisibility(columnVisibility));
+        return lazyPropertyMetadata;
     }
 
     private void extractPropertyData(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
+        Visibility visibility = AccumuloGraph.accumuloVisibilityToVisibility(columnVisibility);
         String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
-        String key = propertyColumnQualifierToKey(columnQualifier, columnVisibility);
+        String key = propertyColumnQualifierToKey(columnQualifier, visibility);
         propertyColumnQualifier.put(key, columnQualifier.toString());
         propertyNames.put(key, propertyName);
         propertyValues.put(key, value.get());
-        propertyVisibilities.put(key, accumuloVisibilityToVisibility(columnVisibility));
+        propertyVisibilities.put(key, visibility);
     }
 
-    private String propertyColumnQualifierToKey(Text columnQualifier, ColumnVisibility columnVisibility) {
-        return columnQualifier.toString() + ":" + columnVisibility.toString();
-    }
-
-    private static class PropertyMetadataColumnQualifier {
-        private final String propertyKey;
-        private final String metadataKey;
-
-        public PropertyMetadataColumnQualifier(Text columnQualifier, ColumnVisibility columnVisibility) {
-            String columnQualifierString = columnQualifier.toString();
-            int i = columnQualifierString.lastIndexOf(ElementMutationBuilder.VALUE_SEPARATOR);
-            if (i < 0) {
-                throw new SecureGraphException("Invalid property metadata column qualifier: " + columnQualifierString);
-            }
-            String propertyKeyPart = columnQualifierString.substring(0, i);
-            metadataKey = columnQualifierString.substring(i + 1);
-            propertyKey = propertyKeyPart + ":" + columnVisibility.toString();
-        }
-
-        public String getPropertyKey() {
-            return propertyKey;
-        }
-
-        public String getMetadataKey() {
-            return metadataKey;
-        }
+    private String propertyColumnQualifierToKey(Text columnQualifier, Visibility visibility) {
+        return columnQualifier.toString() + ElementMutationBuilder.VALUE_SEPARATOR + visibility.toString();
     }
 
     private String getPropertyNameFromColumnQualifier(String columnQualifier) {
@@ -233,18 +213,6 @@ public abstract class ElementMaker<T> {
             throw new SecureGraphException("Invalid property column qualifier");
         }
         return columnQualifier.substring(0, i);
-    }
-
-    private Visibility accumuloVisibilityToVisibility(ColumnVisibility columnVisibility) {
-        String columnVisibilityString = columnVisibility.toString();
-        return accumuloVisibilityToVisibility(columnVisibilityString);
-    }
-
-    private Visibility accumuloVisibilityToVisibility(String columnVisibilityString) {
-        if (columnVisibilityString.startsWith("[") && columnVisibilityString.endsWith("]")) {
-            return new Visibility(columnVisibilityString.substring(1, columnVisibilityString.length() - 1));
-        }
-        return new Visibility(columnVisibilityString);
     }
 
     private String getPropertyKeyFromColumnQualifier(String columnQualifier) {

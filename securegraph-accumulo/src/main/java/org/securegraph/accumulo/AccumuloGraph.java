@@ -48,7 +48,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     public static final String VERTEX_AFTER_ROW_KEY_PREFIX = "W";
     public static final String EDGE_AFTER_ROW_KEY_PREFIX = "F";
     private static final Object addIteratorLock = new Object();
-    private static final Integer METADATA_ACCUMULO_GRAPH_VERSION = 1;
+    private static final Integer METADATA_ACCUMULO_GRAPH_VERSION = 2;
     private static final String METADATA_ACCUMULO_GRAPH_VERSION_KEY = "accumulo.graph.version";
     private static final Authorizations METADATA_AUTHORIZATIONS = new AccumuloAuthorizations();
     private final Connector connector;
@@ -1146,12 +1146,24 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         throw new SecureGraphException("Unexpected end of row: " + dataRowKey);
     }
 
-    ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
+    public static ColumnVisibility visibilityToAccumuloVisibility(Visibility visibility) {
         return new ColumnVisibility(visibility.getVisibilityString());
     }
 
-    ColumnVisibility visibilityToAccumuloVisibility(String visibilityString) {
+    public static ColumnVisibility visibilityToAccumuloVisibility(String visibilityString) {
         return new ColumnVisibility(visibilityString);
+    }
+
+    public static Visibility accumuloVisibilityToVisibility(ColumnVisibility columnVisibility) {
+        String columnVisibilityString = columnVisibility.toString();
+        return accumuloVisibilityToVisibility(columnVisibilityString);
+    }
+
+    public static Visibility accumuloVisibilityToVisibility(String columnVisibilityString) {
+        if (columnVisibilityString.startsWith("[") && columnVisibilityString.endsWith("]")) {
+            return new Visibility(columnVisibilityString.substring(1, columnVisibilityString.length() - 1));
+        }
+        return new Visibility(columnVisibilityString);
     }
 
     public static String getVerticesTableName(String tableNamePrefix) {

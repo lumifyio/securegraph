@@ -1,5 +1,6 @@
 package org.securegraph;
 
+import org.securegraph.mutation.ElementMutation;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.PropertyValue;
@@ -50,6 +51,11 @@ public abstract class ElementBase<T extends Element> implements Element {
                 return p.getValue();
             }
         };
+    }
+
+    @Override
+    public Property getProperty(String name, Visibility visibility) {
+        return getProperty(ElementMutation.DEFAULT_KEY, name, visibility);
     }
 
     @Override

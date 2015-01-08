@@ -2,13 +2,11 @@ package org.securegraph.accumulo;
 
 import org.securegraph.Authorizations;
 import org.securegraph.Metadata;
-import org.securegraph.SecureGraphException;
 import org.securegraph.Visibility;
 import org.securegraph.accumulo.serializer.ValueSerializer;
 import org.securegraph.property.MutableProperty;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class LazyMutableProperty extends MutableProperty {
@@ -18,20 +16,18 @@ public class LazyMutableProperty extends MutableProperty {
     private final String propertyName;
     private Set<Visibility> hiddenVisibilities;
     private byte[] propertyValue;
-    private final Map<String, byte[]> metadata;
-    private final Map<String, Visibility> metadataVisibilities;
+    private final LazyPropertyMetadata metadata;
     private Visibility visibility;
     private transient Object cachedPropertyValue;
     private transient Metadata cachedMetadata;
 
-    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, Map<String, byte[]> metadata, Map<String, Visibility> metadataVisibilities, Set<Visibility> hiddenVisibilities, Visibility visibility) {
+    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, LazyPropertyMetadata metadata, Set<Visibility> hiddenVisibilities, Visibility visibility) {
         this.graph = graph;
         this.valueSerializer = valueSerializer;
         this.propertyKey = propertyKey;
         this.propertyName = propertyName;
         this.propertyValue = propertyValue;
         this.metadata = metadata;
-        this.metadataVisibilities = metadataVisibilities;
         this.visibility = visibility;
         this.hiddenVisibilities = hiddenVisibilities;
     }
@@ -105,16 +101,10 @@ public class LazyMutableProperty extends MutableProperty {
     @Override
     public Metadata getMetadata() {
         if (cachedMetadata == null) {
-            cachedMetadata = new Metadata();
-            if (metadata != null) {
-                for (Map.Entry<String, byte[]> metadataItem : metadata.entrySet()) {
-                    Object metadataValue = this.valueSerializer.valueToObject(metadataItem.getValue());
-                    Visibility metadataVisibility = metadataVisibilities.get(metadataItem.getKey());
-                    if (metadataValue == null) {
-                        throw new SecureGraphException("Invalid metadata found.");
-                    }
-                    cachedMetadata.add(metadataItem.getKey(), metadataValue, metadataVisibility);
-                }
+            if (metadata == null) {
+                cachedMetadata = new Metadata();
+            } else {
+                cachedMetadata = metadata.toMetadata(this.valueSerializer);
             }
         }
         return cachedMetadata;

@@ -1867,7 +1867,10 @@ public abstract class GraphTestBase {
         assertEquals(0, count(graph.query(AUTHORIZATIONS_A).has("prop1", "value1").vertices()));
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
-        assertNotNull(v1.getProperty("prop1"));
+        Property v1Prop1 = v1.getProperty("prop1");
+        assertNotNull(v1Prop1);
+        assertEquals(1, toList(v1Prop1.getMetadata().entrySet()).size());
+        assertEquals("value1", v1Prop1.getMetadata().getValue("prop1_key1"));
         assertNotNull(v1.getProperty("prop2"));
 
         // alter and set property in one mutation
@@ -2011,13 +2014,27 @@ public abstract class GraphTestBase {
 
     @Test
     public void testMetadata() {
-        graph.prepareVertex("v1", VISIBILITY_A)
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_B)
                 .save(AUTHORIZATIONS_A_AND_B);
 
         ExistingElementMutation<Vertex> m = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).prepareMutation();
-        m.setPropertyMetadata("prop1", "metadata1", "value1", VISIBILITY_B);
+        m.setPropertyMetadata(v1.getProperty("prop1", VISIBILITY_A), "metadata1", "metadata-value1aa", VISIBILITY_A);
+        m.setPropertyMetadata(v1.getProperty("prop1", VISIBILITY_A), "metadata1", "metadata-value1ab", VISIBILITY_B);
+        m.setPropertyMetadata(v1.getProperty("prop1", VISIBILITY_B), "metadata1", "metadata-value1bb", VISIBILITY_B);
         m.save(AUTHORIZATIONS_A_AND_B);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+
+        Property prop1A = v1.getProperty("prop1", VISIBILITY_A);
+        assertEquals(2, prop1A.getMetadata().entrySet().size());
+        assertEquals("metadata-value1aa", prop1A.getMetadata().getValue("metadata1", VISIBILITY_A));
+        assertEquals("metadata-value1ab", prop1A.getMetadata().getValue("metadata1", VISIBILITY_B));
+
+        Property prop1B = v1.getProperty("prop1", VISIBILITY_B);
+        assertEquals(1, prop1B.getMetadata().entrySet().size());
+        assertEquals("metadata-value1bb", prop1B.getMetadata().getValue("metadata1", VISIBILITY_B));
     }
 
     @Test
