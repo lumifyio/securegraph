@@ -14,10 +14,12 @@ import java.io.IOException;
 public abstract class GraphBaseWithSearchIndex extends GraphBase implements Graph {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphBaseWithSearchIndex.class);
     public static final String METADATA_DEFINE_PROPERTY_PREFIX = "defineProperty.";
+    public static final String METADATA_ID_GENERATOR_CLASSNAME = "idGenerator.classname";
     private final GraphConfiguration configuration;
     private final IdGenerator idGenerator;
     private SearchIndex searchIndex;
     private final PathFindingAlgorithm pathFindingAlgorithm = new RecursivePathFindingAlgorithm();
+    private boolean foundIdGeneratorClassnameInMetadata;
 
     protected GraphBaseWithSearchIndex(GraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this.configuration = configuration;
@@ -29,9 +31,13 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
         setupGraphMetadata();
     }
 
-    private void setupGraphMetadata() {
+    protected void setupGraphMetadata() {
+        foundIdGeneratorClassnameInMetadata = false;
         for (GraphMetadataEntry graphMetadataEntry : getMetadata()) {
             setupGraphMetadata(graphMetadataEntry);
+        }
+        if (!foundIdGeneratorClassnameInMetadata) {
+            setMetadata(METADATA_ID_GENERATOR_CLASSNAME, this.idGenerator.getClass().getName());
         }
     }
 
@@ -41,7 +47,13 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
             if (v instanceof PropertyDefinition) {
                 setupPropertyDefinition((PropertyDefinition) v);
             } else {
-                throw new SecureGraphException("Invalid property metadata: " + graphMetadataEntry.getKey());
+                throw new SecureGraphException("Invalid property definition metadata: " + graphMetadataEntry.getKey() + " expected " + PropertyDefinition.class.getName() + " found " + v.getClass().getName());
+            }
+        } else if (graphMetadataEntry.getKey().equals(METADATA_ID_GENERATOR_CLASSNAME)) {
+            if (v instanceof String) {
+                foundIdGeneratorClassnameInMetadata = true;
+            } else {
+                throw new SecureGraphException("Invalid " + METADATA_ID_GENERATOR_CLASSNAME + " expected String found " + v.getClass().getName());
             }
         }
     }

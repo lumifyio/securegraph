@@ -50,6 +50,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private static final Object addIteratorLock = new Object();
     private static final Integer METADATA_ACCUMULO_GRAPH_VERSION = 2;
     private static final String METADATA_ACCUMULO_GRAPH_VERSION_KEY = "accumulo.graph.version";
+    private static final String METADATA_VALUE_SERIALIZER = "accumulo.graph.valueSerializer";
     private static final Authorizations METADATA_AUTHORIZATIONS = new AccumuloAuthorizations();
     private final Connector connector;
     private final ValueSerializer valueSerializer;
@@ -62,6 +63,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private ElementMutationBuilder elementMutationBuilder;
     private final Queue<GraphEvent> graphEventQueue = new LinkedList<GraphEvent>();
     private Integer accumuloGraphVersion;
+    private boolean foundValueSerializerMetadata;
 
     protected AccumuloGraph(AccumuloGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex, Connector connector, FileSystem fileSystem, ValueSerializer valueSerializer) {
         super(config, idGenerator, searchIndex);
@@ -127,6 +129,15 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     @Override
+    protected void setupGraphMetadata() {
+        foundValueSerializerMetadata = false;
+        super.setupGraphMetadata();
+        if (!foundValueSerializerMetadata) {
+            setMetadata(METADATA_VALUE_SERIALIZER, valueSerializer.getClass().getName());
+        }
+    }
+
+    @Override
     protected void setupGraphMetadata(GraphMetadataEntry graphMetadataEntry) {
         super.setupGraphMetadata(graphMetadataEntry);
         if (graphMetadataEntry.getKey().equals(METADATA_ACCUMULO_GRAPH_VERSION_KEY)) {
@@ -135,6 +146,16 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 LOGGER.info(METADATA_ACCUMULO_GRAPH_VERSION_KEY + "=" + accumuloGraphVersion);
             } else {
                 throw new SecureGraphException("Invalid accumulo version in metadata. " + graphMetadataEntry);
+            }
+        } else if (graphMetadataEntry.getKey().equals(METADATA_VALUE_SERIALIZER)) {
+            if (graphMetadataEntry.getValue() instanceof String) {
+                String valueSerializerClassName = (String) graphMetadataEntry.getValue();
+                if (!valueSerializerClassName.equals(valueSerializer.getClass().getName())) {
+                    throw new SecureGraphException("Invalid " + METADATA_VALUE_SERIALIZER + " expected " + valueSerializerClassName + " found " + valueSerializer.getClass().getName());
+                }
+                foundValueSerializerMetadata = true;
+            } else {
+                throw new SecureGraphException("Invalid " + METADATA_VALUE_SERIALIZER + " expected string found " + graphMetadataEntry.getValue().getClass().getName());
             }
         }
     }
