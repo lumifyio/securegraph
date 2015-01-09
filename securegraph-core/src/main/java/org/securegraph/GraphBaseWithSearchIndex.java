@@ -51,7 +51,10 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
             }
         } else if (graphMetadataEntry.getKey().equals(METADATA_ID_GENERATOR_CLASSNAME)) {
             if (v instanceof String) {
-                foundIdGeneratorClassnameInMetadata = true;
+                String idGeneratorClassname = (String) graphMetadataEntry.getValue();
+                if (idGeneratorClassname.equals(idGenerator.getClass().getName())) {
+                    foundIdGeneratorClassnameInMetadata = true;
+                }
             } else {
                 throw new SecureGraphException("Invalid " + METADATA_ID_GENERATOR_CLASSNAME + " expected String found " + v.getClass().getName());
             }
