@@ -311,11 +311,6 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             return;
         }
 
-        Vertex inVertex = getVertex(edge.getVertexId(Direction.IN), authorizations);
-        checkNotNull(inVertex, "Could not find in vertex: " + edge.getVertexId(Direction.IN));
-        Vertex outVertex = getVertex(edge.getVertexId(Direction.OUT), authorizations);
-        checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
-
         this.edges.remove(edge.getId());
         getSearchIndex().removeElement(this, edge, authorizations);
 

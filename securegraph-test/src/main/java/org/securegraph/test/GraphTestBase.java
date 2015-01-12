@@ -689,6 +689,55 @@ public abstract class GraphTestBase {
         assertEquals(3, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1")));
     }
 
+    /**
+     * This tests simulates two workspaces w1 (via A) and w1 (vis B).
+     * Both w1 and w2 has e1 on it.
+     * e1 is linked to e2.
+     * <p/>
+     * What happens if w1 (vis A) marks e1 hidden, then deletes itself?
+     */
+    @Test
+    public void testMarkVertexHiddenAndDeleteEdges() {
+        Vertex w1 = graph.addVertex("w1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex w2 = graph.addVertex("w2", VISIBILITY_B, AUTHORIZATIONS_B);
+        Vertex e1 = graph.addVertex("e1", VISIBILITY_EMPTY, AUTHORIZATIONS_A);
+        Vertex e2 = graph.addVertex("e2", VISIBILITY_EMPTY, AUTHORIZATIONS_A);
+        graph.addEdge("w1-e1", w1, e1, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("w2-e1", w2, e1, "test", VISIBILITY_B, AUTHORIZATIONS_B);
+        graph.addEdge("e1-e2", e1, e2, "test", VISIBILITY_EMPTY, AUTHORIZATIONS_A);
+        graph.flush();
+
+        e1 = graph.getVertex("e1", AUTHORIZATIONS_EMPTY);
+        graph.markVertexHidden(e1, VISIBILITY_A, AUTHORIZATIONS_EMPTY);
+        graph.flush();
+
+        w1 = graph.getVertex("w1", AUTHORIZATIONS_A);
+        graph.removeVertex(w1, AUTHORIZATIONS_A);
+        graph.flush();
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals("e2", toList(graph.getVertices(AUTHORIZATIONS_A)).get(0).getId());
+
+        assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_B)));
+        boolean foundW2 = false;
+        boolean foundE1 = false;
+        boolean foundE2 = false;
+        for (Vertex v : graph.getVertices(AUTHORIZATIONS_B)) {
+            if (v.getId().equals("w2")) {
+                foundW2 = true;
+            } else if (v.getId().equals("e1")) {
+                foundE1 = true;
+            } else if (v.getId().equals("e2")) {
+                foundE2 = true;
+            } else {
+                throw new SecureGraphException("Unexpected id: " + v.getId());
+            }
+        }
+        assertTrue("w2", foundW2);
+        assertTrue("e1", foundE1);
+        assertTrue("e2", foundE2);
+    }
+
     @Test
     public void testRemoveVertexWithProperties() {
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)

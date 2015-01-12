@@ -406,9 +406,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public void markVertexHidden(Vertex vertex, Visibility visibility, Authorizations authorizations) {
-        if (vertex == null) {
-            throw new IllegalArgumentException("vertex cannot be null");
-        }
+        checkNotNull(vertex, "vertex cannot be null");
 
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
 
@@ -426,9 +424,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
     @Override
     public void markVertexVisible(Vertex vertex, Visibility visibility, Authorizations authorizations) {
-        if (vertex == null) {
-            throw new IllegalArgumentException("vertex cannot be null");
-        }
+        checkNotNull(vertex, "vertex cannot be null");
 
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
 
@@ -526,30 +522,18 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
 
         getSearchIndex().removeElement(this, edge, authorizations);
 
-        Vertex out = edge.getVertex(Direction.OUT, authorizations);
-        checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
-        Vertex in = edge.getVertex(Direction.IN, authorizations);
-        checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
-
         ColumnVisibility visibility = visibilityToAccumuloVisibility(edge.getVisibility());
 
-        Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + out.getId());
+        Mutation outMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.OUT));
         outMutation.putDelete(AccumuloVertex.CF_OUT_EDGE, new Text(edge.getId()), visibility);
 
-        Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + in.getId());
+        Mutation inMutation = new Mutation(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + edge.getVertexId(Direction.IN));
         inMutation.putDelete(AccumuloVertex.CF_IN_EDGE, new Text(edge.getId()), visibility);
 
         addMutations(getVerticesWriter(), outMutation, inMutation);
 
         // Remove everything else related to edge.
         addMutations(getEdgesWriter(), getDeleteRowMutation(AccumuloConstants.EDGE_ROW_KEY_PREFIX + edge.getId()));
-
-        if (out instanceof AccumuloVertex) {
-            ((AccumuloVertex) out).removeOutEdge(edge);
-        }
-        if (in instanceof AccumuloVertex) {
-            ((AccumuloVertex) in).removeInEdge(edge);
-        }
 
         if (hasEventListeners()) {
             queueEvent(new RemoveEdgeEvent(this, edge));
@@ -561,9 +545,13 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         checkNotNull(edge);
 
         Vertex out = edge.getVertex(Direction.OUT, authorizations);
-        checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
+        if (out == null) {
+            throw new SecureGraphException(String.format("Unable to mark edge hidden %s, can't find out vertex %s", edge.getId(), edge.getVertexId(Direction.OUT)));
+        }
         Vertex in = edge.getVertex(Direction.IN, authorizations);
-        checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
+        if (in == null) {
+            throw new SecureGraphException(String.format("Unable to mark edge hidden %s, can't find in vertex %s", edge.getId(), edge.getVertexId(Direction.IN)));
+        }
 
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
 
@@ -595,9 +583,13 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         checkNotNull(edge);
 
         Vertex out = edge.getVertex(Direction.OUT, FetchHint.ALL_INCLUDING_HIDDEN, authorizations);
-        checkNotNull(out, "Unable to delete edge %s, can't find out vertex", edge.getId());
+        if (out == null) {
+            throw new SecureGraphException(String.format("Unable to mark edge visible %s, can't find out vertex %s", edge.getId(), edge.getVertexId(Direction.OUT)));
+        }
         Vertex in = edge.getVertex(Direction.IN, FetchHint.ALL_INCLUDING_HIDDEN, authorizations);
-        checkNotNull(in, "Unable to delete edge %s, can't find in vertex", edge.getId());
+        if (in == null) {
+            throw new SecureGraphException(String.format("Unable to mark edge visible %s, can't find in vertex %s", edge.getId(), edge.getVertexId(Direction.IN)));
+        }
 
         ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(visibility);
 
