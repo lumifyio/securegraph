@@ -101,6 +101,15 @@ public interface Graph {
     Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
 
     /**
+     * Tests the existence of vertices with the given authorizations.
+     *
+     * @param ids            The vertex ids to check existence of.
+     * @param authorizations The authorizations required to load the vertices.
+     * @return True or False at the same index of the ids.
+     */
+    List<Boolean> doVerticesExist(List<String> ids, Authorizations authorizations);
+
+    /**
      * Gets all vertices matching the given ids on the graph. The order of
      * the returned vertices is not guaranteed {@link org.securegraph.Graph#getVerticesInOrder(Iterable, Authorizations)}.
      * Vertices are not kept in memory during the iteration.
@@ -300,6 +309,15 @@ public interface Graph {
      * @return An iterable of all the edges.
      */
     Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    /**
+     * Tests the existence of edges with the given authorizations.
+     *
+     * @param ids            The edge ids to check existence of.
+     * @param authorizations The authorizations required to load the edges.
+     * @return True or False at the same index of the ids.
+     */
+    List<Boolean> doEdgesExist(List<String> ids, Authorizations authorizations);
 
     /**
      * Gets all edges on the graph matching the given ids.

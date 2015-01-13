@@ -89,6 +89,20 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public List<Boolean> doVerticesExist(List<String> ids, Authorizations authorizations) {
+        Map<String, Vertex> lookup = new HashMap<String, Vertex>();
+        for (Vertex vertex : getVertices(ids, FetchHint.NONE, authorizations)) {
+            lookup.put(vertex.getId(), vertex);
+        }
+
+        ArrayList<Boolean> results = new ArrayList<Boolean>(ids.size());
+        for (String id : ids) {
+            results.add(lookup.containsKey(id));
+        }
+        return results;
+    }
+
+    @Override
     public Iterable<Vertex> getVertices(final Iterable<String> ids, final Authorizations authorizations) {
         return getVertices(ids, FetchHint.ALL, authorizations);
     }
@@ -173,6 +187,20 @@ public abstract class GraphBase implements Graph {
     @Override
     public Edge getEdge(String edgeId, Authorizations authorizations) {
         return getEdge(edgeId, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public List<Boolean> doEdgesExist(List<String> ids, Authorizations authorizations) {
+        Map<String, Edge> lookup = new HashMap<String, Edge>();
+        for (Edge edge : getEdges(ids, FetchHint.NONE, authorizations)) {
+            lookup.put(edge.getId(), edge);
+        }
+
+        ArrayList<Boolean> results = new ArrayList<Boolean>(ids.size());
+        for (String id : ids) {
+            results.add(lookup.containsKey(id));
+        }
+        return results;
     }
 
     @Override
