@@ -542,19 +542,31 @@ public abstract class GraphTestBase {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertTrue("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
         graph.markVertexHidden(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertFalse("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
         graph.markVertexHidden(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertFalse("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertFalse("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
@@ -565,14 +577,22 @@ public abstract class GraphTestBase {
         assertTrue("v1 should be hidden", v1Hidden.isHidden(AUTHORIZATIONS_A));
 
         graph.markVertexVisible(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertFalse("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
         graph.markVertexVisible(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertTrue("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
     }
@@ -584,7 +604,11 @@ public abstract class GraphTestBase {
         Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
         Edge e1 = graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
         Edge e2 = graph.addEdge("v2tov3", v2, v3, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
+        assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));
+        assertTrue("v1tov2 exists (auth A&B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A_AND_B));
         assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
@@ -592,7 +616,11 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
 
         graph.markEdgeHidden(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
+        assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));
+        assertFalse("v1tov2 exists (auth A&B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A_AND_B));
         assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_B)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A_AND_B)));
@@ -608,7 +636,11 @@ public abstract class GraphTestBase {
         assertTrue("e1 should be hidden", e1Hidden.isHidden(AUTHORIZATIONS_A_AND_B));
 
         graph.markEdgeVisible(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
+        assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));
+        assertTrue("v1tov2 exists (auth A&B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A_AND_B));
         assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));

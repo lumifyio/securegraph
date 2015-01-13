@@ -56,6 +56,15 @@ public interface Graph {
     VertexBuilder prepareVertex(String vertexId, Visibility visibility);
 
     /**
+     * Tests the existence of a vertex with the given authorizations.
+     *
+     * @param vertexId       The vertex id to check existence of.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return True if vertex exists.
+     */
+    boolean doesVertexExist(String vertexId, Authorizations authorizations);
+
+    /**
      * Get a vertex from the graph.
      *
      * @param vertexId       The vertex id to retrieve from the graph.
@@ -246,6 +255,15 @@ public interface Graph {
      * @return The edge builder.
      */
     EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility);
+
+    /**
+     * Tests the existence of a edge with the given authorizations.
+     *
+     * @param edgeId         The edge id to check existence of.
+     * @param authorizations The authorizations required to load the edge.
+     * @return True if edge exists.
+     */
+    boolean doesEdgeExist(String edgeId, Authorizations authorizations);
 
     /**
      * Get an edge from the graph.

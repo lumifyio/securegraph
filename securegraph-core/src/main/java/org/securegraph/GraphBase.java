@@ -47,6 +47,11 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public boolean doesVertexExist(String vertexId, Authorizations authorizations) {
+        return getVertex(vertexId, FetchHint.NONE, authorizations) != null;
+    }
+
+    @Override
     public Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all vertices! Override getVertex.");
         for (Vertex vertex : getVertices(fetchHints, authorizations)) {
@@ -147,6 +152,11 @@ public abstract class GraphBase implements Graph {
     @Override
     public EdgeBuilder prepareEdge(Vertex outVertex, Vertex inVertex, String label, Visibility visibility) {
         return prepareEdge(getIdGenerator().nextId(), outVertex, inVertex, label, visibility);
+    }
+
+    @Override
+    public boolean doesEdgeExist(String edgeId, Authorizations authorizations) {
+        return getEdge(edgeId, FetchHint.NONE, authorizations) != null;
     }
 
     @Override
