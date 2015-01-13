@@ -89,15 +89,13 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public List<Boolean> doVerticesExist(List<String> ids, Authorizations authorizations) {
-        Map<String, Vertex> lookup = new HashMap<String, Vertex>();
-        for (Vertex vertex : getVertices(ids, FetchHint.NONE, authorizations)) {
-            lookup.put(vertex.getId(), vertex);
-        }
-
-        ArrayList<Boolean> results = new ArrayList<Boolean>(ids.size());
+    public Map<String, Boolean> doVerticesExist(List<String> ids, Authorizations authorizations) {
+        Map<String, Boolean> results = new HashMap<String, Boolean>();
         for (String id : ids) {
-            results.add(lookup.containsKey(id));
+            results.put(id, false);
+        }
+        for (Vertex vertex : getVertices(ids, FetchHint.NONE, authorizations)) {
+            results.put(vertex.getId(), true);
         }
         return results;
     }
@@ -190,15 +188,13 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
-    public List<Boolean> doEdgesExist(List<String> ids, Authorizations authorizations) {
-        Map<String, Edge> lookup = new HashMap<String, Edge>();
-        for (Edge edge : getEdges(ids, FetchHint.NONE, authorizations)) {
-            lookup.put(edge.getId(), edge);
-        }
-
-        ArrayList<Boolean> results = new ArrayList<Boolean>(ids.size());
+    public Map<String, Boolean> doEdgesExist(List<String> ids, Authorizations authorizations) {
+        Map<String, Boolean> results = new HashMap<String, Boolean>();
         for (String id : ids) {
-            results.add(lookup.containsKey(id));
+            results.put(id, false);
+        }
+        for (Edge edge : getEdges(ids, FetchHint.NONE, authorizations)) {
+            results.put(edge.getId(), true);
         }
         return results;
     }

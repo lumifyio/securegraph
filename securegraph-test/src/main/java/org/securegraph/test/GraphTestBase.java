@@ -548,11 +548,11 @@ public abstract class GraphTestBase {
         vertexIdList.add("v1");
         vertexIdList.add("v2");
         vertexIdList.add("bad"); // add "bad" to the end of the list to test ordering of results
-        List<Boolean> verticesExist = graph.doVerticesExist(vertexIdList, AUTHORIZATIONS_A);
+        Map<String, Boolean> verticesExist = graph.doVerticesExist(vertexIdList, AUTHORIZATIONS_A);
         assertEquals(3, vertexIdList.size());
-        assertTrue("v1 exist", verticesExist.get(0));
-        assertTrue("v2 exist", verticesExist.get(1));
-        assertFalse("v3 exist", verticesExist.get(2));
+        assertTrue("v1 exist", verticesExist.get("v1"));
+        assertTrue("v2 exist", verticesExist.get("v2"));
+        assertFalse("bad exist", verticesExist.get("bad"));
 
         assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
         assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
@@ -620,11 +620,11 @@ public abstract class GraphTestBase {
         edgeIdList.add("v1tov2");
         edgeIdList.add("v2tov3");
         edgeIdList.add("bad");
-        List<Boolean> edgesExist = graph.doEdgesExist(edgeIdList, AUTHORIZATIONS_A);
+        Map<String, Boolean> edgesExist = graph.doEdgesExist(edgeIdList, AUTHORIZATIONS_A);
         assertEquals(3, edgeIdList.size());
-        assertTrue("v1tov2 exist", edgesExist.get(0));
-        assertTrue("v2tov3 exist", edgesExist.get(1));
-        assertFalse("bad exist", edgesExist.get(2));
+        assertTrue("v1tov2 exist", edgesExist.get("v1tov2"));
+        assertTrue("v2tov3 exist", edgesExist.get("v2tov3"));
+        assertFalse("bad exist", edgesExist.get("bad"));
 
         assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
         assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));

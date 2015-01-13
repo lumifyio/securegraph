@@ -6,6 +6,7 @@ import org.securegraph.query.GraphQuery;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 public interface Graph {
     /**
@@ -105,9 +106,9 @@ public interface Graph {
      *
      * @param ids            The vertex ids to check existence of.
      * @param authorizations The authorizations required to load the vertices.
-     * @return True or False at the same index of the ids.
+     * @return Map of ids to exists status.
      */
-    List<Boolean> doVerticesExist(List<String> ids, Authorizations authorizations);
+    Map<String, Boolean> doVerticesExist(List<String> ids, Authorizations authorizations);
 
     /**
      * Gets all vertices matching the given ids on the graph. The order of
@@ -315,9 +316,9 @@ public interface Graph {
      *
      * @param ids            The edge ids to check existence of.
      * @param authorizations The authorizations required to load the edges.
-     * @return True or False at the same index of the ids.
+     * @return Maps of ids to exists status.
      */
-    List<Boolean> doEdgesExist(List<String> ids, Authorizations authorizations);
+    Map<String, Boolean> doEdgesExist(List<String> ids, Authorizations authorizations);
 
     /**
      * Gets all edges on the graph matching the given ids.
