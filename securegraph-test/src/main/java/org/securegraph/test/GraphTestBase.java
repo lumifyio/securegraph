@@ -15,7 +15,6 @@ import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.*;
 import org.securegraph.search.DefaultSearchIndex;
-import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.test.util.LargeStringInputStream;
@@ -27,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -1252,18 +1252,17 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testDisableEdgeIndexing() {
+    public void testDisableEdgeIndexing() throws NoSuchFieldException, IllegalAccessException {
         if (!(graph instanceof GraphBaseWithSearchIndex)) {
             LOGGER.info("skipping can't get " + SearchIndex.class.getSimpleName());
             return;
         }
         GraphBaseWithSearchIndex graphBaseWithSearchIndex = (GraphBaseWithSearchIndex) graph;
         SearchIndex searchIndex = graphBaseWithSearchIndex.getSearchIndex();
-        if (!(searchIndex instanceof DisableEdgeIndexSupport)) {
-            LOGGER.info("skipping " + SearchIndex.class.getSimpleName() + " doesn't support " + DisableEdgeIndexSupport.class.getSimpleName());
+        if (!disableEdgeIndexSupport(searchIndex)) {
+            LOGGER.info("skipping " + SearchIndex.class.getSimpleName() + " doesn't support disabling index");
             return;
         }
-        ((DisableEdgeIndexSupport) searchIndex).setIndexEdges(false);
 
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
         Vertex v2 = graph.prepareVertex("v2", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
@@ -2388,6 +2387,45 @@ public abstract class GraphTestBase {
         assertEquals("ids length mismatch", ids.length, edgesList.size());
         for (int i = 0; i < ids.length; i++) {
             assertEquals("at offset: " + i, ids[i], edgesList.get(i).getId());
+        }
+    }
+
+    private boolean disableEdgeIndexSupport(SearchIndex searchIndex) throws NoSuchFieldException, IllegalAccessException {
+        Field configField = findPrivateField(searchIndex.getClass(), "config");
+        if (configField == null) {
+            LOGGER.debug("Could not find 'config' field");
+            return false;
+        }
+
+        configField.setAccessible(true);
+
+        Object config = configField.get(searchIndex);
+        if (config == null) {
+            LOGGER.debug("Could not get 'config' field");
+            return false;
+        }
+
+        Field indexEdgesField = findPrivateField(config.getClass(), "indexEdges");
+        if (indexEdgesField == null) {
+            LOGGER.debug("Could not find 'indexEdgesField' field");
+            return false;
+        }
+
+        indexEdgesField.setAccessible(true);
+
+        indexEdgesField.set(config, false);
+
+        return true;
+    }
+
+    private Field findPrivateField(Class clazz, String name) {
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            if (clazz.getSuperclass() != null) {
+                return findPrivateField(clazz.getSuperclass(), name);
+            }
+            return null;
         }
     }
 }

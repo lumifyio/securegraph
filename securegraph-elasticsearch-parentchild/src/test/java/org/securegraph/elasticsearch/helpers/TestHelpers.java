@@ -9,6 +9,7 @@ import org.securegraph.Graph;
 import org.securegraph.GraphConfiguration;
 import org.securegraph.elasticsearch.ElasticSearchParentChildSearchIndex;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
+import org.securegraph.elasticsearch.ElasticSearchSearchIndexConfiguration;
 import org.securegraph.inmemory.InMemoryGraph;
 import org.securegraph.inmemory.InMemoryGraphConfiguration;
 import org.slf4j.Logger;
@@ -34,12 +35,12 @@ public class TestHelpers {
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchParentChildSearchIndex.class.getName());
         if (TESTING) {
             addr = "localhost";
-            config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_STORE_SOURCE_DATA, "true");
-            config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_INDEX_NAME, "securegraph-test");
+            config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_STORE_SOURCE_DATA, "true");
+            config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_INDEX_NAME, "securegraph-test");
         } else {
             config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
         }
-        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexBase.CONFIG_ES_LOCATIONS, addr);
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_ES_LOCATIONS, addr);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
         return InMemoryGraph.create(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }

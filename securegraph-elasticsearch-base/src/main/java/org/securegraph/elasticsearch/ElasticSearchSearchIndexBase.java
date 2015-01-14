@@ -22,7 +22,6 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.DefaultVertexQuery;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.query.VertexQuery;
-import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.type.GeoPoint;
 import org.slf4j.Logger;
@@ -33,21 +32,8 @@ import java.util.*;
 
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public abstract class ElasticSearchSearchIndexBase implements SearchIndex, DisableEdgeIndexSupport {
+public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
-    public static final String CONFIG_STORE_SOURCE_DATA = "storeSourceData";
-    public static final String CONFIG_ES_LOCATIONS = "locations";
-    public static final String CONFIG_INDEX_NAME = "indexName";
-    private static final String DEFAULT_INDEX_NAME = "securegraph";
-    public static final String CONFIG_INDICES_TO_QUERY = "indicesToQuery";
-    public static final String CONFIG_IN_EDGE_BOOST = "inEdgeBoost";
-    private static final double DEFAULT_IN_EDGE_BOOST = 1.2;
-    public static final String CONFIG_OUT_EDGE_BOOST = "outEdgeBoost";
-    private static final double DEFAULT_OUT_EDGE_BOOST = 1.1;
-    public static final String CONFIG_USE_EDGE_BOOST = "useEdgeBoost";
-    private static final boolean DEFAULT_USE_EDGE_BOOST = true;
-    public static final String CONFIG_INDEX_EDGES = "indexEdges";
-    private static final boolean DEFAULT_INDEX_EDGES = true;
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String VISIBILITY_FIELD_NAME = "__visibility";
@@ -60,37 +46,20 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     public static final String GEO_PROPERTY_NAME_SUFFIX = "_geo";
     private final TransportClient client;
-    private final boolean autoflush;
-    private final boolean storeSourceData;
-    private String defaultIndexName;
-    private String[] indicesToQuery;
-    private final Map<String, IndexInfo> indexInfos = new HashMap<String, IndexInfo>();
+    private final ElasticSearchSearchIndexConfiguration config;
+    private final Map<String, IndexInfo> indexInfos = new HashMap<>();
     private int indexInfosLastSize = 0; // Used to prevent creating a index name array each time
     private String[] indexNamesAsArray;
-    private String[] esLocations;
-    private double inEdgeBoost;
-    private double outEdgeBoost;
-    private boolean useEdgeBoost;
-    private boolean indexEdges;
 
     protected ElasticSearchSearchIndexBase(Map config) {
-        readConfig(config);
-
-        Object storeSourceDataConfig = config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_STORE_SOURCE_DATA);
-        storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
-        LOGGER.info("Store source data: " + storeSourceData);
-
-        // TODO convert this to use a proper config object
-        Object autoFlushObj = config.get(GraphConfiguration.AUTO_FLUSH);
-        autoflush = autoFlushObj != null && "true".equals(autoFlushObj.toString());
-        LOGGER.info("Auto flush: " + autoflush);
+        this.config = new ElasticSearchSearchIndexConfiguration(config);
 
         ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
         if (config.get(SETTING_CLUSTER_NAME) != null) {
             settingsBuilder.put("cluster.name", config.get(SETTING_CLUSTER_NAME));
         }
         client = new TransportClient(settingsBuilder.build());
-        for (String esLocation : esLocations) {
+        for (String esLocation : this.config.getEsLocations()) {
             String[] locationSocket = esLocation.split(":");
             String hostname;
             int port;
@@ -112,80 +81,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
 
         loadIndexInfos();
         loadPropertyDefinitions();
-    }
-
-    protected void readConfig(Map config) {
-        // Locations
-        String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_ES_LOCATIONS);
-        if (esLocationsString == null) {
-            throw new SecureGraphException(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_ES_LOCATIONS + " is a required configuration parameter");
-        }
-        LOGGER.info("Using elastic search locations: " + esLocationsString);
-        esLocations = esLocationsString.split(",");
-
-        // Index Name
-        defaultIndexName = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_NAME);
-        if (defaultIndexName == null) {
-            defaultIndexName = DEFAULT_INDEX_NAME;
-        }
-        LOGGER.info("Default index name: " + defaultIndexName);
-
-        // Indices to query
-        String indicesToQueryString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDICES_TO_QUERY);
-        if (indicesToQueryString == null) {
-            indicesToQuery = new String[]{defaultIndexName};
-        } else {
-            indicesToQuery = indicesToQueryString.split(",");
-            for (int i = 0; i < indicesToQuery.length; i++) {
-                indicesToQuery[i] = indicesToQuery[i].trim();
-            }
-        }
-        if (LOGGER.isInfoEnabled()) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < indicesToQuery.length; i++) {
-                if (i > 0) {
-                    sb.append(',');
-                }
-                sb.append(indicesToQuery[i]);
-            }
-            LOGGER.info("Indices to query: " + sb.toString());
-        }
-
-        // In-Edge Boost
-        String inEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_IN_EDGE_BOOST);
-        if (inEdgeBoostString == null) {
-            inEdgeBoost = DEFAULT_IN_EDGE_BOOST;
-        } else {
-            inEdgeBoost = Double.parseDouble(inEdgeBoostString);
-        }
-        LOGGER.info("In Edge Boost: " + inEdgeBoost);
-
-        // Out-Edge Boost
-        String outEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_OUT_EDGE_BOOST);
-        if (outEdgeBoostString == null) {
-            outEdgeBoost = DEFAULT_OUT_EDGE_BOOST;
-        } else {
-            outEdgeBoost = Double.parseDouble(outEdgeBoostString);
-        }
-        LOGGER.info("Out Edge Boost: " + outEdgeBoost);
-
-        // Use Edge Boost
-        String useEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_USE_EDGE_BOOST);
-        if (useEdgeBoostString == null) {
-            useEdgeBoost = DEFAULT_USE_EDGE_BOOST;
-        } else {
-            useEdgeBoost = Boolean.parseBoolean(useEdgeBoostString);
-        }
-        LOGGER.info("Use edge boost: " + useEdgeBoost);
-
-        // index edges
-        String indexEdgesString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_EDGES);
-        if (indexEdgesString == null) {
-            indexEdges = DEFAULT_INDEX_EDGES;
-        } else {
-            indexEdges = Boolean.parseBoolean(indexEdgesString);
-        }
-        LOGGER.info("index edges: " + indexEdges);
     }
 
     protected void loadIndexInfos() {
@@ -239,7 +134,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
             try {
                 XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
                         .startObject()
-                        .startObject("_source").field("enabled", storeSourceData).endObject()
+                        .startObject("_source").field("enabled", this.config.isStoreSourceData()).endObject()
                         .startObject("properties");
                 createIndexAddFieldsToElementType(mappingBuilder);
                 XContentBuilder mapping = mappingBuilder.endObject()
@@ -290,7 +185,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     private PropertyDefinition createPropertyDefinition(Map.Entry<String, String> property, Map<String, String> propertyTypes) {
         String propertyName = property.getKey();
         Class dataType = elasticSearchTypeToClass(property.getValue());
-        Set<TextIndexHint> indexHints = new HashSet<TextIndexHint>();
+        Set<TextIndexHint> indexHints = new HashSet<>();
 
         if (dataType == String.class) {
             if (propertyTypes.containsKey(propertyName + GEO_PROPERTY_NAME_SUFFIX)) {
@@ -349,7 +244,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     private Map<String, String> getPropertyTypesFromServer(String indexName) {
-        Map<String, String> propertyTypes = new HashMap<String, String>();
+        Map<String, String> propertyTypes = new HashMap<>();
         try {
             ImmutableOpenMap<String, ImmutableOpenMap<String, MappingMetaData>> imd = client.admin().indices().prepareGetMappings(indexName).execute().actionGet().getMappings();
             for (ObjectCursor<ImmutableOpenMap<String, MappingMetaData>> m : imd.values()) {
@@ -423,7 +318,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     public Map<String, PropertyDefinition> getAllPropertyDefinitions() {
-        Map<String, PropertyDefinition> allPropertyDefinitions = new HashMap<String, PropertyDefinition>();
+        Map<String, PropertyDefinition> allPropertyDefinitions = new HashMap<>();
         for (IndexInfo indexInfo : this.indexInfos.values()) {
             allPropertyDefinitions.putAll(indexInfo.getPropertyDefinitions());
         }
@@ -456,7 +351,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
         LOGGER.debug("adding property definition: " + propertyDefinition);
         for (String indexName : getIndexNames(propertyDefinition)) {
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, storeSourceData);
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, this.config.isStoreSourceData());
 
             if (propertyDefinition.getDataType() == String.class) {
                 if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
@@ -477,13 +372,13 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     protected Iterable<String> getIndexNames(PropertyDefinition propertyDefinition) {
-        List<String> indexNames = new ArrayList<String>();
-        indexNames.add(defaultIndexName);
+        List<String> indexNames = new ArrayList<>();
+        indexNames.add(this.config.getDefaultIndexName());
         return indexNames;
     }
 
     protected String getIndexName(Element element) {
-        return defaultIndexName;
+        return this.config.getDefaultIndexName();
     }
 
     @Override
@@ -499,7 +394,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     public IndexInfo addPropertiesToIndex(Element element, Iterable<Property> properties) {
         try {
             String indexName = getIndexName(element);
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, storeSourceData);
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, this.config.isStoreSourceData());
             for (Property property : properties) {
                 addPropertyToIndex(indexInfo, property);
             }
@@ -550,10 +445,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     protected abstract void addPropertyToIndex(IndexInfo indexInfo, String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException;
 
     protected boolean shouldIgnoreType(Class dataType) {
-        if (dataType == byte[].class) {
-            return true;
-        }
-        return false;
+        return dataType == byte[].class;
     }
 
     public TransportClient getClient() {
@@ -561,27 +453,23 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     public boolean isAutoflush() {
-        return autoflush;
+        return this.config.isAutoFlush();
     }
 
     public boolean isUseEdgeBoost() {
-        return useEdgeBoost;
+        return this.config.isUseEdgeBoost();
     }
 
     public boolean isIndexEdges() {
-        return indexEdges;
-    }
-
-    public void setIndexEdges(boolean indexEdges) {
-        this.indexEdges = indexEdges;
+        return this.config.isIndexEdges();
     }
 
     public double getInEdgeBoost() {
-        return inEdgeBoost;
+        return this.config.getInEdgeBoost();
     }
 
     public double getOutEdgeBoost() {
-        return outEdgeBoost;
+        return this.config.getOutEdgeBoost();
     }
 
     protected void addTypeToMapping(XContentBuilder mapping, String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException {
@@ -631,7 +519,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     protected boolean isStoreSourceData() {
-        return storeSourceData;
+        return this.config.isStoreSourceData();
     }
 
     protected void doBulkRequest(BulkRequest bulkRequest) {
@@ -657,12 +545,12 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
             } catch (Exception ex) {
                 throw new SecureGraphException("Could not delete index " + indexName, ex);
             }
-            ensureIndexCreatedAndInitialized(indexName, storeSourceData);
+            ensureIndexCreatedAndInitialized(indexName, this.config.isStoreSourceData());
         }
         loadPropertyDefinitions();
     }
 
     protected String[] getIndicesToQuery() {
-        return indicesToQuery;
+        return this.config.getIndicesToQuery();
     }
 }
