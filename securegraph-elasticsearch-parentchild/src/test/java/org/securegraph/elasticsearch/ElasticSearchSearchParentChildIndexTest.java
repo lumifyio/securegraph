@@ -68,7 +68,7 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
         ElasticSearchParentChildSearchIndex searchIndex = (ElasticSearchParentChildSearchIndex) ((GraphBaseWithSearchIndex) graph).getSearchIndex();
 
         String indexName = searchIndex.getIndexName(v1);
-        IndexInfo indexInfo = searchIndex.ensureIndexCreatedAndInitialized(indexName, searchIndex.isStoreSourceData());
+        IndexInfo indexInfo = searchIndex.ensureIndexCreatedAndInitialized(indexName, searchIndex.getConfig().isStoreSourceData());
 
         String parentDocumentJson = searchIndex.getParentDocumentIndexRequest(v1, AUTHORIZATIONS_A_AND_B).source().toUtf8();
         assertNotNull(parentDocumentJson);

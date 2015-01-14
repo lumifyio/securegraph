@@ -43,7 +43,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
                         .startObject()
                         .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
-                        .startObject("_source").field("enabled", isStoreSourceData()).endObject()
+                        .startObject("_source").field("enabled", getConfig().isStoreSourceData()).endObject()
                         .startObject("properties")
                         .startObject(VISIBILITY_FIELD_NAME)
                         .field("type", "string")
@@ -139,7 +139,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("addElement: " + element.getId());
         }
-        if (!isIndexEdges() && element instanceof Edge) {
+        if (!getConfig().isIndexEdges() && element instanceof Edge) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping edge: " + element.getId());
             }
@@ -155,14 +155,14 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
             doBulkRequest(bulkRequest);
 
-            if (isAutoflush()) {
+            if (getConfig().isAutoFlush()) {
                 flush();
             }
         } catch (Exception e) {
             throw new SecureGraphException("Could not add element", e);
         }
 
-        if (isUseEdgeBoost() && element instanceof Edge) {
+        if (getConfig().isUpdateEdgeBoost() && element instanceof Edge) {
             Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
             if (vOut != null) {
                 addElement(graph, vOut, authorizations);
@@ -180,7 +180,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         Map<IndexInfo, BulkRequestWithCount> bulkRequests = new HashMap<IndexInfo, BulkRequestWithCount>();
         for (Element element : elements) {
             String indexName = getIndexName(element);
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
             BulkRequestWithCount bulkRequestWithCount = bulkRequests.get(indexInfo);
             if (bulkRequestWithCount == null) {
                 bulkRequestWithCount = new BulkRequestWithCount();
@@ -196,7 +196,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             bulkRequestWithCount.incrementCount();
             totalCount++;
 
-            if (isUseEdgeBoost() && element instanceof Edge) {
+            if (getConfig().isUpdateEdgeBoost() && element instanceof Edge) {
                 Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
                 if (vOut != null) {
                     addElementToBulkRequest(indexInfo, bulkRequestWithCount.getBulkRequest(), vOut, authorizations);
@@ -218,7 +218,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
         LOGGER.debug("added " + totalCount + " elements");
 
-        if (isAutoflush()) {
+        if (getConfig().isAutoFlush()) {
             flush();
         }
     }
@@ -239,7 +239,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     public IndexRequest getPropertyDocumentIndexRequest(Element element, Property property) throws IOException {
         String indexName = getIndexName(element);
-        IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
         return getPropertyDocumentIndexRequest(indexInfo, element, property);
     }
 
@@ -264,7 +264,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     public IndexRequest getParentDocumentIndexRequest(Element element, Authorizations authorizations) throws IOException {
         String indexName = getIndexName(element);
-        IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
         return getParentDocumentIndexRequest(indexInfo, element, authorizations);
     }
 
@@ -276,7 +276,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         String id = element.getId();
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
-            if (isUseEdgeBoost()) {
+            if (getConfig().isUpdateEdgeBoost()) {
                 int inEdgeCount = ((Vertex) element).getEdgeCount(Direction.IN, authorizations);
                 jsonBuilder.field(ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
                 int outEdgeCount = ((Vertex) element).getEdgeCount(Direction.OUT, authorizations);
@@ -346,7 +346,15 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchParentChildGraphQuery(getClient(), getIndicesToQuery(), graph, queryString, getAllPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
+        return new ElasticSearchParentChildGraphQuery(
+                getClient(),
+                getConfig().getIndicesToQuery(),
+                graph,
+                queryString,
+                getAllPropertyDefinitions(),
+                getConfig().getInEdgeBoost(),
+                getConfig().getOutEdgeBoost(),
+                authorizations);
     }
 
     @Override
@@ -365,7 +373,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 .startObject("_parent").field("type", ELEMENT_TYPE).endObject()
                 .startObject("properties")
                 .startObject(propertyName)
-                .field("store", isStoreSourceData());
+                .field("store", getConfig().isStoreSourceData());
 
         addTypeToMapping(mapping, propertyName, dataType, analyzed, boost);
 

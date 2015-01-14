@@ -3,8 +3,8 @@ package org.securegraph.elasticsearch;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -41,8 +41,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public static final String OUT_EDGE_COUNT_FIELD_NAME = "__outEdgeCount";
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
-    public static final String SETTING_CLUSTER_NAME = "clusterName";
-    public static final int DEFAULT_ES_PORT = 9300;
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     public static final String GEO_PROPERTY_NAME_SUFFIX = "_geo";
     private final TransportClient client;
@@ -55,11 +53,11 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         this.config = new ElasticSearchSearchIndexConfiguration(config);
 
         ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
-        if (config.get(SETTING_CLUSTER_NAME) != null) {
-            settingsBuilder.put("cluster.name", config.get(SETTING_CLUSTER_NAME));
+        if (getConfig().getClusterName() != null) {
+            settingsBuilder.put("cluster.name", getConfig().getClusterName());
         }
         client = new TransportClient(settingsBuilder.build());
-        for (String esLocation : this.config.getEsLocations()) {
+        for (String esLocation : getConfig().getEsLocations()) {
             String[] locationSocket = esLocation.split(":");
             String hostname;
             int port;
@@ -68,15 +66,15 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                 port = Integer.parseInt(locationSocket[1]);
             } else if (locationSocket.length == 1) {
                 hostname = locationSocket[0];
-                port = DEFAULT_ES_PORT;
+                port = getConfig().getPort();
             } else {
                 throw new SecureGraphException("Invalid elastic search location: " + esLocation);
             }
             client.addTransportAddress(new InetSocketTransportAddress(hostname, port));
         }
 
-        for (String indexName : getIndicesToQuery()) {
-            ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        for (String indexName : getConfig().getIndicesToQuery()) {
+            ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
         }
 
         loadIndexInfos();
@@ -84,7 +82,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     }
 
     protected void loadIndexInfos() {
-        Map<String, IndexStatus> indices = client.admin().indices().prepareStatus().execute().actionGet().getIndices();
+        Map<String, IndexStats> indices = client.admin().indices().prepareStats().execute().actionGet().getIndices();
         for (String indexName : indices.keySet()) {
             IndexInfo indexInfo = indexInfos.get(indexName);
             if (indexInfo != null) {
@@ -108,7 +106,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                     try {
                         createIndex(indexName, storeSourceData);
 
-                        IndicesStatusResponse statusResponse = client.admin().indices().prepareStatus(indexName).execute().actionGet();
+                        IndicesStatsResponse statusResponse = client.admin().indices().prepareStats(indexName).execute().actionGet();
                         LOGGER.debug(statusResponse.toString());
                     } catch (IOException e) {
                         throw new SecureGraphException("Could not create index: " + indexName, e);
@@ -134,7 +132,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             try {
                 XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
                         .startObject()
-                        .startObject("_source").field("enabled", this.config.isStoreSourceData()).endObject()
+                        .startObject("_source").field("enabled", getConfig().isStoreSourceData()).endObject()
                         .startObject("properties");
                 createIndexAddFieldsToElementType(mappingBuilder);
                 XContentBuilder mapping = mappingBuilder.endObject()
@@ -351,7 +349,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
         LOGGER.debug("adding property definition: " + propertyDefinition);
         for (String indexName : getIndexNames(propertyDefinition)) {
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, this.config.isStoreSourceData());
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
 
             if (propertyDefinition.getDataType() == String.class) {
                 if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
@@ -373,12 +371,12 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
 
     protected Iterable<String> getIndexNames(PropertyDefinition propertyDefinition) {
         List<String> indexNames = new ArrayList<>();
-        indexNames.add(this.config.getDefaultIndexName());
+        indexNames.add(getConfig().getDefaultIndexName());
         return indexNames;
     }
 
     protected String getIndexName(Element element) {
-        return this.config.getDefaultIndexName();
+        return getConfig().getDefaultIndexName();
     }
 
     @Override
@@ -394,7 +392,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public IndexInfo addPropertiesToIndex(Element element, Iterable<Property> properties) {
         try {
             String indexName = getIndexName(element);
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, this.config.isStoreSourceData());
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
             for (Property property : properties) {
                 addPropertyToIndex(indexInfo, property);
             }
@@ -452,24 +450,8 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         return client;
     }
 
-    public boolean isAutoflush() {
-        return this.config.isAutoFlush();
-    }
-
-    public boolean isUseEdgeBoost() {
-        return this.config.isUseEdgeBoost();
-    }
-
-    public boolean isIndexEdges() {
-        return this.config.isIndexEdges();
-    }
-
-    public double getInEdgeBoost() {
-        return this.config.getInEdgeBoost();
-    }
-
-    public double getOutEdgeBoost() {
-        return this.config.getOutEdgeBoost();
+    public ElasticSearchSearchIndexConfiguration getConfig() {
+        return config;
     }
 
     protected void addTypeToMapping(XContentBuilder mapping, String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException {
@@ -518,10 +500,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         }
     }
 
-    protected boolean isStoreSourceData() {
-        return this.config.isStoreSourceData();
-    }
-
     protected void doBulkRequest(BulkRequest bulkRequest) {
         BulkResponse response = getClient().bulk(bulkRequest).actionGet();
         if (response.hasFailures()) {
@@ -545,12 +523,8 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
             } catch (Exception ex) {
                 throw new SecureGraphException("Could not delete index " + indexName, ex);
             }
-            ensureIndexCreatedAndInitialized(indexName, this.config.isStoreSourceData());
+            ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
         }
         loadPropertyDefinitions();
-    }
-
-    protected String[] getIndicesToQuery() {
-        return this.config.getIndicesToQuery();
     }
 }

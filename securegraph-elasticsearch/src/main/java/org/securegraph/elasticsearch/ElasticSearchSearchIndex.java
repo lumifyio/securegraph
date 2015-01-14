@@ -32,7 +32,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("addElement: " + element.getId());
         }
-        if (!isIndexEdges() && element instanceof Edge) {
+        if (!getConfig().isIndexEdges() && element instanceof Edge) {
             return;
         }
 
@@ -51,14 +51,14 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 throw new SecureGraphException("Could not index document " + element.getId());
             }
 
-            if (isAutoflush()) {
+            if (getConfig().isAutoFlush()) {
                 flush();
             }
         } catch (Exception e) {
             throw new SecureGraphException("Could not add element", e);
         }
 
-        if (isUseEdgeBoost() && element instanceof Edge) {
+        if (getConfig().isUpdateEdgeBoost() && element instanceof Edge) {
             Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
             if (vOut != null) {
                 addElement(graph, vOut, authorizations);
@@ -88,7 +88,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
     public String createJsonForElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) {
         try {
             String indexName = getIndexName(element);
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
             return buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations).string();
         } catch (Exception e) {
             throw new SecureGraphException("Could not create JSON for element", e);
@@ -106,7 +106,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
-            if (isUseEdgeBoost()) {
+            if (getConfig().isUpdateEdgeBoost()) {
                 int inEdgeCount = ((Vertex) element).getEdgeCount(Direction.IN, authorizations);
                 jsonBuilder.field(ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
                 int outEdgeCount = ((Vertex) element).getEdgeCount(Direction.OUT, authorizations);
@@ -232,7 +232,15 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchGraphQuery(getClient(), getIndicesToQuery(), graph, queryString, getAllPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
+        return new ElasticSearchGraphQuery(
+                getClient(),
+                getConfig().getIndicesToQuery(),
+                graph,
+                queryString,
+                getAllPropertyDefinitions(),
+                getConfig().getInEdgeBoost(),
+                getConfig().getOutEdgeBoost(),
+                authorizations);
     }
 
     @Override
