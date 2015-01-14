@@ -8,7 +8,6 @@ import org.elasticsearch.node.NodeBuilder;
 import org.securegraph.Graph;
 import org.securegraph.GraphConfiguration;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndex;
-import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndexConfiguration;
 import org.securegraph.inmemory.InMemoryGraph;
 import org.securegraph.inmemory.InMemoryGraphConfiguration;
@@ -35,9 +34,9 @@ public class TestHelpers {
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
         if (TESTING) {
             addr = "localhost";
-            config.put(ElasticSearchSearchIndexConfiguration.CONFIG_STORE_SOURCE_DATA, "true");
+            config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_STORE_SOURCE_DATA, "true");
         } else {
-            config.put(ElasticSearchSearchIndexBase.SETTING_CLUSTER_NAME, clusterName);
+            config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_CLUSTER_NAME, clusterName);
         }
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_ES_LOCATIONS, addr);
         InMemoryGraphConfiguration configuration = new InMemoryGraphConfiguration(config);
