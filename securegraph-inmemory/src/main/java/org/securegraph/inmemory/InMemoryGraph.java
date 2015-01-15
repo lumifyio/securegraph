@@ -66,13 +66,16 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                InMemoryVertex existingVertex = (InMemoryVertex) getVertex(getVertexId(), authorizations);
-                InMemoryVertex vertex = InMemoryVertex.updateOrCreate(InMemoryGraph.this, existingVertex, this, authorizations);
-                vertices.put(getVertexId(), vertex);
+                InMemoryVertex newVertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), getProperties(), null, authorizations);
 
+                // to more closely simulate how accumulo works. add a potentially sparse (in case of an update) vertex to the search index.
                 if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
-                    getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
+                    getSearchIndex().addElement(InMemoryGraph.this, newVertex, authorizations);
                 }
+
+                InMemoryVertex existingVertex = (InMemoryVertex) getVertex(getVertexId(), authorizations);
+                InMemoryVertex vertex = InMemoryVertex.updateOrCreate(InMemoryGraph.this, existingVertex, newVertex, authorizations);
+                vertices.put(getVertexId(), vertex);
 
                 if (hasEventListeners()) {
                     fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, vertex));

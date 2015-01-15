@@ -129,7 +129,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         }
     }
 
-    protected void updateExisting(ElementBuilder elementBuilder) {
-        updatePropertiesInternal(elementBuilder.getProperties());
+    protected void updateExisting(InMemoryVertex newVertex) {
+        updatePropertiesInternal(newVertex.getProperties());
     }
 }

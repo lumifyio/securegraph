@@ -1,6 +1,7 @@
 package org.securegraph.elasticsearch.score;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.securegraph.*;
 import org.securegraph.elasticsearch.BulkRequestWithCount;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
@@ -32,5 +33,15 @@ public class NopScoringStrategy extends ScoringStrategy {
     @Override
     public int addElement(ElasticSearchSearchIndexBase searchIndex, Graph graph, BulkRequestWithCount bulkRequestWithCount, IndexInfo indexInfo, Element element, Authorizations authorizations) {
         return 0;
+    }
+
+    @Override
+    public void addFieldsToElementType(XContentBuilder builder) throws IOException {
+
+    }
+
+    @Override
+    public QueryBuilder updateQuery(QueryBuilder query) {
+        return query;
     }
 }

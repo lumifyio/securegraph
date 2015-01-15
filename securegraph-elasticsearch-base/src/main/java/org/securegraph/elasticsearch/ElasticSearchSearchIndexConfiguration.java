@@ -16,10 +16,6 @@ public class ElasticSearchSearchIndexConfiguration {
     public static final String CONFIG_INDEX_NAME = "indexName";
     public static final String DEFAULT_INDEX_NAME = "securegraph";
     public static final String CONFIG_INDICES_TO_QUERY = "indicesToQuery";
-    public static final String CONFIG_IN_EDGE_BOOST = "inEdgeBoost";
-    public static final double DEFAULT_IN_EDGE_BOOST = 1.2;
-    public static final String CONFIG_OUT_EDGE_BOOST = "outEdgeBoost";
-    public static final double DEFAULT_OUT_EDGE_BOOST = 1.1;
     public static final String CONFIG_INDEX_EDGES = "indexEdges";
     public static final boolean DEFAULT_INDEX_EDGES = true;
     public static final boolean DEFAULT_AUTO_FLUSH = false;
@@ -33,8 +29,6 @@ public class ElasticSearchSearchIndexConfiguration {
     private final boolean autoFlush;
     private final boolean storeSourceData;
     private final String[] esLocations;
-    private final double inEdgeBoost;
-    private final double outEdgeBoost;
     private final String defaultIndexName;
     private final String[] indicesToQuery;
     private final boolean indexEdges;
@@ -46,8 +40,6 @@ public class ElasticSearchSearchIndexConfiguration {
         esLocations = getElasticSearchLocations(config);
         defaultIndexName = getDefaultIndexName(config);
         indicesToQuery = getIndicesToQuery(config, defaultIndexName);
-        inEdgeBoost = getInEdgeBoost(config);
-        outEdgeBoost = getOutEdgeBoost(config);
         indexEdges = getIndexEdges(config);
         storeSourceData = getStoreSourceData(config);
         autoFlush = getAutoFlush(config);
@@ -66,14 +58,6 @@ public class ElasticSearchSearchIndexConfiguration {
 
     public String[] getEsLocations() {
         return esLocations;
-    }
-
-    public double getInEdgeBoost() {
-        return inEdgeBoost;
-    }
-
-    public double getOutEdgeBoost() {
-        return outEdgeBoost;
     }
 
     public String getDefaultIndexName() {
@@ -116,18 +100,6 @@ public class ElasticSearchSearchIndexConfiguration {
         boolean indexEdges = config.getBoolean(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_EDGES, DEFAULT_INDEX_EDGES);
         LOGGER.info("index edges: " + indexEdges);
         return indexEdges;
-    }
-
-    private static double getOutEdgeBoost(GraphConfiguration config) {
-        double outEdgeBoost = config.getDouble(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_OUT_EDGE_BOOST, DEFAULT_OUT_EDGE_BOOST);
-        LOGGER.info("Out Edge Boost: " + outEdgeBoost);
-        return outEdgeBoost;
-    }
-
-    private static double getInEdgeBoost(GraphConfiguration config) {
-        double inEdgeBoost = config.getDouble(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_IN_EDGE_BOOST, DEFAULT_IN_EDGE_BOOST);
-        LOGGER.info("In Edge Boost: " + inEdgeBoost);
-        return inEdgeBoost;
     }
 
     private static String[] getIndicesToQuery(GraphConfiguration config, String defaultIndexName) {

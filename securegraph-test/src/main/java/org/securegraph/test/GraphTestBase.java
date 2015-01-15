@@ -1252,14 +1252,59 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testGraphQueryUpdateVertex() throws NoSuchFieldException, IllegalAccessException {
+        graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                .setProperty("age", 25, VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        Vertex v2 = graph.prepareVertex("v2", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        Vertex v3 = graph.prepareVertex("v3", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.addEdge("v2tov3", v2, v3, "", VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        boolean disableUpdateEdgeCountInSearchIndexSuccess = disableUpdateEdgeCountInSearchIndex(graph);
+
+        graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                .setProperty("name", "Joe", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.prepareVertex("v2", VISIBILITY_EMPTY)
+                .setProperty("name", "Bob", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.prepareVertex("v3", VISIBILITY_EMPTY)
+                .setProperty("name", "Same", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        List<Vertex> allVertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).vertices());
+        assertEquals(3, count(allVertices));
+//        if (disableUpdateEdgeCountInSearchIndexSuccess) {
+//            assertEquals(
+//                    "if edge indexing was disabled and updating vertices does not destroy the edge counts " +
+//                            "that were already in place 'v1' should be last since it has no edges",
+//                    "v1", allVertices.get(2).getId());
+//        }
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("name", Compare.EQUAL, "Joe")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("age", Compare.EQUAL, 25)
+                .has("name", Compare.EQUAL, "Joe")
+                .vertices();
+        assertEquals(1, count(vertices));
+    }
+
+    @Test
     public void testDisableEdgeIndexing() throws NoSuchFieldException, IllegalAccessException {
-        if (!(graph instanceof GraphBaseWithSearchIndex)) {
-            LOGGER.info("skipping can't get " + SearchIndex.class.getSimpleName());
-            return;
-        }
-        GraphBaseWithSearchIndex graphBaseWithSearchIndex = (GraphBaseWithSearchIndex) graph;
-        SearchIndex searchIndex = graphBaseWithSearchIndex.getSearchIndex();
-        if (!disableEdgeIndexSupport(searchIndex)) {
+        if (!disableEdgeIndexing(graph)) {
             LOGGER.info("skipping " + SearchIndex.class.getSimpleName() + " doesn't support disabling index");
             return;
         }
@@ -2390,32 +2435,47 @@ public abstract class GraphTestBase {
         }
     }
 
-    private boolean disableEdgeIndexSupport(SearchIndex searchIndex) throws NoSuchFieldException, IllegalAccessException {
-        Field configField = findPrivateField(searchIndex.getClass(), "config");
-        if (configField == null) {
-            LOGGER.debug("Could not find 'config' field");
-            return false;
+    protected boolean disableUpdateEdgeCountInSearchIndex(Graph graph) {
+        return false;
+    }
+
+    protected boolean disableEdgeIndexing(Graph graph) {
+        try {
+            if (!(graph instanceof GraphBaseWithSearchIndex)) {
+                LOGGER.debug("Graph does not have a search index");
+                return false;
+            }
+
+            SearchIndex searchIndex = ((GraphBaseWithSearchIndex) graph).getSearchIndex();
+
+            Field configField = findPrivateField(searchIndex.getClass(), "config");
+            if (configField == null) {
+                LOGGER.debug("Could not find 'config' field");
+                return false;
+            }
+
+            configField.setAccessible(true);
+
+            Object config = configField.get(searchIndex);
+            if (config == null) {
+                LOGGER.debug("Could not get 'config' field");
+                return false;
+            }
+
+            Field indexEdgesField = findPrivateField(config.getClass(), "indexEdges");
+            if (indexEdgesField == null) {
+                LOGGER.debug("Could not find 'indexEdgesField' field");
+                return false;
+            }
+
+            indexEdgesField.setAccessible(true);
+
+            indexEdgesField.set(config, false);
+
+            return true;
+        } catch (Exception ex) {
+            throw new SecureGraphException("Could not disableEdgeIndexing", ex);
         }
-
-        configField.setAccessible(true);
-
-        Object config = configField.get(searchIndex);
-        if (config == null) {
-            LOGGER.debug("Could not get 'config' field");
-            return false;
-        }
-
-        Field indexEdgesField = findPrivateField(config.getClass(), "indexEdges");
-        if (indexEdgesField == null) {
-            LOGGER.debug("Could not find 'indexEdgesField' field");
-            return false;
-        }
-
-        indexEdgesField.setAccessible(true);
-
-        indexEdgesField.set(config, false);
-
-        return true;
     }
 
     private Field findPrivateField(Class clazz, String name) {

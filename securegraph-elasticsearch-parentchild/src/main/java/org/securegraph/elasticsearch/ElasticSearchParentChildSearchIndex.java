@@ -327,8 +327,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 graph,
                 queryString,
                 getAllPropertyDefinitions(),
-                getConfig().getInEdgeBoost(),
-                getConfig().getOutEdgeBoost(),
+                getConfig().getScoringStrategy(),
                 authorizations);
     }
 

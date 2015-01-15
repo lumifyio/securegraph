@@ -37,8 +37,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String VISIBILITY_FIELD_NAME = "__visibility";
-    public static final String IN_EDGE_COUNT_FIELD_NAME = "__inEdgeCount";
-    public static final String OUT_EDGE_COUNT_FIELD_NAME = "__outEdgeCount";
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
@@ -159,10 +157,9 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     protected void createIndexAddFieldsToElementType(XContentBuilder builder) throws IOException {
         builder
                 .startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").field("store", "true").endObject()
-                .startObject(IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
-                .startObject(OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
                 .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "not_analyzed").field("store", "true").endObject()
         ;
+        getConfig().getScoringStrategy().addFieldsToElementType(builder);
     }
 
     public synchronized void loadPropertyDefinitions() {

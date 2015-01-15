@@ -1,6 +1,7 @@
 package org.securegraph.elasticsearch.score;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.securegraph.*;
 import org.securegraph.elasticsearch.BulkRequestWithCount;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
@@ -27,4 +28,8 @@ public abstract class ScoringStrategy {
     public abstract void addFieldsToEdgeDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Edge edge, Authorizations authorizations) throws IOException;
 
     public abstract int addElement(ElasticSearchSearchIndexBase searchIndex, Graph graph, BulkRequestWithCount bulkRequestWithCount, IndexInfo indexInfo, Element element, Authorizations authorizations);
+
+    public abstract void addFieldsToElementType(XContentBuilder builder) throws IOException;
+
+    public abstract QueryBuilder updateQuery(QueryBuilder query);
 }

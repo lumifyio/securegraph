@@ -41,8 +41,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         IndexInfo indexInfo = addPropertiesToIndex(element, element.getProperties());
 
         try {
-            boolean mergeExisting = true;
-            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations);
+            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, indexInfo, element, authorizations);
 
             IndexResponse response = getClient()
                     .prepareIndex(indexInfo.getIndexName(), ElasticSearchSearchIndexBase.ELEMENT_TYPE, element.getId())
@@ -66,8 +65,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
     @Override
     public void addElementToBulkRequest(Graph graph, BulkRequest bulkRequest, IndexInfo indexInfo, Element element, Authorizations authorizations) {
         try {
-            boolean mergeExisting = true;
-            XContentBuilder json = buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations);
+            XContentBuilder json = buildJsonContentFromElement(graph, indexInfo, element, authorizations);
             IndexRequest indexRequest = new IndexRequest(indexInfo.getIndexName(), ELEMENT_TYPE, element.getId()).source(json);
             bulkRequest.add(indexRequest);
         } catch (IOException ex) {
@@ -90,24 +88,22 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         }
     }
 
-    public String createJsonForElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) {
+    public String createJsonForElement(Graph graph, Element element, Authorizations authorizations) {
         try {
             String indexName = getIndexName(element);
             IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
-            return buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations).string();
+            return buildJsonContentFromElement(graph, indexInfo, element, authorizations).string();
         } catch (Exception e) {
             throw new SecureGraphException("Could not create JSON for element", e);
         }
     }
 
-    private XContentBuilder buildJsonContentFromElement(Graph graph, IndexInfo indexInfo, Element element, boolean mergeExisting, Authorizations authorizations) throws IOException {
+    private XContentBuilder buildJsonContentFromElement(Graph graph, IndexInfo indexInfo, Element element, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
-        if (mergeExisting) {
-            element = requeryWithAuthsAndMergedElement(graph, element, authorizations);
-        }
+        element = requeryWithAuthsAndMergedElement(graph, element, authorizations);
 
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
@@ -239,8 +235,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 graph,
                 queryString,
                 getAllPropertyDefinitions(),
-                getConfig().getInEdgeBoost(),
-                getConfig().getOutEdgeBoost(),
+                getConfig().getScoringStrategy(),
                 authorizations);
     }
 

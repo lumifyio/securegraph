@@ -5,11 +5,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.securegraph.*;
 import org.securegraph.elasticsearch.helpers.ElasticSearchSearchParentChildIndexTestHelpers;
+import org.securegraph.elasticsearch.score.EdgeCountScoringStrategy;
+import org.securegraph.elasticsearch.score.EdgeCountScoringStrategyConfiguration;
+import org.securegraph.elasticsearch.score.ScoringStrategy;
 import org.securegraph.inmemory.InMemoryAuthorizations;
 import org.securegraph.test.GraphTestBase;
 import org.securegraph.type.GeoPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
@@ -76,5 +82,27 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
             String propertyJson = searchIndex.getPropertyDocumentIndexRequest(v1, property).source().toUtf8();
             assertNotNull(propertyJson);
         }
+    }
+
+    @Override
+    protected boolean disableUpdateEdgeCountInSearchIndex(Graph graph) {
+        ElasticSearchParentChildSearchIndex searchIndex = (ElasticSearchParentChildSearchIndex) ((GraphBaseWithSearchIndex) graph).getSearchIndex();
+        ElasticSearchSearchIndexConfiguration config = searchIndex.getConfig();
+        ScoringStrategy scoringStrategy = config.getScoringStrategy();
+        if (!(scoringStrategy instanceof EdgeCountScoringStrategy)) {
+            return false;
+        }
+
+        EdgeCountScoringStrategyConfiguration edgeCountScoringStrategyConfig = ((EdgeCountScoringStrategy) scoringStrategy).getConfig();
+
+        try {
+            Field updateEdgeBoostField = edgeCountScoringStrategyConfig.getClass().getDeclaredField("updateEdgeBoost");
+            updateEdgeBoostField.setAccessible(true);
+            updateEdgeBoostField.set(edgeCountScoringStrategyConfig, false);
+        } catch (Exception e) {
+            throw new SecureGraphException("Failed to update 'updateEdgeBoost' field", e);
+        }
+
+        return true;
     }
 }
