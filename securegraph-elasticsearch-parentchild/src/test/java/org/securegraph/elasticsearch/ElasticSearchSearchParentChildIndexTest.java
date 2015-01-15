@@ -4,7 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.securegraph.*;
-import org.securegraph.elasticsearch.helpers.TestHelpers;
+import org.securegraph.elasticsearch.helpers.ElasticSearchSearchParentChildIndexTestHelpers;
 import org.securegraph.inmemory.InMemoryAuthorizations;
 import org.securegraph.test.GraphTestBase;
 import org.securegraph.type.GeoPoint;
@@ -18,7 +18,7 @@ import static junit.framework.TestCase.assertNotNull;
 public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
     @Override
     protected Graph createGraph() {
-        return TestHelpers.createGraph();
+        return ElasticSearchSearchParentChildIndexTestHelpers.createGraph();
     }
 
     @Override
@@ -29,14 +29,14 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
     @Before
     @Override
     public void before() throws Exception {
-        TestHelpers.before();
+        ElasticSearchSearchParentChildIndexTestHelpers.before();
         super.before();
     }
 
     @After
     public void after() throws Exception {
         super.after();
-        TestHelpers.after();
+        ElasticSearchSearchParentChildIndexTestHelpers.after();
     }
 
     @Test

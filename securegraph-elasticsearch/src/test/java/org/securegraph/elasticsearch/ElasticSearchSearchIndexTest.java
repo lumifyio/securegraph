@@ -9,7 +9,7 @@ import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.Metadata;
 import org.securegraph.Vertex;
-import org.securegraph.elasticsearch.helpers.TestHelpers;
+import org.securegraph.elasticsearch.helpers.ElasticSearchSearchIndexTestHelpers;
 import org.securegraph.inmemory.InMemoryAuthorizations;
 import org.securegraph.inmemory.InMemoryGraph;
 import org.securegraph.property.PropertyValue;
@@ -25,7 +25,7 @@ import static junit.framework.TestCase.assertNotNull;
 public class ElasticSearchSearchIndexTest extends GraphTestBase {
     @Override
     protected Graph createGraph() {
-        return TestHelpers.createGraph();
+        return ElasticSearchSearchIndexTestHelpers.createGraph();
     }
 
     @Override
@@ -36,14 +36,14 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
     @Before
     @Override
     public void before() throws Exception {
-        TestHelpers.before();
+        ElasticSearchSearchIndexTestHelpers.before();
         super.before();
     }
 
     @After
     public void after() throws Exception {
         super.after();
-        TestHelpers.after();
+        ElasticSearchSearchIndexTestHelpers.after();
     }
 
     private ElasticSearchSearchIndex getSearchIndex() {

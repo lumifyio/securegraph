@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class TestHelpers {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestHelpers.class);
+public class ElasticSearchSearchIndexTestHelpers {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexTestHelpers.class);
     private static File tempDir;
     private static Node elasticSearchNode;
     private static String addr;
