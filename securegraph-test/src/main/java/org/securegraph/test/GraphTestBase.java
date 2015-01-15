@@ -1278,12 +1278,12 @@ public abstract class GraphTestBase {
 
         List<Vertex> allVertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).vertices());
         assertEquals(3, count(allVertices));
-//        if (disableUpdateEdgeCountInSearchIndexSuccess) {
-//            assertEquals(
-//                    "if edge indexing was disabled and updating vertices does not destroy the edge counts " +
-//                            "that were already in place 'v1' should be last since it has no edges",
-//                    "v1", allVertices.get(2).getId());
-//        }
+        if (disableUpdateEdgeCountInSearchIndexSuccess) {
+            assertEquals(
+                    "if edge indexing was disabled and updating vertices does not destroy the edge counts " +
+                            "that were already in place 'v1' should be last since it has no edges",
+                    "v1", allVertices.get(2).getId());
+        }
 
         Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
                 .has("age", Compare.EQUAL, 25)

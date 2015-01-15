@@ -5,13 +5,16 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.deletebyquery.IndexDeleteByQueryResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.securegraph.*;
+import org.securegraph.elasticsearch.utils.GetResponseUtil;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.type.GeoPoint;
@@ -21,13 +24,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchIndexBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchParentChildSearchIndex.class);
     public static final String PROPERTY_TYPE = "property";
     public static final int BATCH_SIZE = 1000;
+    private String[] parentDocumentFields;
 
     public ElasticSearchParentChildSearchIndex(GraphConfiguration config) {
         super(config);
@@ -204,7 +210,10 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     @Override
     public void addElementToBulkRequest(Graph graph, BulkRequest bulkRequest, IndexInfo indexInfo, Element element, Authorizations authorizations) {
         try {
-            bulkRequest.add(getParentDocumentIndexRequest(indexInfo, element, authorizations));
+            IndexRequest parentDocumentIndexRequest = getParentDocumentIndexRequest(indexInfo, element, authorizations);
+            if (parentDocumentIndexRequest != null) {
+                bulkRequest.add(parentDocumentIndexRequest);
+            }
             for (Property property : element.getProperties()) {
                 IndexRequest propertyIndexRequest = getPropertyDocumentIndexRequest(indexInfo, element, property);
                 if (propertyIndexRequest != null) {
@@ -248,24 +257,67 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     private IndexRequest getParentDocumentIndexRequest(IndexInfo indexInfo, Element element, Authorizations authorizations) throws IOException {
+        boolean changed = false;
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
         String id = element.getId();
+        GetResponse existingParentDocument = getParentDocument(indexInfo, element.getId());
+        if (existingParentDocument == null) {
+            changed = true;
+        }
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
-            getConfig().getScoringStrategy().addFieldsToVertexDocument(this, jsonBuilder, (Vertex) element, authorizations);
+            if (getConfig().getScoringStrategy().addFieldsToVertexDocument(this, jsonBuilder, (Vertex) element, existingParentDocument, authorizations)) {
+                changed = true;
+            }
         } else if (element instanceof Edge) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
-            getConfig().getScoringStrategy().addFieldsToEdgeDocument(this, jsonBuilder, (Edge) element, authorizations);
+            if (getConfig().getScoringStrategy().addFieldsToEdgeDocument(this, jsonBuilder, (Edge) element, existingParentDocument, authorizations)) {
+                changed = true;
+            }
         } else {
             throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
         }
 
-        jsonBuilder.field(VISIBILITY_FIELD_NAME, element.getVisibility().getVisibilityString());
+        String visibilityString = element.getVisibility().getVisibilityString();
+        jsonBuilder.field(VISIBILITY_FIELD_NAME, visibilityString);
+        if (existingParentDocument == null || !visibilityString.equals(GetResponseUtil.getFieldValueString(existingParentDocument, VISIBILITY_FIELD_NAME))) {
+            changed = true;
+        }
 
+        if (!changed) {
+            return null;
+        }
         return new IndexRequest(indexInfo.getIndexName(), ELEMENT_TYPE, id).source(jsonBuilder);
+    }
+
+    private GetResponse getParentDocument(IndexInfo indexInfo, String elementId) {
+        try {
+            GetResponse response = getClient()
+                    .prepareGet(indexInfo.getIndexName(), ELEMENT_TYPE, elementId)
+                    .setFields(getParentDocumentFields())
+                    .execute()
+                    .get();
+            if (!response.isExists()) {
+                return null;
+            }
+            return response;
+        } catch (Exception ex) {
+            throw new SecureGraphException("Could not get parent document: " + elementId, ex);
+        }
+    }
+
+    private String[] getParentDocumentFields() {
+        if (this.parentDocumentFields == null) {
+            List<String> fields = new ArrayList<String>();
+            fields.add(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME);
+            fields.add(VISIBILITY_FIELD_NAME);
+            fields.addAll(getConfig().getScoringStrategy().getFieldNames());
+            this.parentDocumentFields = fields.toArray(new String[fields.size()]);
+        }
+        return this.parentDocumentFields;
     }
 
     private XContentBuilder buildJsonContentFromProperty(IndexInfo indexInfo, Property property) throws IOException {

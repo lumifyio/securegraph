@@ -1,5 +1,6 @@
 package org.securegraph.elasticsearch.score;
 
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.securegraph.*;
@@ -21,13 +22,13 @@ public class NopScoringStrategy extends ScoringStrategy {
     }
 
     @Override
-    public void addFieldsToVertexDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Vertex vertex, Authorizations authorizations) throws IOException {
-
+    public boolean addFieldsToVertexDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Vertex vertex, GetResponse existingDocument, Authorizations authorizations) throws IOException {
+        return false;
     }
 
     @Override
-    public void addFieldsToEdgeDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Edge edge, Authorizations authorizations) throws IOException {
-
+    public boolean addFieldsToEdgeDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Edge edge, GetResponse existingDocument, Authorizations authorizations) throws IOException {
+        return false;
     }
 
     @Override

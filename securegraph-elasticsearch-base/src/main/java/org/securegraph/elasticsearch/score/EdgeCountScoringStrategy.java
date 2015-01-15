@@ -1,5 +1,6 @@
 package org.securegraph.elasticsearch.score;
 
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -9,9 +10,11 @@ import org.securegraph.*;
 import org.securegraph.elasticsearch.BulkRequestWithCount;
 import org.securegraph.elasticsearch.ElasticSearchSearchIndexBase;
 import org.securegraph.elasticsearch.IndexInfo;
+import org.securegraph.elasticsearch.utils.GetResponseUtil;
 import org.securegraph.search.SearchIndex;
 
 import java.io.IOException;
+import java.util.List;
 
 public class EdgeCountScoringStrategy extends ScoringStrategy {
     public static final String IN_EDGE_COUNT_FIELD_NAME = "__inEdgeCount";
@@ -85,6 +88,14 @@ public class EdgeCountScoringStrategy extends ScoringStrategy {
     }
 
     @Override
+    public List<String> getFieldNames() {
+        List<String> fieldNames = super.getFieldNames();
+        fieldNames.add(IN_EDGE_COUNT_FIELD_NAME);
+        fieldNames.add(OUT_EDGE_COUNT_FIELD_NAME);
+        return fieldNames;
+    }
+
+    @Override
     public QueryBuilder updateQuery(QueryBuilder query) {
         if (!getConfig().isUseEdgeBoost()) {
             return query;
@@ -102,19 +113,36 @@ public class EdgeCountScoringStrategy extends ScoringStrategy {
     }
 
     @Override
-    public void addFieldsToVertexDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Vertex vertex, Authorizations authorizations) throws IOException {
-        if (!getConfig().isUpdateEdgeBoost()) {
-            return;
+    public boolean addFieldsToVertexDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Vertex vertex, GetResponse existingDocument, Authorizations authorizations) throws IOException {
+        if (existingDocument != null && !getConfig().isUpdateEdgeBoost()) {
+            return false;
         }
 
+        boolean changed = false;
+
         int inEdgeCount = vertex.getEdgeCount(Direction.IN, authorizations);
-        jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
+        Long existingInEdgeCount = existingDocument == null ? null : GetResponseUtil.getFieldValueLong(existingDocument, IN_EDGE_COUNT_FIELD_NAME);
+        if (existingInEdgeCount == null || existingInEdgeCount.intValue() != inEdgeCount) {
+            jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
+            changed = true;
+        } else {
+            jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, existingInEdgeCount);
+        }
+
         int outEdgeCount = vertex.getEdgeCount(Direction.OUT, authorizations);
-        jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
+        Long existingOutEdgeCount = existingDocument == null ? null : GetResponseUtil.getFieldValueLong(existingDocument, OUT_EDGE_COUNT_FIELD_NAME);
+        if (existingOutEdgeCount == null || existingOutEdgeCount.intValue() != outEdgeCount) {
+            jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
+            changed = true;
+        } else {
+            jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
+        }
+
+        return changed;
     }
 
     @Override
-    public void addFieldsToEdgeDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Edge edge, Authorizations authorizations) throws IOException {
-
+    public boolean addFieldsToEdgeDocument(SearchIndex searchIndex, XContentBuilder jsonBuilder, Edge edge, GetResponse existingDocument, Authorizations authorizations) throws IOException {
+        return false;
     }
 }
