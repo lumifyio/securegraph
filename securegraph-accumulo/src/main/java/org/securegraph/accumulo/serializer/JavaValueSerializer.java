@@ -6,10 +6,6 @@ import org.securegraph.util.JavaSerializableUtils;
 import java.util.Map;
 
 public class JavaValueSerializer implements ValueSerializer {
-    public JavaValueSerializer(Map configuration) {
-
-    }
-
     @Override
     public Value objectToValue(Object value) {
         return new Value(JavaSerializableUtils.objectToBytes(value));

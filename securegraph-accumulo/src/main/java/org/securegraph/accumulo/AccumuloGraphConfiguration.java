@@ -1,11 +1,5 @@
 package org.securegraph.accumulo;
 
-import org.securegraph.GraphConfiguration;
-import org.securegraph.SecureGraphException;
-import org.securegraph.accumulo.serializer.JavaValueSerializer;
-import org.securegraph.accumulo.serializer.ValueSerializer;
-import org.securegraph.util.ConfigurationUtils;
-import org.securegraph.util.MapUtils;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -14,6 +8,12 @@ import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.securegraph.GraphConfiguration;
+import org.securegraph.SecureGraphException;
+import org.securegraph.accumulo.serializer.JavaValueSerializer;
+import org.securegraph.accumulo.serializer.ValueSerializer;
+import org.securegraph.util.ConfigurationUtils;
+import org.securegraph.util.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,11 +83,11 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     }
 
     private String getHdfsUser() {
-        return getConfigString(HDFS_USER, DEFAULT_HDFS_USER);
+        return getString(HDFS_USER, DEFAULT_HDFS_USER);
     }
 
     private URI getHdfsRootDir() throws URISyntaxException {
-        return new URI(getConfigString(HDFS_ROOT_DIR, DEFAULT_HDFS_ROOT_DIR));
+        return new URI(getString(HDFS_ROOT_DIR, DEFAULT_HDFS_ROOT_DIR));
     }
 
     private org.apache.hadoop.conf.Configuration getHadoopConfiguration() {
@@ -100,32 +100,32 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     }
 
     public AuthenticationToken getAuthenticationToken() {
-        String password = getConfigString(ACCUMULO_PASSWORD, DEFAULT_ACCUMULO_PASSWORD);
+        String password = getString(ACCUMULO_PASSWORD, DEFAULT_ACCUMULO_PASSWORD);
         return new PasswordToken(password);
     }
 
     public String getAccumuloUsername() {
-        return getConfigString(ACCUMULO_USERNAME, DEFAULT_ACCUMULO_USERNAME);
+        return getString(ACCUMULO_USERNAME, DEFAULT_ACCUMULO_USERNAME);
     }
 
     public String getAccumuloInstanceName() {
-        return getConfigString(ACCUMULO_INSTANCE_NAME, DEFAULT_ACCUMULO_INSTANCE_NAME);
+        return getString(ACCUMULO_INSTANCE_NAME, DEFAULT_ACCUMULO_INSTANCE_NAME);
     }
 
     public String getZookeeperServers() {
-        return getConfigString(ZOOKEEPER_SERVERS, DEFAULT_ZOOKEEPER_SERVERS);
+        return getString(ZOOKEEPER_SERVERS, DEFAULT_ZOOKEEPER_SERVERS);
     }
 
     public ValueSerializer createValueSerializer() throws SecureGraphException {
-        return ConfigurationUtils.createProvider(getConfig(), VALUE_SERIALIZER_PROP_PREFIX, DEFAULT_VALUE_SERIALIZER);
+        return ConfigurationUtils.createProvider(this, VALUE_SERIALIZER_PROP_PREFIX, DEFAULT_VALUE_SERIALIZER);
     }
 
     public boolean isAutoFlush() {
-        return getConfigBoolean(AUTO_FLUSH, DEFAULT_AUTO_FLUSH);
+        return getBoolean(AUTO_FLUSH, DEFAULT_AUTO_FLUSH);
     }
 
     public String getTableNamePrefix() {
-        return getConfigString(TABLE_NAME_PREFIX, DEFAULT_TABLE_NAME_PREFIX);
+        return getString(TABLE_NAME_PREFIX, DEFAULT_TABLE_NAME_PREFIX);
     }
 
     public long getMaxStreamingPropertyValueTableDataSize() {
@@ -133,10 +133,10 @@ public class AccumuloGraphConfiguration extends GraphConfiguration {
     }
 
     public String getDataDir() {
-        return getConfigString(DATA_DIR, DEFAULT_DATA_DIR);
+        return getString(DATA_DIR, DEFAULT_DATA_DIR);
     }
 
     public boolean isUseServerSideElementVisibilityRowFilter() {
-        return getConfigBoolean(USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER, DEFAULT_USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER);
+        return getBoolean(USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER, DEFAULT_USE_SERVER_SIDE_ELEMENT_VISIBILITY_ROW_FILTER);
     }
 }

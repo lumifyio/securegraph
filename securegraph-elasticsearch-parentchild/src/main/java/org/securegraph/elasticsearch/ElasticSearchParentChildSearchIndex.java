@@ -29,7 +29,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     public static final String PROPERTY_TYPE = "property";
     public static final int BATCH_SIZE = 1000;
 
-    public ElasticSearchParentChildSearchIndex(Map config) {
+    public ElasticSearchParentChildSearchIndex(GraphConfiguration config) {
         super(config);
     }
 
@@ -151,7 +151,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         try {
             BulkRequest bulkRequest = new BulkRequest();
 
-            addElementToBulkRequest(indexInfo, bulkRequest, element, authorizations);
+            addElementToBulkRequest(graph, bulkRequest, indexInfo, element, authorizations);
 
             doBulkRequest(bulkRequest);
 
@@ -162,22 +162,13 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             throw new SecureGraphException("Could not add element", e);
         }
 
-        if (getConfig().isUpdateEdgeBoost() && element instanceof Edge) {
-            Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
-            if (vOut != null) {
-                addElement(graph, vOut, authorizations);
-            }
-            Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
-            if (vIn != null) {
-                addElement(graph, vIn, authorizations);
-            }
-        }
+        getConfig().getScoringStrategy().addElement(this, graph, element, authorizations);
     }
 
     @Override
     public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
         int totalCount = 0;
-        Map<IndexInfo, BulkRequestWithCount> bulkRequests = new HashMap<IndexInfo, BulkRequestWithCount>();
+        Map<IndexInfo, BulkRequestWithCount> bulkRequests = new HashMap<>();
         for (Element element : elements) {
             String indexName = getIndexName(element);
             IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
@@ -192,24 +183,11 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
                 doBulkRequest(bulkRequestWithCount.getBulkRequest());
                 bulkRequestWithCount.clear();
             }
-            addElementToBulkRequest(indexInfo, bulkRequestWithCount.getBulkRequest(), element, authorizations);
+            addElementToBulkRequest(graph, bulkRequestWithCount.getBulkRequest(), indexInfo, element, authorizations);
             bulkRequestWithCount.incrementCount();
             totalCount++;
 
-            if (getConfig().isUpdateEdgeBoost() && element instanceof Edge) {
-                Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
-                if (vOut != null) {
-                    addElementToBulkRequest(indexInfo, bulkRequestWithCount.getBulkRequest(), vOut, authorizations);
-                    bulkRequestWithCount.incrementCount();
-                    totalCount++;
-                }
-                Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
-                if (vIn != null) {
-                    addElementToBulkRequest(indexInfo, bulkRequestWithCount.getBulkRequest(), vIn, authorizations);
-                    bulkRequestWithCount.incrementCount();
-                    totalCount++;
-                }
-            }
+            totalCount += getConfig().getScoringStrategy().addElement(this, graph, bulkRequestWithCount, indexInfo, element, authorizations);
         }
         for (BulkRequestWithCount bulkRequestWithCount : bulkRequests.values()) {
             if (bulkRequestWithCount.getCount() > 0) {
@@ -223,7 +201,8 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
     }
 
-    private void addElementToBulkRequest(IndexInfo indexInfo, BulkRequest bulkRequest, Element element, Authorizations authorizations) {
+    @Override
+    public void addElementToBulkRequest(Graph graph, BulkRequest bulkRequest, IndexInfo indexInfo, Element element, Authorizations authorizations) {
         try {
             bulkRequest.add(getParentDocumentIndexRequest(indexInfo, element, authorizations));
             for (Property property : element.getProperties()) {
@@ -276,14 +255,10 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         String id = element.getId();
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
-            if (getConfig().isUpdateEdgeBoost()) {
-                int inEdgeCount = ((Vertex) element).getEdgeCount(Direction.IN, authorizations);
-                jsonBuilder.field(ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
-                int outEdgeCount = ((Vertex) element).getEdgeCount(Direction.OUT, authorizations);
-                jsonBuilder.field(ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
-            }
+            getConfig().getScoringStrategy().addFieldsToVertexDocument(this, jsonBuilder, (Vertex) element, authorizations);
         } else if (element instanceof Edge) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
+            getConfig().getScoringStrategy().addFieldsToEdgeDocument(this, jsonBuilder, (Edge) element, authorizations);
         } else {
             throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
         }
@@ -303,7 +278,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             return null;
         } else if (propertyValue instanceof GeoPoint) {
             GeoPoint geoPoint = (GeoPoint) propertyValue;
-            Map<String, Object> propertyValueMap = new HashMap<String, Object>();
+            Map<String, Object> propertyValueMap = new HashMap<>();
             propertyValueMap.put("lat", geoPoint.getLatitude());
             propertyValueMap.put("lon", geoPoint.getLongitude());
 

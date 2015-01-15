@@ -24,7 +24,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     private final Map<String, Object> metadata = new HashMap<String, Object>();
 
     protected InMemoryGraph() {
-        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION.getConfig()), new DefaultSearchIndex(DEFAULT_CONFIGURATION.getConfig()));
+        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION), new DefaultSearchIndex(DEFAULT_CONFIGURATION));
     }
 
     protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
@@ -244,7 +244,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         } else {
             Iterable<Property> existingProperties = existingEdge.getProperties();
             Iterable<Property> newProperties = edgeBuilder.getProperties();
-            properties = new TreeSet<Property>(toList(existingProperties));
+            properties = new TreeSet<>(toList(existingProperties));
             for (Property p : newProperties) {
                 ((TreeSet<Property>) properties).remove(p);
                 ((TreeSet<Property>) properties).add(p);
@@ -479,7 +479,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     }
 
     private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, boolean includeHidden, Authorizations authorizations) {
-        List<Property> filteredProperties = new ArrayList<Property>();
+        List<Property> filteredProperties = new ArrayList<>();
         for (Property p : properties) {
             if (canRead(p.getVisibility(), authorizations) && (includeHidden || !p.isHidden(authorizations))) {
                 filteredProperties.add(p);

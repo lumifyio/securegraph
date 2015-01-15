@@ -49,7 +49,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private int indexInfosLastSize = 0; // Used to prevent creating a index name array each time
     private String[] indexNamesAsArray;
 
-    protected ElasticSearchSearchIndexBase(Map config) {
+    protected ElasticSearchSearchIndexBase(GraphConfiguration config) {
         this.config = new ElasticSearchSearchIndexConfiguration(config);
 
         ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
@@ -527,4 +527,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         }
         loadPropertyDefinitions();
     }
+
+    public abstract void addElementToBulkRequest(Graph graph, BulkRequest bulkRequest, IndexInfo indexInfo, Element element, Authorizations authorizations);
 }

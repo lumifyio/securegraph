@@ -17,7 +17,7 @@ import java.util.Map;
 public class KryoValueSerializer implements ValueSerializer {
     private final Kryo kryo;
 
-    public KryoValueSerializer(Map configuration) {
+    public KryoValueSerializer() {
         kryo = new Kryo();
         kryo.register(EdgeInfo.class, 1000);
         kryo.register(GeoPoint.class, 1001);
