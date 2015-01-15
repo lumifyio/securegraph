@@ -10,7 +10,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.securegraph.*;
@@ -158,11 +157,12 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             BulkRequest bulkRequest = new BulkRequest();
 
             addElementToBulkRequest(graph, bulkRequest, indexInfo, element, authorizations);
+            if (bulkRequest.numberOfActions() > 0) {
+                doBulkRequest(bulkRequest);
 
-            doBulkRequest(bulkRequest);
-
-            if (getConfig().isAutoFlush()) {
-                flush();
+                if (getConfig().isAutoFlush()) {
+                    flush();
+                }
             }
         } catch (Exception e) {
             throw new SecureGraphException("Could not add element", e);

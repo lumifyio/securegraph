@@ -11,8 +11,6 @@ import org.securegraph.elasticsearch.score.ScoringStrategy;
 import org.securegraph.inmemory.InMemoryAuthorizations;
 import org.securegraph.test.GraphTestBase;
 import org.securegraph.type.GeoPoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -75,13 +73,7 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
 
         String indexName = searchIndex.getIndexName(v1);
         IndexInfo indexInfo = searchIndex.ensureIndexCreatedAndInitialized(indexName, searchIndex.getConfig().isStoreSourceData());
-
-        String parentDocumentJson = searchIndex.getParentDocumentIndexRequest(v1, AUTHORIZATIONS_A_AND_B).source().toUtf8();
-        assertNotNull(parentDocumentJson);
-        for (Property property : v1.getProperties()) {
-            String propertyJson = searchIndex.getPropertyDocumentIndexRequest(v1, property).source().toUtf8();
-            assertNotNull(propertyJson);
-        }
+        assertNotNull(indexInfo);
     }
 
     @Override
