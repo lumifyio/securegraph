@@ -1,10 +1,10 @@
 package org.securegraph.elasticsearch;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -103,9 +103,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
                 if (!client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
                     try {
                         createIndex(indexName, storeSourceData);
-
-                        IndicesStatsResponse statusResponse = client.admin().indices().prepareStats(indexName).execute().actionGet();
-                        LOGGER.debug(statusResponse.toString());
                     } catch (IOException e) {
                         throw new SecureGraphException("Could not create index: " + indexName, e);
                     }
@@ -152,6 +149,14 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
         CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).execute().actionGet();
         LOGGER.debug(createResponse.toString());
+
+        ClusterHealthResponse health = client.admin().cluster().prepareHealth(indexName)
+                .setWaitForGreenStatus()
+                .execute().actionGet();
+        LOGGER.debug("Index status: " + health.toString());
+        if (health.isTimedOut()) {
+            LOGGER.warn("timed out waiting for green index status, for index: " + indexName);
+        }
     }
 
     protected void createIndexAddFieldsToElementType(XContentBuilder builder) throws IOException {

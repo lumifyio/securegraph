@@ -1,8 +1,6 @@
 package org.securegraph.elasticsearch;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.securegraph.*;
 import org.securegraph.elasticsearch.helpers.ElasticSearchSearchParentChildIndexTestHelpers;
 import org.securegraph.elasticsearch.score.EdgeCountScoringStrategy;
@@ -30,6 +28,11 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
         return new InMemoryAuthorizations(auths);
     }
 
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        ElasticSearchSearchParentChildIndexTestHelpers.beforeClass();
+    }
+
     @Before
     @Override
     public void before() throws Exception {
@@ -41,6 +44,11 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
     public void after() throws Exception {
         super.after();
         ElasticSearchSearchParentChildIndexTestHelpers.after();
+    }
+
+    @AfterClass
+    public static void afterClass() throws IOException {
+        ElasticSearchSearchParentChildIndexTestHelpers.afterClass();
     }
 
     @Test
