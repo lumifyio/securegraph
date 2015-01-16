@@ -13,6 +13,8 @@ import org.securegraph.SecureGraphException;
 import org.securegraph.query.*;
 import org.securegraph.type.GeoPoint;
 import org.securegraph.type.GeoRect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -17,9 +17,6 @@ import java.io.IOException;
 import java.util.List;
 
 public class EdgeCountScoringStrategy extends ScoringStrategy {
-    public static final String IN_EDGE_COUNT_FIELD_NAME = "__inEdgeCount";
-    public static final String OUT_EDGE_COUNT_FIELD_NAME = "__outEdgeCount";
-
     private final EdgeCountScoringStrategyConfiguration config;
 
     public EdgeCountScoringStrategy(GraphConfiguration config) {
@@ -82,16 +79,16 @@ public class EdgeCountScoringStrategy extends ScoringStrategy {
     @Override
     public void addFieldsToElementType(XContentBuilder builder) throws IOException {
         builder
-                .startObject(IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
-                .startObject(OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
+                .startObject(EdgeCountScoringStrategyConfiguration.IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
+                .startObject(EdgeCountScoringStrategyConfiguration.OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
         ;
     }
 
     @Override
     public List<String> getFieldNames() {
         List<String> fieldNames = super.getFieldNames();
-        fieldNames.add(IN_EDGE_COUNT_FIELD_NAME);
-        fieldNames.add(OUT_EDGE_COUNT_FIELD_NAME);
+        fieldNames.add(EdgeCountScoringStrategyConfiguration.IN_EDGE_COUNT_FIELD_NAME);
+        fieldNames.add(EdgeCountScoringStrategyConfiguration.OUT_EDGE_COUNT_FIELD_NAME);
         return fieldNames;
     }
 
@@ -102,10 +99,7 @@ public class EdgeCountScoringStrategy extends ScoringStrategy {
         }
 
         ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
-                .scriptFunction("_score "
-                        + " * sqrt(inEdgeMultiplier * (1 + doc['" + IN_EDGE_COUNT_FIELD_NAME + "'].value))"
-                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + OUT_EDGE_COUNT_FIELD_NAME + "'].value))"
-                        , "groovy")
+                .scriptFunction(getConfig().getScoreFormula(), "groovy")
                 .param("inEdgeMultiplier", getConfig().getInEdgeBoost())
                 .param("outEdgeMultiplier", getConfig().getOutEdgeBoost());
 
@@ -121,21 +115,21 @@ public class EdgeCountScoringStrategy extends ScoringStrategy {
         boolean changed = false;
 
         int inEdgeCount = vertex.getEdgeCount(Direction.IN, authorizations);
-        Long existingInEdgeCount = existingDocument == null ? null : GetResponseUtil.getFieldValueLong(existingDocument, IN_EDGE_COUNT_FIELD_NAME);
+        Long existingInEdgeCount = existingDocument == null ? null : GetResponseUtil.getFieldValueLong(existingDocument, EdgeCountScoringStrategyConfiguration.IN_EDGE_COUNT_FIELD_NAME);
         if (existingInEdgeCount == null || existingInEdgeCount.intValue() != inEdgeCount) {
-            jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
+            jsonBuilder.field(EdgeCountScoringStrategyConfiguration.IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
             changed = true;
         } else {
-            jsonBuilder.field(IN_EDGE_COUNT_FIELD_NAME, existingInEdgeCount);
+            jsonBuilder.field(EdgeCountScoringStrategyConfiguration.IN_EDGE_COUNT_FIELD_NAME, existingInEdgeCount.intValue());
         }
 
         int outEdgeCount = vertex.getEdgeCount(Direction.OUT, authorizations);
-        Long existingOutEdgeCount = existingDocument == null ? null : GetResponseUtil.getFieldValueLong(existingDocument, OUT_EDGE_COUNT_FIELD_NAME);
+        Long existingOutEdgeCount = existingDocument == null ? null : GetResponseUtil.getFieldValueLong(existingDocument, EdgeCountScoringStrategyConfiguration.OUT_EDGE_COUNT_FIELD_NAME);
         if (existingOutEdgeCount == null || existingOutEdgeCount.intValue() != outEdgeCount) {
-            jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
+            jsonBuilder.field(EdgeCountScoringStrategyConfiguration.OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
             changed = true;
         } else {
-            jsonBuilder.field(OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
+            jsonBuilder.field(EdgeCountScoringStrategyConfiguration.OUT_EDGE_COUNT_FIELD_NAME, existingOutEdgeCount.intValue());
         }
 
         return changed;

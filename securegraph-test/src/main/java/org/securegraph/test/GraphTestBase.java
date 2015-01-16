@@ -20,6 +20,7 @@ import org.securegraph.search.SearchIndex;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
+import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.ToElementIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1924,6 +1925,10 @@ public abstract class GraphTestBase {
         graph.addEdge("e1", v3, v2, "link", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.flush();
 
+        v1.prepareMutation().save(AUTHORIZATIONS_A_AND_B);
+        v2.prepareMutation().save(AUTHORIZATIONS_A_AND_B);
+        v3.prepareMutation().save(AUTHORIZATIONS_A_AND_B);
+
         assertVertexIds(graph.query(AUTHORIZATIONS_A).vertices(), new String[]{"v2", "v3", "v1"});
     }
 
@@ -2411,12 +2416,38 @@ public abstract class GraphTestBase {
         return graphBaseWithSearchIndex.getSearchIndex() instanceof DefaultSearchIndex;
     }
 
-    protected void assertVertexIds(Iterable<Vertex> vertices, String[] ids) {
+    protected void assertVertexIds(Iterable<Vertex> vertices, String[] expectedIds) {
+        String verticesIdsString = idsToString(vertices);
+        String expectedIdsString = idsToString(expectedIds);
         List<Vertex> verticesList = toList(vertices);
-        assertEquals("ids length mismatch", ids.length, verticesList.size());
-        for (int i = 0; i < ids.length; i++) {
-            assertEquals("at offset: " + i, ids[i], verticesList.get(i).getId());
+        assertEquals("ids length mismatch found:[" + verticesIdsString + "] expected:[" + expectedIdsString + "]", expectedIds.length, verticesList.size());
+        for (int i = 0; i < expectedIds.length; i++) {
+            assertEquals("at offset: " + i + " found:[" + verticesIdsString + "] expected:[" + expectedIdsString + "]", expectedIds[i], verticesList.get(i).getId());
         }
+    }
+
+    private String idsToString(String[] ids) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String id : ids) {
+            if (!first) {
+                sb.append(", ");
+            }
+            sb.append(id);
+            first = false;
+        }
+        return sb.toString();
+    }
+
+    private String idsToString(Iterable<Vertex> vertices) {
+        List<String> idsList = toList(new ConvertingIterable<Vertex, String>(vertices) {
+            @Override
+            protected String convert(Vertex o) {
+                return o.getId();
+            }
+        });
+        String[] idsArray = idsList.toArray(new String[idsList.size()]);
+        return idsToString(idsArray);
     }
 
     private void assertEvents(GraphEvent... expectedEvents) {
