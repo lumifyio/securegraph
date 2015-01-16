@@ -351,9 +351,6 @@ public abstract class GraphBase implements Graph {
     public abstract boolean isFieldBoostSupported();
 
     @Override
-    public abstract boolean isEdgeBoostSupported();
-
-    @Override
     public abstract SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();
 
     @Override

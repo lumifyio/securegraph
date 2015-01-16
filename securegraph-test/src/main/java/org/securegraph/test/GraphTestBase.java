@@ -1909,7 +1909,7 @@ public abstract class GraphTestBase {
 
     @Test
     public void testVertexBoost() throws Exception {
-        if (!graph.isEdgeBoostSupported()) {
+        if (!isEdgeBoostSupported()) {
             LOGGER.warn("Boost not supported");
             return;
         }
@@ -2488,4 +2488,6 @@ public abstract class GraphTestBase {
             return null;
         }
     }
+
+    protected abstract boolean isEdgeBoostSupported();
 }

@@ -386,11 +386,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         return true;
     }
 
-    @Override
-    public boolean isEdgeBoostSupported() {
-        return true;
-    }
-
     public IndexInfo addPropertiesToIndex(Element element, Iterable<Property> properties) {
         try {
             String indexName = getIndexName(element);

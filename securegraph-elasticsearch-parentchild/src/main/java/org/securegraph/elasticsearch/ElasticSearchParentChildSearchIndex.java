@@ -424,11 +424,6 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     @Override
-    public boolean isEdgeBoostSupported() {
-        return false;
-    }
-
-    @Override
     public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
         return SearchIndexSecurityGranularity.PROPERTY;
     }

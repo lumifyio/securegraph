@@ -22,6 +22,7 @@ import java.util.UUID;
 
 public class ElasticSearchSearchIndexTestHelpers {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexTestHelpers.class);
+    public static final String ES_INDEX_NAME = "securegraph-test";
     private static File tempDir;
     private static Node elasticSearchNode;
     private static String addr;
@@ -32,6 +33,7 @@ public class ElasticSearchSearchIndexTestHelpers {
         Map config = new HashMap();
         config.put(GraphConfiguration.AUTO_FLUSH, true);
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, ElasticSearchSearchIndex.class.getName());
+        config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_INDEX_NAME, ES_INDEX_NAME);
         if (TESTING) {
             addr = "localhost";
             config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + ElasticSearchSearchIndexConfiguration.CONFIG_STORE_SOURCE_DATA, "true");
@@ -43,7 +45,7 @@ public class ElasticSearchSearchIndexTestHelpers {
         return InMemoryGraph.create(configuration, configuration.createIdGenerator(), configuration.createSearchIndex());
     }
 
-    public static void before() throws IOException {
+    public static void beforeClass() throws IOException {
         tempDir = File.createTempFile("elasticsearch-temp", Long.toString(System.nanoTime()));
         tempDir.delete();
         tempDir.mkdir();
@@ -57,11 +59,20 @@ public class ElasticSearchSearchIndexTestHelpers {
                 .settings(
                         ImmutableSettings.settingsBuilder()
                                 .put("gateway.type", "local")
+                                .put("index.number_of_shards", "1")
+                                .put("index.number_of_replicas", "0")
                                 .put("path.data", new File(tempDir, "data").getAbsolutePath())
                                 .put("path.logs", new File(tempDir, "logs").getAbsolutePath())
                                 .put("path.work", new File(tempDir, "work").getAbsolutePath())
                 ).node();
         elasticSearchNode.start();
+    }
+
+    public static void before() {
+        if (elasticSearchNode.client().admin().indices().prepareExists(ES_INDEX_NAME).execute().actionGet().isExists()) {
+            LOGGER.info("deleting test index: " + ES_INDEX_NAME);
+            elasticSearchNode.client().admin().indices().prepareDelete(ES_INDEX_NAME).execute().actionGet();
+        }
 
         ClusterStateResponse response = elasticSearchNode.client().admin().cluster().prepareState().execute().actionGet();
         addr = response.getState().getNodes().getNodes().values().iterator().next().value.getAddress().toString();
@@ -70,6 +81,10 @@ public class ElasticSearchSearchIndexTestHelpers {
     }
 
     public static void after() throws IOException {
+
+    }
+
+    public static void afterClass() throws IOException {
         if (elasticSearchNode != null) {
             elasticSearchNode.stop();
             elasticSearchNode.close();

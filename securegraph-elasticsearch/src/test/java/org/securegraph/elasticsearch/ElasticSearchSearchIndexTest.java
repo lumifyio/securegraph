@@ -2,9 +2,7 @@ package org.securegraph.elasticsearch;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.securegraph.*;
 import org.securegraph.elasticsearch.helpers.ElasticSearchSearchIndexTestHelpers;
 import org.securegraph.elasticsearch.score.EdgeCountScoringStrategy;
@@ -34,6 +32,11 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
         return new InMemoryAuthorizations(auths);
     }
 
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        ElasticSearchSearchIndexTestHelpers.beforeClass();
+    }
+
     @Before
     @Override
     public void before() throws Exception {
@@ -45,6 +48,11 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
     public void after() throws Exception {
         super.after();
         ElasticSearchSearchIndexTestHelpers.after();
+    }
+
+    @AfterClass
+    public static void afterClass() throws IOException {
+        ElasticSearchSearchIndexTestHelpers.afterClass();
     }
 
     private ElasticSearchSearchIndex getSearchIndex() {
@@ -92,6 +100,11 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
             throw new SecureGraphException("Failed to update 'updateEdgeBoost' field", e);
         }
 
+        return true;
+    }
+
+    @Override
+    protected boolean isEdgeBoostSupported() {
         return true;
     }
 }

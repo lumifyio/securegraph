@@ -491,14 +491,9 @@ public interface Graph {
     Iterable<GraphMetadataEntry> getMetadata();
 
     /**
-     * Determine if field boost is support.
+     * Determine if field boost is support. That is can you change the boost at a field level to give higher priority.
      */
     boolean isFieldBoostSupported();
-
-    /**
-     * Determine if edge boost is supported. That is can you change the vertex boost based on incoming and outgoing edge counts.
-     */
-    boolean isEdgeBoostSupported();
 
     /**
      * Clears all data from the graph.

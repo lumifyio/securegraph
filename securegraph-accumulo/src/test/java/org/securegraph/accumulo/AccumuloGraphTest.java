@@ -65,6 +65,11 @@ public class AccumuloGraphTest extends GraphTestBase {
         super.after();
     }
 
+    @Override
+    protected boolean isEdgeBoostSupported() {
+        return false;
+    }
+
     @Test
     public void testFilterHints() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);

@@ -69,11 +69,6 @@ public class DefaultSearchIndex implements SearchIndex {
     }
 
     @Override
-    public boolean isEdgeBoostSupported() {
-        return false;
-    }
-
-    @Override
     public void clearData() {
     }
 

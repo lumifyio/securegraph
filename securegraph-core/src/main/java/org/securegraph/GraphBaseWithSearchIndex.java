@@ -144,11 +144,6 @@ public abstract class GraphBaseWithSearchIndex extends GraphBase implements Grap
     }
 
     @Override
-    public boolean isEdgeBoostSupported() {
-        return getSearchIndex().isEdgeBoostSupported();
-    }
-
-    @Override
     public SearchIndexSecurityGranularity getSearchIndexSecurityGranularity() {
         return getSearchIndex().getSearchIndexSecurityGranularity();
     }

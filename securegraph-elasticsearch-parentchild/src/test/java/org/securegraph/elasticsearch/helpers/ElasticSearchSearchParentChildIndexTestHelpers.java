@@ -82,7 +82,6 @@ public class ElasticSearchSearchParentChildIndexTestHelpers {
     }
 
     public static void after() throws IOException {
-        LOGGER.info("after");
     }
 
     public static void afterClass() throws IOException {

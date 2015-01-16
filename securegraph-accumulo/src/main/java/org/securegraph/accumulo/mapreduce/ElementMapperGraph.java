@@ -104,11 +104,6 @@ public class ElementMapperGraph extends GraphBase {
     }
 
     @Override
-    public boolean isEdgeBoostSupported() {
-        throw new SecureGraphException("Not supported");
-    }
-
-    @Override
     public void clearData() {
         throw new SecureGraphException("Not supported");
     }

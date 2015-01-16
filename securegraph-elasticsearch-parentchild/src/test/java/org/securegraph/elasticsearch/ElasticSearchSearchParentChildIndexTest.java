@@ -105,4 +105,9 @@ public class ElasticSearchSearchParentChildIndexTest extends GraphTestBase {
 
         return true;
     }
+
+    @Override
+    protected boolean isEdgeBoostSupported() {
+        return true;
+    }
 }
