@@ -52,7 +52,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        return getEdges(direction, new String[]{label}, authorizations);
+        return getEdges(direction, labelToArrayOrNull(label), authorizations);
     }
 
     @Override
@@ -182,7 +182,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        return getVertices(direction, new String[]{label}, authorizations);
+        return getVertices(direction, labelToArrayOrNull(label), authorizations);
     }
 
     @Override

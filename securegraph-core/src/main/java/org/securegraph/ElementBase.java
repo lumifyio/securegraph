@@ -327,4 +327,11 @@ public abstract class ElementBase<T extends Element> implements Element {
     protected void removeHiddenVisibility(Visibility visibility) {
         this.hiddenVisibilities.remove(visibility);
     }
+
+    protected String[] labelToArrayOrNull(String label) {
+        if (label == null) {
+            return null;
+        }
+        return new String[]{label};
+    }
 }
