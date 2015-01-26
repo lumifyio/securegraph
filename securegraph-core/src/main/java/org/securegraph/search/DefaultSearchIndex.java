@@ -12,7 +12,7 @@ import java.util.Map;
 public class DefaultSearchIndex implements SearchIndex {
     private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
 
-    public DefaultSearchIndex(Map configuration) {
+    public DefaultSearchIndex(GraphConfiguration configuration) {
 
     }
 
@@ -65,11 +65,6 @@ public class DefaultSearchIndex implements SearchIndex {
 
     @Override
     public boolean isFieldBoostSupported() {
-        return false;
-    }
-
-    @Override
-    public boolean isEdgeBoostSupported() {
         return false;
     }
 

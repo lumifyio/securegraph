@@ -65,6 +65,11 @@ public class AccumuloGraphTest extends GraphTestBase {
         super.after();
     }
 
+    @Override
+    protected boolean isEdgeBoostSupported() {
+        return false;
+    }
+
     @Test
     public void testFilterHints() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
@@ -131,21 +136,21 @@ public class AccumuloGraphTest extends GraphTestBase {
     @Test
     public void testStoringEmptyMetadata() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
-        Map<String, Object> metadata = new HashMap<String, Object>();
+        Metadata metadata = new Metadata();
         v1.addPropertyValue("prop1", "prop1", "val1", metadata, VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B);
 
         Vertex v2 = graph.addVertex("v2", VISIBILITY_EMPTY, AUTHORIZATIONS_EMPTY);
-        metadata = new HashMap<String, Object>();
-        metadata.put("meta1", "metavalue1");
+        metadata = new Metadata();
+        metadata.add("meta1", "metavalue1", VISIBILITY_EMPTY);
         v2.addPropertyValue("prop1", "prop1", "val1", metadata, VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B);
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_EMPTY);
-        assertEquals(0, v1.getProperty("prop1", "prop1").getMetadata().size());
+        assertEquals(0, v1.getProperty("prop1", "prop1").getMetadata().entrySet().size());
 
         v2 = graph.getVertex("v2", AUTHORIZATIONS_EMPTY);
         metadata = v2.getProperty("prop1", "prop1").getMetadata();
-        assertEquals(1, metadata.size());
-        assertEquals("metavalue1", metadata.get("meta1"));
+        assertEquals(1, metadata.entrySet().size());
+        assertEquals("metavalue1", metadata.getEntry("meta1", VISIBILITY_EMPTY).getValue());
 
         AccumuloGraph accumuloGraph = (AccumuloGraph) graph;
         Scanner vertexScanner = accumuloGraph.createVertexScanner(FetchHint.ALL, AUTHORIZATIONS_EMPTY);

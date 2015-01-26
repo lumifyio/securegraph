@@ -1,10 +1,10 @@
 package org.securegraph.elasticsearch;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -22,7 +22,6 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.DefaultVertexQuery;
 import org.securegraph.query.GraphQuery;
 import org.securegraph.query.VertexQuery;
-import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.type.GeoPoint;
 import org.slf4j.Logger;
@@ -33,64 +32,30 @@ import java.util.*;
 
 import static org.securegraph.util.Preconditions.checkNotNull;
 
-public abstract class ElasticSearchSearchIndexBase implements SearchIndex, DisableEdgeIndexSupport {
+public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
-    public static final String CONFIG_STORE_SOURCE_DATA = "storeSourceData";
-    public static final String CONFIG_ES_LOCATIONS = "locations";
-    public static final String CONFIG_INDEX_NAME = "indexName";
-    private static final String DEFAULT_INDEX_NAME = "securegraph";
-    public static final String CONFIG_INDICES_TO_QUERY = "indicesToQuery";
-    public static final String CONFIG_IN_EDGE_BOOST = "inEdgeBoost";
-    private static final double DEFAULT_IN_EDGE_BOOST = 1.2;
-    public static final String CONFIG_OUT_EDGE_BOOST = "outEdgeBoost";
-    private static final double DEFAULT_OUT_EDGE_BOOST = 1.1;
-    public static final String CONFIG_USE_EDGE_BOOST = "useEdgeBoost";
-    private static final boolean DEFAULT_USE_EDGE_BOOST = true;
-    public static final String CONFIG_INDEX_EDGES = "indexEdges";
-    private static final boolean DEFAULT_INDEX_EDGES = true;
     public static final String ELEMENT_TYPE = "element";
     public static final String ELEMENT_TYPE_FIELD_NAME = "__elementType";
     public static final String VISIBILITY_FIELD_NAME = "__visibility";
-    public static final String IN_EDGE_COUNT_FIELD_NAME = "__inEdgeCount";
-    public static final String OUT_EDGE_COUNT_FIELD_NAME = "__outEdgeCount";
     public static final String ELEMENT_TYPE_VERTEX = "vertex";
     public static final String ELEMENT_TYPE_EDGE = "edge";
-    public static final String SETTING_CLUSTER_NAME = "clusterName";
-    public static final int DEFAULT_ES_PORT = 9300;
     public static final String EXACT_MATCH_PROPERTY_NAME_SUFFIX = "_exactMatch";
     public static final String GEO_PROPERTY_NAME_SUFFIX = "_geo";
     private final TransportClient client;
-    private final boolean autoflush;
-    private final boolean storeSourceData;
-    private String defaultIndexName;
-    private String[] indicesToQuery;
-    private final Map<String, IndexInfo> indexInfos = new HashMap<String, IndexInfo>();
+    private final ElasticSearchSearchIndexConfiguration config;
+    private final Map<String, IndexInfo> indexInfos = new HashMap<>();
     private int indexInfosLastSize = 0; // Used to prevent creating a index name array each time
     private String[] indexNamesAsArray;
-    private String[] esLocations;
-    private double inEdgeBoost;
-    private double outEdgeBoost;
-    private boolean useEdgeBoost;
-    private boolean indexEdges;
 
-    protected ElasticSearchSearchIndexBase(Map config) {
-        readConfig(config);
-
-        Object storeSourceDataConfig = config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_STORE_SOURCE_DATA);
-        storeSourceData = storeSourceDataConfig != null && "true".equals(storeSourceDataConfig.toString());
-        LOGGER.info("Store source data: " + storeSourceData);
-
-        // TODO convert this to use a proper config object
-        Object autoFlushObj = config.get(GraphConfiguration.AUTO_FLUSH);
-        autoflush = autoFlushObj != null && "true".equals(autoFlushObj.toString());
-        LOGGER.info("Auto flush: " + autoflush);
+    protected ElasticSearchSearchIndexBase(GraphConfiguration config) {
+        this.config = new ElasticSearchSearchIndexConfiguration(config);
 
         ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
-        if (config.get(SETTING_CLUSTER_NAME) != null) {
-            settingsBuilder.put("cluster.name", config.get(SETTING_CLUSTER_NAME));
+        if (getConfig().getClusterName() != null) {
+            settingsBuilder.put("cluster.name", getConfig().getClusterName());
         }
         client = new TransportClient(settingsBuilder.build());
-        for (String esLocation : esLocations) {
+        for (String esLocation : getConfig().getEsLocations()) {
             String[] locationSocket = esLocation.split(":");
             String hostname;
             int port;
@@ -99,97 +64,23 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
                 port = Integer.parseInt(locationSocket[1]);
             } else if (locationSocket.length == 1) {
                 hostname = locationSocket[0];
-                port = DEFAULT_ES_PORT;
+                port = getConfig().getPort();
             } else {
                 throw new SecureGraphException("Invalid elastic search location: " + esLocation);
             }
             client.addTransportAddress(new InetSocketTransportAddress(hostname, port));
         }
 
-        for (String indexName : getIndicesToQuery()) {
-            ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
+        for (String indexName : getConfig().getIndicesToQuery()) {
+            ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
         }
 
         loadIndexInfos();
         loadPropertyDefinitions();
     }
 
-    protected void readConfig(Map config) {
-        // Locations
-        String esLocationsString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_ES_LOCATIONS);
-        if (esLocationsString == null) {
-            throw new SecureGraphException(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_ES_LOCATIONS + " is a required configuration parameter");
-        }
-        LOGGER.info("Using elastic search locations: " + esLocationsString);
-        esLocations = esLocationsString.split(",");
-
-        // Index Name
-        defaultIndexName = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_NAME);
-        if (defaultIndexName == null) {
-            defaultIndexName = DEFAULT_INDEX_NAME;
-        }
-        LOGGER.info("Default index name: " + defaultIndexName);
-
-        // Indices to query
-        String indicesToQueryString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDICES_TO_QUERY);
-        if (indicesToQueryString == null) {
-            indicesToQuery = new String[]{defaultIndexName};
-        } else {
-            indicesToQuery = indicesToQueryString.split(",");
-            for (int i = 0; i < indicesToQuery.length; i++) {
-                indicesToQuery[i] = indicesToQuery[i].trim();
-            }
-        }
-        if (LOGGER.isInfoEnabled()) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < indicesToQuery.length; i++) {
-                if (i > 0) {
-                    sb.append(',');
-                }
-                sb.append(indicesToQuery[i]);
-            }
-            LOGGER.info("Indices to query: " + sb.toString());
-        }
-
-        // In-Edge Boost
-        String inEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_IN_EDGE_BOOST);
-        if (inEdgeBoostString == null) {
-            inEdgeBoost = DEFAULT_IN_EDGE_BOOST;
-        } else {
-            inEdgeBoost = Double.parseDouble(inEdgeBoostString);
-        }
-        LOGGER.info("In Edge Boost: " + inEdgeBoost);
-
-        // Out-Edge Boost
-        String outEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_OUT_EDGE_BOOST);
-        if (outEdgeBoostString == null) {
-            outEdgeBoost = DEFAULT_OUT_EDGE_BOOST;
-        } else {
-            outEdgeBoost = Double.parseDouble(outEdgeBoostString);
-        }
-        LOGGER.info("Out Edge Boost: " + outEdgeBoost);
-
-        // Use Edge Boost
-        String useEdgeBoostString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_USE_EDGE_BOOST);
-        if (useEdgeBoostString == null) {
-            useEdgeBoost = DEFAULT_USE_EDGE_BOOST;
-        } else {
-            useEdgeBoost = Boolean.parseBoolean(useEdgeBoostString);
-        }
-        LOGGER.info("Use edge boost: " + useEdgeBoost);
-
-        // index edges
-        String indexEdgesString = (String) config.get(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX + "." + CONFIG_INDEX_EDGES);
-        if (indexEdgesString == null) {
-            indexEdges = DEFAULT_INDEX_EDGES;
-        } else {
-            indexEdges = Boolean.parseBoolean(indexEdgesString);
-        }
-        LOGGER.info("index edges: " + indexEdges);
-    }
-
     protected void loadIndexInfos() {
-        Map<String, IndexStatus> indices = client.admin().indices().prepareStatus().execute().actionGet().getIndices();
+        Map<String, IndexStats> indices = client.admin().indices().prepareStats().execute().actionGet().getIndices();
         for (String indexName : indices.keySet()) {
             IndexInfo indexInfo = indexInfos.get(indexName);
             if (indexInfo != null) {
@@ -212,9 +103,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
                 if (!client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
                     try {
                         createIndex(indexName, storeSourceData);
-
-                        IndicesStatusResponse statusResponse = client.admin().indices().prepareStatus(indexName).execute().actionGet();
-                        LOGGER.debug(statusResponse.toString());
                     } catch (IOException e) {
                         throw new SecureGraphException("Could not create index: " + indexName, e);
                     }
@@ -239,7 +127,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
             try {
                 XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
                         .startObject()
-                        .startObject("_source").field("enabled", storeSourceData).endObject()
+                        .startObject("_source").field("enabled", getConfig().isStoreSourceData()).endObject()
                         .startObject("properties");
                 createIndexAddFieldsToElementType(mappingBuilder);
                 XContentBuilder mapping = mappingBuilder.endObject()
@@ -261,15 +149,22 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
         CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).execute().actionGet();
         LOGGER.debug(createResponse.toString());
+
+        ClusterHealthResponse health = client.admin().cluster().prepareHealth(indexName)
+                .setWaitForGreenStatus()
+                .execute().actionGet();
+        LOGGER.debug("Index status: " + health.toString());
+        if (health.isTimedOut()) {
+            LOGGER.warn("timed out waiting for green index status, for index: " + indexName);
+        }
     }
 
     protected void createIndexAddFieldsToElementType(XContentBuilder builder) throws IOException {
         builder
                 .startObject(ELEMENT_TYPE_FIELD_NAME).field("type", "string").field("store", "true").endObject()
-                .startObject(IN_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
-                .startObject(OUT_EDGE_COUNT_FIELD_NAME).field("type", "integer").field("store", "true").endObject()
                 .startObject(VISIBILITY_FIELD_NAME).field("type", "string").field("analyzer", "keyword").field("index", "not_analyzed").field("store", "true").endObject()
         ;
+        getConfig().getScoringStrategy().addFieldsToElementType(builder);
     }
 
     public synchronized void loadPropertyDefinitions() {
@@ -290,7 +185,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     private PropertyDefinition createPropertyDefinition(Map.Entry<String, String> property, Map<String, String> propertyTypes) {
         String propertyName = property.getKey();
         Class dataType = elasticSearchTypeToClass(property.getValue());
-        Set<TextIndexHint> indexHints = new HashSet<TextIndexHint>();
+        Set<TextIndexHint> indexHints = new HashSet<>();
 
         if (dataType == String.class) {
             if (propertyTypes.containsKey(propertyName + GEO_PROPERTY_NAME_SUFFIX)) {
@@ -349,7 +244,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     private Map<String, String> getPropertyTypesFromServer(String indexName) {
-        Map<String, String> propertyTypes = new HashMap<String, String>();
+        Map<String, String> propertyTypes = new HashMap<>();
         try {
             ImmutableOpenMap<String, ImmutableOpenMap<String, MappingMetaData>> imd = client.admin().indices().prepareGetMappings(indexName).execute().actionGet().getMappings();
             for (ObjectCursor<ImmutableOpenMap<String, MappingMetaData>> m : imd.values()) {
@@ -423,7 +318,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     public Map<String, PropertyDefinition> getAllPropertyDefinitions() {
-        Map<String, PropertyDefinition> allPropertyDefinitions = new HashMap<String, PropertyDefinition>();
+        Map<String, PropertyDefinition> allPropertyDefinitions = new HashMap<>();
         for (IndexInfo indexInfo : this.indexInfos.values()) {
             allPropertyDefinitions.putAll(indexInfo.getPropertyDefinitions());
         }
@@ -435,13 +330,16 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         client.admin().indices().prepareFlush(getIndexNamesAsArray()).execute().actionGet();
     }
 
-    protected synchronized String[] getIndexNamesAsArray() {
-        if (indexInfos.size() != indexInfosLastSize) {
+    protected String[] getIndexNamesAsArray() {
+        if (indexInfos.size() == indexInfosLastSize) {
+            return indexNamesAsArray;
+        }
+        synchronized (this) {
             Set<String> keys = indexInfos.keySet();
             indexNamesAsArray = keys.toArray(new String[keys.size()]);
             indexInfosLastSize = indexInfos.size();
+            return indexNamesAsArray;
         }
-        return indexNamesAsArray;
     }
 
     @Override
@@ -451,8 +349,9 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
 
     @Override
     public void addPropertyDefinition(PropertyDefinition propertyDefinition) throws IOException {
+        LOGGER.debug("adding property definition: " + propertyDefinition);
         for (String indexName : getIndexNames(propertyDefinition)) {
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, storeSourceData);
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
 
             if (propertyDefinition.getDataType() == String.class) {
                 if (propertyDefinition.getTextIndexHints().contains(TextIndexHint.EXACT_MATCH)) {
@@ -473,13 +372,13 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     }
 
     protected Iterable<String> getIndexNames(PropertyDefinition propertyDefinition) {
-        List<String> indexNames = new ArrayList<String>();
-        indexNames.add(defaultIndexName);
+        List<String> indexNames = new ArrayList<>();
+        indexNames.add(getConfig().getDefaultIndexName());
         return indexNames;
     }
 
     protected String getIndexName(Element element) {
-        return defaultIndexName;
+        return getConfig().getDefaultIndexName();
     }
 
     @Override
@@ -487,15 +386,10 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         return true;
     }
 
-    @Override
-    public boolean isEdgeBoostSupported() {
-        return true;
-    }
-
     public IndexInfo addPropertiesToIndex(Element element, Iterable<Property> properties) {
         try {
             String indexName = getIndexName(element);
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, storeSourceData);
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
             for (Property property : properties) {
                 addPropertyToIndex(indexInfo, property);
             }
@@ -546,38 +440,15 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
     protected abstract void addPropertyToIndex(IndexInfo indexInfo, String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException;
 
     protected boolean shouldIgnoreType(Class dataType) {
-        if (dataType == byte[].class) {
-            return true;
-        }
-        return false;
+        return dataType == byte[].class;
     }
 
     public TransportClient getClient() {
         return client;
     }
 
-    public boolean isAutoflush() {
-        return autoflush;
-    }
-
-    public boolean isUseEdgeBoost() {
-        return useEdgeBoost;
-    }
-
-    public boolean isIndexEdges() {
-        return indexEdges;
-    }
-
-    public void setIndexEdges(boolean indexEdges) {
-        this.indexEdges = indexEdges;
-    }
-
-    public double getInEdgeBoost() {
-        return inEdgeBoost;
-    }
-
-    public double getOutEdgeBoost() {
-        return outEdgeBoost;
+    public ElasticSearchSearchIndexConfiguration getConfig() {
+        return config;
     }
 
     protected void addTypeToMapping(XContentBuilder mapping, String propertyName, Class dataType, boolean analyzed, Double boost) throws IOException {
@@ -626,10 +497,6 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
         }
     }
 
-    protected boolean isStoreSourceData() {
-        return storeSourceData;
-    }
-
     protected void doBulkRequest(BulkRequest bulkRequest) {
         BulkResponse response = getClient().bulk(bulkRequest).actionGet();
         if (response.hasFailures()) {
@@ -653,12 +520,10 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex, Disab
             } catch (Exception ex) {
                 throw new SecureGraphException("Could not delete index " + indexName, ex);
             }
-            ensureIndexCreatedAndInitialized(indexName, storeSourceData);
+            ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
         }
         loadPropertyDefinitions();
     }
 
-    protected String[] getIndicesToQuery() {
-        return indicesToQuery;
-    }
+    public abstract void addElementToBulkRequest(Graph graph, BulkRequest bulkRequest, IndexInfo indexInfo, Element element, Authorizations authorizations);
 }

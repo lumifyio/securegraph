@@ -3,7 +3,7 @@ package org.securegraph.elasticsearch;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoHashGridBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramBuilder;
@@ -13,6 +13,7 @@ import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.PropertyDefinition;
 import org.securegraph.SecureGraphException;
+import org.securegraph.elasticsearch.score.ScoringStrategy;
 import org.securegraph.query.*;
 
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ public class ElasticSearchGraphQuery extends ElasticSearchGraphQueryBase impleme
     private final List<TermsQueryItem> termsQueryItems = new ArrayList<TermsQueryItem>();
     private final List<GeohashQueryItem> geohashQueryItems = new ArrayList<GeohashQueryItem>();
 
-    public ElasticSearchGraphQuery(TransportClient client, String[] indicesToQuery, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, double inEdgeBoost, double outEdgeBoost, Authorizations authorizations) {
-        super(client, indicesToQuery, graph, queryString, propertyDefinitions, inEdgeBoost, outEdgeBoost, false, authorizations);
+    public ElasticSearchGraphQuery(TransportClient client, String[] indicesToQuery, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, ScoringStrategy scoringStrategy, Authorizations authorizations) {
+        super(client, indicesToQuery, graph, queryString, propertyDefinitions, scoringStrategy, false, authorizations);
     }
 
     @Override
@@ -61,8 +62,8 @@ public class ElasticSearchGraphQuery extends ElasticSearchGraphQueryBase impleme
     }
 
     @Override
-    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
-        SearchRequestBuilder searchRequestBuilder = super.getSearchRequestBuilder(filters, functionScoreQuery);
+    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, QueryBuilder queryBuilder) {
+        SearchRequestBuilder searchRequestBuilder = super.getSearchRequestBuilder(filters, queryBuilder);
 
         for (HistogramQueryItem histogramQueryItem : histogramQueryItems) {
             PropertyDefinition propertyDefinition = getPropertyDefinitions().get(histogramQueryItem.getFieldName());

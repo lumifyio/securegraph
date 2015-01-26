@@ -47,6 +47,11 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public boolean doesVertexExist(String vertexId, Authorizations authorizations) {
+        return getVertex(vertexId, FetchHint.NONE, authorizations) != null;
+    }
+
+    @Override
     public Vertex getVertex(String vertexId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all vertices! Override getVertex.");
         for (Vertex vertex : getVertices(fetchHints, authorizations)) {
@@ -81,6 +86,18 @@ public abstract class GraphBase implements Graph {
                 return ids.iterator();
             }
         };
+    }
+
+    @Override
+    public Map<String, Boolean> doVerticesExist(List<String> ids, Authorizations authorizations) {
+        Map<String, Boolean> results = new HashMap<String, Boolean>();
+        for (String id : ids) {
+            results.put(id, false);
+        }
+        for (Vertex vertex : getVertices(ids, FetchHint.NONE, authorizations)) {
+            results.put(vertex.getId(), true);
+        }
+        return results;
     }
 
     @Override
@@ -150,6 +167,11 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public boolean doesEdgeExist(String edgeId, Authorizations authorizations) {
+        return getEdge(edgeId, FetchHint.NONE, authorizations) != null;
+    }
+
+    @Override
     public Edge getEdge(String edgeId, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
         LOGGER.warn("Performing scan of all edges! Override getEdge.");
         for (Edge edge : getEdges(fetchHints, authorizations)) {
@@ -163,6 +185,18 @@ public abstract class GraphBase implements Graph {
     @Override
     public Edge getEdge(String edgeId, Authorizations authorizations) {
         return getEdge(edgeId, FetchHint.ALL, authorizations);
+    }
+
+    @Override
+    public Map<String, Boolean> doEdgesExist(List<String> ids, Authorizations authorizations) {
+        Map<String, Boolean> results = new HashMap<String, Boolean>();
+        for (String id : ids) {
+            results.put(id, false);
+        }
+        for (Edge edge : getEdges(ids, FetchHint.NONE, authorizations)) {
+            results.put(edge.getId(), true);
+        }
+        return results;
     }
 
     @Override
@@ -280,6 +314,22 @@ public abstract class GraphBase implements Graph {
     }
 
     @Override
+    public abstract Iterable<GraphMetadataEntry> getMetadata();
+
+    @Override
+    public Object getMetadata(String key) {
+        for (GraphMetadataEntry e : getMetadata()) {
+            if (e.getKey().equals(key)) {
+                return e.getValue();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public abstract void setMetadata(String key, Object value);
+
+    @Override
     public abstract GraphQuery query(Authorizations authorizations);
 
     @Override
@@ -299,9 +349,6 @@ public abstract class GraphBase implements Graph {
 
     @Override
     public abstract boolean isFieldBoostSupported();
-
-    @Override
-    public abstract boolean isEdgeBoostSupported();
 
     @Override
     public abstract SearchIndexSecurityGranularity getSearchIndexSecurityGranularity();

@@ -4,11 +4,12 @@ import org.securegraph.*;
 import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.id.UUIDIdGenerator;
-import org.securegraph.mutation.AlterPropertyMetadata;
 import org.securegraph.mutation.AlterPropertyVisibility;
+import org.securegraph.mutation.SetPropertyMetadata;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
+import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.LookAheadIterable;
 
 import java.util.*;
@@ -20,12 +21,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<String, InMemoryVertex> vertices;
     private final Map<String, InMemoryEdge> edges;
+    private final Map<String, Object> metadata = new HashMap<String, Object>();
 
-    public InMemoryGraph() {
-        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION.getConfig()), new DefaultSearchIndex(DEFAULT_CONFIGURATION.getConfig()));
+    protected InMemoryGraph() {
+        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION), new DefaultSearchIndex(DEFAULT_CONFIGURATION));
     }
 
-    public InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
+    protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this(configuration, idGenerator, searchIndex, new HashMap<String, InMemoryVertex>(), new HashMap<String, InMemoryEdge>());
     }
 
@@ -35,10 +37,20 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         this.edges = edges;
     }
 
+    public static InMemoryGraph create() {
+        return create(DEFAULT_CONFIGURATION);
+    }
+
     public static InMemoryGraph create(InMemoryGraphConfiguration config) {
         IdGenerator idGenerator = config.createIdGenerator();
         SearchIndex searchIndex = config.createSearchIndex();
-        return new InMemoryGraph(config, idGenerator, searchIndex);
+        return create(config, idGenerator, searchIndex);
+    }
+
+    public static InMemoryGraph create(InMemoryGraphConfiguration config, IdGenerator idGenerator, SearchIndex searchIndex) {
+        InMemoryGraph graph = new InMemoryGraph(config, idGenerator, searchIndex);
+        graph.setup();
+        return graph;
     }
 
     public static InMemoryGraph create(Map config) {
@@ -54,32 +66,16 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                Vertex existingVertex = getVertex(getVertexId(), authorizations);
+                InMemoryVertex newVertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), getProperties(), null, authorizations);
 
-                Iterable<Property> properties;
-                if (existingVertex == null) {
-                    properties = getProperties();
-                } else {
-                    Iterable<Property> existingProperties = existingVertex.getProperties();
-                    Iterable<Property> newProperties = getProperties();
-                    properties = new TreeSet<Property>(toList(existingProperties));
-                    for (Property p : newProperties) {
-                        ((TreeSet<Property>) properties).remove(p);
-                        ((TreeSet<Property>) properties).add(p);
-                    }
-                }
-
-                Iterable<Visibility> hiddenVisibilities = null;
-                if (existingVertex instanceof InMemoryVertex) {
-                    hiddenVisibilities = ((InMemoryVertex) existingVertex).getHiddenVisibilities();
-                }
-
-                InMemoryVertex vertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), properties, hiddenVisibilities, authorizations);
-                vertices.put(getVertexId(), vertex);
-
+                // to more closely simulate how accumulo works. add a potentially sparse (in case of an update) vertex to the search index.
                 if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
-                    getSearchIndex().addElement(InMemoryGraph.this, vertex, authorizations);
+                    getSearchIndex().addElement(InMemoryGraph.this, newVertex, authorizations);
                 }
+
+                InMemoryVertex existingVertex = (InMemoryVertex) getVertex(getVertexId(), authorizations);
+                InMemoryVertex vertex = InMemoryVertex.updateOrCreate(InMemoryGraph.this, existingVertex, newVertex, authorizations);
+                vertices.put(getVertexId(), vertex);
 
                 if (hasEventListeners()) {
                     fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, vertex));
@@ -251,7 +247,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         } else {
             Iterable<Property> existingProperties = existingEdge.getProperties();
             Iterable<Property> newProperties = edgeBuilder.getProperties();
-            properties = new TreeSet<Property>(toList(existingProperties));
+            properties = new TreeSet<>(toList(existingProperties));
             for (Property p : newProperties) {
                 ((TreeSet<Property>) properties).remove(p);
                 ((TreeSet<Property>) properties).add(p);
@@ -318,17 +314,32 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             return;
         }
 
-        Vertex inVertex = getVertex(edge.getVertexId(Direction.IN), authorizations);
-        checkNotNull(inVertex, "Could not find in vertex: " + edge.getVertexId(Direction.IN));
-        Vertex outVertex = getVertex(edge.getVertexId(Direction.OUT), authorizations);
-        checkNotNull(outVertex, "Could not find out vertex: " + edge.getVertexId(Direction.OUT));
-
         this.edges.remove(edge.getId());
         getSearchIndex().removeElement(this, edge, authorizations);
 
         if (hasEventListeners()) {
             fireGraphEvent(new RemoveEdgeEvent(this, edge));
         }
+    }
+
+    @Override
+    public Iterable<GraphMetadataEntry> getMetadata() {
+        return new ConvertingIterable<Map.Entry<String, Object>, GraphMetadataEntry>(this.metadata.entrySet()) {
+            @Override
+            protected GraphMetadataEntry convert(Map.Entry<String, Object> o) {
+                return new GraphMetadataEntry(o.getKey(), o.getValue());
+            }
+        };
+    }
+
+    @Override
+    public Object getMetadata(String key) {
+        return this.metadata.get(key);
+    }
+
+    @Override
+    public void setMetadata(String key, Object value) {
+        this.metadata.put(key, value);
     }
 
     @Override
@@ -471,7 +482,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     }
 
     private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, boolean includeHidden, Authorizations authorizations) {
-        List<Property> filteredProperties = new ArrayList<Property>();
+        List<Property> filteredProperties = new ArrayList<>();
         for (Property p : properties) {
             if (canRead(p.getVisibility(), authorizations) && (includeHidden || !p.isHidden(authorizations))) {
                 filteredProperties.add(p);
@@ -511,29 +522,29 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                 throw new SecureGraphException("Could not find property " + apv.getKey() + ":" + apv.getName());
             }
             Object value = property.getValue();
-            Map<String, Object> metadata = property.getMetadata();
+            Metadata metadata = property.getMetadata();
 
             element.removeProperty(apv.getKey(), apv.getName(), authorizations);
             element.addPropertyValue(apv.getKey(), apv.getName(), value, metadata, apv.getVisibility(), authorizations);
         }
     }
 
-    public void alterEdgePropertyMetadata(String edgeId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        alterElementPropertyMetadata(this.edges.get(edgeId), alterPropertyMetadatas);
+    public void alterEdgePropertyMetadata(String edgeId, List<SetPropertyMetadata> setPropertyMetadatas) {
+        alterElementPropertyMetadata(this.edges.get(edgeId), setPropertyMetadatas);
     }
 
-    public void alterVertexPropertyMetadata(String vertexId, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        alterElementPropertyMetadata(this.vertices.get(vertexId), alterPropertyMetadatas);
+    public void alterVertexPropertyMetadata(String vertexId, List<SetPropertyMetadata> setPropertyMetadatas) {
+        alterElementPropertyMetadata(this.vertices.get(vertexId), setPropertyMetadatas);
     }
 
-    private void alterElementPropertyMetadata(Element element, List<AlterPropertyMetadata> alterPropertyMetadatas) {
-        for (AlterPropertyMetadata apm : alterPropertyMetadatas) {
+    private void alterElementPropertyMetadata(Element element, List<SetPropertyMetadata> setPropertyMetadatas) {
+        for (SetPropertyMetadata apm : setPropertyMetadatas) {
             Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
             if (property == null) {
                 throw new SecureGraphException("Could not find property " + apm.getPropertyKey() + ":" + apm.getPropertyName());
             }
 
-            property.getMetadata().put(apm.getMetadataName(), apm.getNewValue());
+            property.getMetadata().add(apm.getMetadataName(), apm.getNewValue(), apm.getMetadataVisibility());
         }
     }
 

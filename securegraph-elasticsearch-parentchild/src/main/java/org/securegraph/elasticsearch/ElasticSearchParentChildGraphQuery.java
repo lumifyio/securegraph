@@ -3,17 +3,17 @@ package org.securegraph.elasticsearch;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.*;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.PropertyDefinition;
+import org.securegraph.elasticsearch.score.ScoringStrategy;
 
 import java.util.List;
 import java.util.Map;
 
 public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryBase {
-    protected ElasticSearchParentChildGraphQuery(TransportClient client, String[] indicesToQuery, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, double inEdgeBoost, double outEdgeBoost, Authorizations authorizations) {
-        super(client, indicesToQuery, graph, queryString, propertyDefinitions, inEdgeBoost, outEdgeBoost, false, authorizations);
+    protected ElasticSearchParentChildGraphQuery(TransportClient client, String[] indicesToQuery, Graph graph, String queryString, Map<String, PropertyDefinition> propertyDefinitions, ScoringStrategy scoringStrategy, Authorizations authorizations) {
+        super(client, indicesToQuery, graph, queryString, propertyDefinitions, scoringStrategy, false, authorizations);
     }
 
     @Override
@@ -68,11 +68,11 @@ public class ElasticSearchParentChildGraphQuery extends ElasticSearchGraphQueryB
     }
 
     @Override
-    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
+    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, QueryBuilder queryBuilder) {
         return getClient()
                 .prepareSearch(getIndicesToQuery())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
-                .setQuery(functionScoreQuery)
+                .setQuery(queryBuilder)
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
     }

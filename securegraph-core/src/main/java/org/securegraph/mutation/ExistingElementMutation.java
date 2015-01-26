@@ -38,32 +38,35 @@ public interface ExistingElementMutation<T extends Element> extends ElementMutat
     ExistingElementMutation<T> alterElementVisibility(Visibility visibility);
 
     /**
-     * Alters a property metadata value on a property.
+     * Sets a property metadata value on a property.
      *
      * @param property     The property to mutate.
      * @param metadataName The name of the metadata.
      * @param newValue     The new value.
+     * @param visibility   The visibility of the metadata item
      */
-    ExistingElementMutation<T> alterPropertyMetadata(Property property, String metadataName, Object newValue);
+    ExistingElementMutation<T> setPropertyMetadata(Property property, String metadataName, Object newValue, Visibility visibility);
 
     /**
-     * Alters a property metadata value on a property.
+     * Sets a property metadata value on a property.
      *
      * @param propertyKey  The key of a multivalued property.
      * @param propertyName The name of the property.
      * @param metadataName The name of the metadata.
      * @param newValue     The new value.
+     * @param visibility   The visibility of the metadata item
      */
-    ExistingElementMutation<T> alterPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue);
+    ExistingElementMutation<T> setPropertyMetadata(String propertyKey, String propertyName, String metadataName, Object newValue, Visibility visibility);
 
     /**
-     * Alters a property metadata value on a property.
+     * Sets a property metadata value on a property.
      *
      * @param propertyName The name of the property.
      * @param metadataName The name of the metadata.
      * @param newValue     The new value.
+     * @param visibility   The visibility of the metadata item
      */
-    ExistingElementMutation<T> alterPropertyMetadata(String propertyName, String metadataName, Object newValue);
+    ExistingElementMutation<T> setPropertyMetadata(String propertyName, String metadataName, Object newValue, Visibility visibility);
 
     /**
      * Gets the element this mutation is affecting.

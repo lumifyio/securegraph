@@ -1,12 +1,7 @@
 package org.securegraph.mutation;
 
-import org.securegraph.Authorizations;
-import org.securegraph.Element;
-import org.securegraph.Property;
-import org.securegraph.Visibility;
+import org.securegraph.*;
 import org.securegraph.search.IndexHint;
-
-import java.util.Map;
 
 public interface ElementMutation<T extends Element> {
     public static final String DEFAULT_KEY = "";
@@ -41,7 +36,7 @@ public interface ElementMutation<T extends Element> {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    ElementMutation<T> setProperty(String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    ElementMutation<T> setProperty(String name, Object value, Metadata metadata, Visibility visibility);
 
     /**
      * Adds or updates a property.
@@ -62,7 +57,7 @@ public interface ElementMutation<T extends Element> {
      * @param metadata   The metadata to assign to this property.
      * @param visibility The visibility to give this property.
      */
-    ElementMutation<T> addPropertyValue(String key, String name, Object value, Map<String, Object> metadata, Visibility visibility);
+    ElementMutation<T> addPropertyValue(String key, String name, Object value, Metadata metadata, Visibility visibility);
 
     /**
      * Gets the properties currently in this mutation.
