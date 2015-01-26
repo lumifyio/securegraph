@@ -170,6 +170,9 @@ public abstract class ElementBase<T extends Element> implements Element {
 
     // this method differs setProperties in that it only updates the in memory representation of the properties
     protected void updatePropertiesInternal(Iterable<Property> properties) {
+        if (properties == null) {
+            return;
+        }
         for (Property property : properties) {
             if (property.getKey() == null) {
                 throw new IllegalArgumentException("key is required for property");

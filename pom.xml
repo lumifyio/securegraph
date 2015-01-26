@@ -82,6 +82,9 @@
         <zookeeper.version>3.4.5</zookeeper.version>
         <hadoop.version>2.3.0</hadoop.version>
 
+        <!-- used by: sql -->
+        <liquibase.version>3.3.2</liquibase.version>
+
         <!-- used by: examples-base -->
         <miniweb.version>0.3.0</miniweb.version>
         <jetty.version>9.2.5.v20141112</jetty.version>
@@ -223,6 +226,7 @@
         <module>securegraph-elasticsearch-plugin</module>
         <module>securegraph-examples</module>
         <module>securegraph-accumulo-migrations</module>
+        <module>securegraph-sql</module>
     </modules>
 
     <profiles>

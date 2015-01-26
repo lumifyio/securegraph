@@ -1,9 +1,8 @@
 package org.securegraph;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import org.securegraph.util.ConvertingIterable;
+
+import java.util.*;
 
 public class Metadata {
     private Map<String, Entry> entries = new HashMap<String, Entry>();
