@@ -46,4 +46,9 @@ public class InMemoryGraphTest extends GraphTestBase {
     public void after() throws Exception {
         super.after();
     }
+
+    @Override
+    protected boolean isEdgeBoostSupported() {
+        return false;
+    }
 }

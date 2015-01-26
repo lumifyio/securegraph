@@ -18,18 +18,26 @@ public class LimitOutputStream extends OutputStream {
         this.length = 0;
     }
 
-    private synchronized OutputStream getLargeOutputStream() throws IOException {
-        if (largeOutputStream == null) {
+    private OutputStream getLargeOutputStream() throws IOException {
+        if (largeOutputStream != null) {
+            return largeOutputStream;
+        }
+
+        synchronized (this) {
+            if (largeOutputStream != null) {
+                return largeOutputStream;
+            }
+
             largeOutputStream = largeDataStore.createOutputStream();
             if (smallOutputStream.size() > 0) {
                 largeOutputStream.write(smallOutputStream.toByteArray());
             }
+            return largeOutputStream;
         }
-        return largeOutputStream;
     }
 
     @Override
-    public synchronized void write(int b) throws IOException {
+    public void write(int b) throws IOException {
         if (this.smallOutputStream.size() <= maxSizeToStore - 1) {
             this.smallOutputStream.write(b);
         } else {
@@ -39,7 +47,7 @@ public class LimitOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void write(byte[] b) throws IOException {
+    public void write(byte[] b) throws IOException {
         if (this.smallOutputStream.size() <= maxSizeToStore - b.length) {
             this.smallOutputStream.write(b);
         } else {
@@ -49,7 +57,7 @@ public class LimitOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         if (this.smallOutputStream.size() <= maxSizeToStore - len) {
             this.smallOutputStream.write(b, off, len);
         } else {
@@ -58,7 +66,7 @@ public class LimitOutputStream extends OutputStream {
         length += len;
     }
 
-    public synchronized boolean hasExceededSizeLimit() {
+    public boolean hasExceededSizeLimit() {
         return this.largeOutputStream != null;
     }
 
@@ -70,7 +78,7 @@ public class LimitOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void flush() throws IOException {
+    public void flush() throws IOException {
         if (this.largeOutputStream != null) {
             this.largeOutputStream.flush();
         }
@@ -78,13 +86,11 @@ public class LimitOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (this.largeOutputStream != null) {
             this.largeOutputStream.close();
         }
-        if (this.smallOutputStream != null) {
-            this.smallOutputStream.close();
-        }
+        this.smallOutputStream.close();
         super.close();
     }
 

@@ -2,11 +2,9 @@ package org.securegraph.examples;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -161,9 +159,6 @@ public abstract class ExampleBase {
     }
 
     protected Server runJetty(int httpPort) throws Exception {
-        SelectChannelConnector httpConnector = new SelectChannelConnector();
-        httpConnector.setPort(httpPort);
-
         WebAppContext webAppContext = new WebAppContext();
         webAppContext.setContextPath("/");
         webAppContext.addServlet(getServletClass(), "/*");
@@ -172,8 +167,7 @@ public abstract class ExampleBase {
         ContextHandlerCollection contexts = new ContextHandlerCollection();
         contexts.setHandlers(new Handler[]{webAppContext});
 
-        Server server = new Server();
-        server.setConnectors(new Connector[]{httpConnector});
+        Server server = new Server(port);
         server.setHandler(contexts);
 
         server.start();
@@ -207,7 +201,7 @@ public abstract class ExampleBase {
 
     public static JSONObject vertexToJson(Vertex vertex) {
         JSONObject json = new JSONObject();
-        json.put("id", vertex.getId().toString());
+        json.put("id", vertex.getId());
 
         JSONArray propertiesJson = new JSONArray();
         for (Property property : vertex.getProperties()) {
@@ -228,9 +222,9 @@ public abstract class ExampleBase {
         return json;
     }
 
-    public static JSONObject propertyMetadataToJson(Map<String, Object> metadata) {
+    public static JSONObject propertyMetadataToJson(Metadata metadata) {
         JSONObject json = new JSONObject();
-        for (Map.Entry<String, Object> entry : metadata.entrySet()) {
+        for (Metadata.Entry entry : metadata.entrySet()) {
             json.put(entry.getKey(), entry.getValue());
         }
         return json;

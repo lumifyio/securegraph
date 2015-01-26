@@ -5,12 +5,10 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.*;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
-import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.securegraph.*;
+import org.securegraph.elasticsearch.score.ScoringStrategy;
 import org.securegraph.query.Compare;
 import org.securegraph.query.GeoCompare;
 import org.securegraph.query.GraphQueryBase;
@@ -32,8 +30,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     private final TransportClient client;
     private final boolean evaluateHasContainers;
     private String[] indicesToQuery;
-    private final double inEdgeBoost;
-    private final double outEdgeBoost;
+    private ScoringStrategy scoringStrategy;
 
     protected ElasticSearchGraphQueryBase(
             TransportClient client,
@@ -41,16 +38,14 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
             Graph graph,
             String queryString,
             Map<String, PropertyDefinition> propertyDefinitions,
-            double inEdgeBoost,
-            double outEdgeBoost,
+            ScoringStrategy scoringStrategy,
             boolean evaluateHasContainers,
             Authorizations authorizations) {
         super(graph, queryString, propertyDefinitions, authorizations);
         this.client = client;
         this.indicesToQuery = indicesToQuery;
-        this.inEdgeBoost = inEdgeBoost;
-        this.outEdgeBoost = outEdgeBoost;
         this.evaluateHasContainers = evaluateHasContainers;
+        this.scoringStrategy = scoringStrategy;
     }
 
     @Override
@@ -105,23 +100,14 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     }
 
     protected <T extends Element> ElasticSearchGraphQueryIterable<T> createIterable(SearchResponse response, Parameters filterParameters, Iterable<T> elements, boolean evaluateHasContainers, long searchTime, SearchHits hits) {
-        return new ElasticSearchGraphQueryIterable<T>(response, filterParameters, elements, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
+        return new ElasticSearchGraphQueryIterable<>(response, filterParameters, elements, false, evaluateHasContainers, hits.getTotalHits(), searchTime, hits);
     }
 
     private SearchResponse getSearchResponse(String elementType) {
         List<FilterBuilder> filters = getFilters(elementType);
         QueryBuilder query = createQuery(getParameters().getQueryString(), elementType, filters);
-
-        ScoreFunctionBuilder scoreFunction = ScoreFunctionBuilders
-                .scriptFunction("_score "
-                        + " * sqrt(inEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME + "'].value))"
-                        + " * sqrt(outEdgeMultiplier * (1 + doc['" + ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME + "'].value))")
-                .param("inEdgeMultiplier", inEdgeBoost)
-                .param("outEdgeMultiplier", outEdgeBoost);
-
-        FunctionScoreQueryBuilder functionScoreQuery = QueryBuilders.functionScoreQuery(query, scoreFunction);
-
-        SearchRequestBuilder q = getSearchRequestBuilder(filters, functionScoreQuery);
+        query = scoringStrategy.updateQuery(query);
+        SearchRequestBuilder q = getSearchRequestBuilder(filters, query);
 
         LOGGER.debug("query: " + q);
         return q.execute()
@@ -129,7 +115,7 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
     }
 
     protected List<FilterBuilder> getFilters(String elementType) {
-        List<FilterBuilder> filters = new ArrayList<FilterBuilder>();
+        List<FilterBuilder> filters = new ArrayList<>();
         addElementTypeFilter(filters, elementType);
         for (HasContainer has : getParameters().getHasContainers()) {
             if (has.predicate instanceof Compare) {
@@ -226,12 +212,12 @@ public abstract class ElasticSearchGraphQueryBase extends GraphQueryBase {
         filters.add(FilterBuilders.notFilter(FilterBuilders.inFilter(key, value)));
     }
 
-    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, FunctionScoreQueryBuilder functionScoreQuery) {
+    protected SearchRequestBuilder getSearchRequestBuilder(List<FilterBuilder> filters, QueryBuilder queryBuilder) {
         AndFilterBuilder filterBuilder = getFilterBuilder(filters);
         return getClient()
                 .prepareSearch(getIndicesToQuery())
                 .setTypes(ElasticSearchSearchIndexBase.ELEMENT_TYPE)
-                .setQuery(QueryBuilders.filteredQuery(functionScoreQuery, filterBuilder))
+                .setQuery(QueryBuilders.filteredQuery(queryBuilder, filterBuilder))
                 .setFrom((int) getParameters().getSkip())
                 .setSize((int) getParameters().getLimit());
     }

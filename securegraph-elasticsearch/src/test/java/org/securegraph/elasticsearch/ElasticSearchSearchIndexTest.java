@@ -2,13 +2,12 @@ package org.securegraph.elasticsearch;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.securegraph.Authorizations;
-import org.securegraph.Graph;
-import org.securegraph.Vertex;
-import org.securegraph.elasticsearch.helpers.TestHelpers;
+import org.junit.*;
+import org.securegraph.*;
+import org.securegraph.elasticsearch.helpers.ElasticSearchSearchIndexTestHelpers;
+import org.securegraph.elasticsearch.score.EdgeCountScoringStrategy;
+import org.securegraph.elasticsearch.score.EdgeCountScoringStrategyConfiguration;
+import org.securegraph.elasticsearch.score.ScoringStrategy;
 import org.securegraph.inmemory.InMemoryAuthorizations;
 import org.securegraph.inmemory.InMemoryGraph;
 import org.securegraph.property.PropertyValue;
@@ -18,15 +17,14 @@ import org.securegraph.test.util.LargeStringInputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
 
 import static junit.framework.TestCase.assertNotNull;
 
 public class ElasticSearchSearchIndexTest extends GraphTestBase {
     @Override
     protected Graph createGraph() {
-        return TestHelpers.createGraph();
+        return ElasticSearchSearchIndexTestHelpers.createGraph();
     }
 
     @Override
@@ -34,17 +32,27 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
         return new InMemoryAuthorizations(auths);
     }
 
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        ElasticSearchSearchIndexTestHelpers.beforeClass();
+    }
+
     @Before
     @Override
     public void before() throws Exception {
-        TestHelpers.before();
+        ElasticSearchSearchIndexTestHelpers.before();
         super.before();
     }
 
     @After
     public void after() throws Exception {
         super.after();
-        TestHelpers.after();
+        ElasticSearchSearchIndexTestHelpers.after();
+    }
+
+    @AfterClass
+    public static void afterClass() throws IOException {
+        ElasticSearchSearchIndexTestHelpers.afterClass();
     }
 
     private ElasticSearchSearchIndex getSearchIndex() {
@@ -53,8 +61,8 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
 
     @Test
     public void testCreateJsonForElement() throws IOException {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("metadata1", "metadata1Value");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("metadata1", "metadata1Value", VISIBILITY_A);
 
         String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(LARGE_PROPERTY_VALUE_SIZE));
         PropertyValue propSmall = new StreamingPropertyValue(new ByteArrayInputStream("value1".getBytes()), String.class);
@@ -66,10 +74,37 @@ public class ElasticSearchSearchIndexTest extends GraphTestBase {
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
 
-        String jsonString = getSearchIndex().createJsonForElement(graph, v1, true, AUTHORIZATIONS_A_AND_B);
+        String jsonString = getSearchIndex().createJsonForElement(graph, v1, AUTHORIZATIONS_A_AND_B);
         JSONObject json = new JSONObject(jsonString);
         assertNotNull(json);
 
         getSearchIndex().loadPropertyDefinitions();
+    }
+
+    @Override
+    protected boolean disableUpdateEdgeCountInSearchIndex(Graph graph) {
+        ElasticSearchSearchIndex searchIndex = getSearchIndex();
+        ElasticSearchSearchIndexConfiguration config = searchIndex.getConfig();
+        ScoringStrategy scoringStrategy = config.getScoringStrategy();
+        if (!(scoringStrategy instanceof EdgeCountScoringStrategy)) {
+            return false;
+        }
+
+        EdgeCountScoringStrategyConfiguration edgeCountScoringStrategyConfig = ((EdgeCountScoringStrategy) scoringStrategy).getConfig();
+
+        try {
+            Field updateEdgeBoostField = edgeCountScoringStrategyConfig.getClass().getDeclaredField("updateEdgeBoost");
+            updateEdgeBoostField.setAccessible(true);
+            updateEdgeBoostField.set(edgeCountScoringStrategyConfig, false);
+        } catch (Exception e) {
+            throw new SecureGraphException("Failed to update 'updateEdgeBoost' field", e);
+        }
+
+        return true;
+    }
+
+    @Override
+    protected boolean isEdgeBoostSupported() {
+        return true;
     }
 }

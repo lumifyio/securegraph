@@ -2,19 +2,21 @@ package org.securegraph.mutation;
 
 import org.securegraph.Visibility;
 
-public class AlterPropertyMetadata {
+public class SetPropertyMetadata {
     private final String propertyKey;
     private final String propertyName;
     private final Visibility propertyVisibility;
     private final String metadataName;
     private final Object newValue;
+    private final Visibility metadataVisibility;
 
-    public AlterPropertyMetadata(String propertyKey, String propertyName, Visibility propertyVisibility, String metadataName, Object newValue) {
+    public SetPropertyMetadata(String propertyKey, String propertyName, Visibility propertyVisibility, String metadataName, Object newValue, Visibility metadataVisibility) {
         this.propertyKey = propertyKey;
         this.propertyName = propertyName;
         this.propertyVisibility = propertyVisibility;
         this.metadataName = metadataName;
         this.newValue = newValue;
+        this.metadataVisibility = metadataVisibility;
     }
 
     public String getPropertyKey() {
@@ -35,5 +37,9 @@ public class AlterPropertyMetadata {
 
     public Object getNewValue() {
         return newValue;
+    }
+
+    public Visibility getMetadataVisibility() {
+        return metadataVisibility;
     }
 }

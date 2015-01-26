@@ -6,6 +6,7 @@ import org.securegraph.query.GraphQuery;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 public interface Graph {
     /**
@@ -56,6 +57,15 @@ public interface Graph {
     VertexBuilder prepareVertex(String vertexId, Visibility visibility);
 
     /**
+     * Tests the existence of a vertex with the given authorizations.
+     *
+     * @param vertexId       The vertex id to check existence of.
+     * @param authorizations The authorizations required to load the vertex.
+     * @return True if vertex exists.
+     */
+    boolean doesVertexExist(String vertexId, Authorizations authorizations);
+
+    /**
      * Get a vertex from the graph.
      *
      * @param vertexId       The vertex id to retrieve from the graph.
@@ -90,6 +100,15 @@ public interface Graph {
      * @return An iterable of all the vertices.
      */
     Iterable<Vertex> getVertices(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    /**
+     * Tests the existence of vertices with the given authorizations.
+     *
+     * @param ids            The vertex ids to check existence of.
+     * @param authorizations The authorizations required to load the vertices.
+     * @return Map of ids to exists status.
+     */
+    Map<String, Boolean> doVerticesExist(List<String> ids, Authorizations authorizations);
 
     /**
      * Gets all vertices matching the given ids on the graph. The order of
@@ -248,6 +267,15 @@ public interface Graph {
     EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility);
 
     /**
+     * Tests the existence of a edge with the given authorizations.
+     *
+     * @param edgeId         The edge id to check existence of.
+     * @param authorizations The authorizations required to load the edge.
+     * @return True if edge exists.
+     */
+    boolean doesEdgeExist(String edgeId, Authorizations authorizations);
+
+    /**
      * Get an edge from the graph.
      *
      * @param edgeId         The edge id to retrieve from the graph.
@@ -282,6 +310,15 @@ public interface Graph {
      * @return An iterable of all the edges.
      */
     Iterable<Edge> getEdges(EnumSet<FetchHint> fetchHints, Authorizations authorizations);
+
+    /**
+     * Tests the existence of edges with the given authorizations.
+     *
+     * @param ids            The edge ids to check existence of.
+     * @param authorizations The authorizations required to load the edges.
+     * @return Maps of ids to exists status.
+     */
+    Map<String, Boolean> doEdgesExist(List<String> ids, Authorizations authorizations);
 
     /**
      * Gets all edges on the graph matching the given ids.
@@ -431,14 +468,32 @@ public interface Graph {
     DefinePropertyBuilder defineProperty(String propertyName);
 
     /**
-     * Determine if field boost is support.
+     * Sets metadata on the graph.
+     *
+     * @param key   The key to the metadata.
+     * @param value The value to set.
      */
-    boolean isFieldBoostSupported();
+    void setMetadata(String key, Object value);
 
     /**
-     * Determine if edge boost is supported. That is can you change the vertex boost based on incoming and outgoing edge counts.
+     * Gets metadata from the graph.
+     *
+     * @param key The key to the metadata.
+     * @return The metadata value, or null.
      */
-    boolean isEdgeBoostSupported();
+    Object getMetadata(String key);
+
+    /**
+     * Gets all metadata.
+     *
+     * @return Iterable of all metadata.
+     */
+    Iterable<GraphMetadataEntry> getMetadata();
+
+    /**
+     * Determine if field boost is support. That is can you change the boost at a field level to give higher priority.
+     */
+    boolean isFieldBoostSupported();
 
     /**
      * Clears all data from the graph.

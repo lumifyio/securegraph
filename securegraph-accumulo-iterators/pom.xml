@@ -3,17 +3,12 @@
     <parent>
         <artifactId>securegraph-root</artifactId>
         <groupId>org.securegraph</groupId>
-        <version>0.8.1-SNAPSHOT</version>
+        <version>0.9.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>securegraph-accumulo-iterators</artifactId>
     <name>SecureGraph: Accumulo: Iterators</name>
-
-    <properties>
-        <accumulo.version>1.5.2</accumulo.version>
-        <hadoop.version>0.23.10</hadoop.version>
-    </properties>
 
     <dependencies>
         <dependency>

@@ -1,5 +1,6 @@
 package org.securegraph.accumulo.blueprints;
 
+import org.securegraph.GraphConfiguration;
 import org.securegraph.SecureGraphException;
 import org.securegraph.accumulo.AccumuloGraph;
 import org.securegraph.blueprints.*;
@@ -12,8 +13,8 @@ public class AccumuloSecureGraphBlueprintsGraphFactory extends SecureGraphBluepr
     @Override
     public SecureGraphBlueprintsGraph createGraph(Map config) {
         AccumuloGraph graph = createAccumuloGraph(config);
-        VisibilityProvider visibilityProvider = createVisibilityProvider(config);
-        AuthorizationsProvider authorizationProvider = createAuthorizationsProvider(config);
+        VisibilityProvider visibilityProvider = createVisibilityProvider(graph.getConfiguration());
+        AuthorizationsProvider authorizationProvider = createAuthorizationsProvider(graph.getConfiguration());
         return new AccumuloSecureGraphBlueprintsGraph(graph, visibilityProvider, authorizationProvider);
     }
 
@@ -26,7 +27,7 @@ public class AccumuloSecureGraphBlueprintsGraphFactory extends SecureGraphBluepr
         }
     }
 
-    private VisibilityProvider createVisibilityProvider(Map config) {
+    private VisibilityProvider createVisibilityProvider(GraphConfiguration config) {
         try {
             return ConfigurationUtils.createProvider(config, "visibilityProvider", DefaultVisibilityProvider.class.getName());
         } catch (Exception ex) {
@@ -34,7 +35,7 @@ public class AccumuloSecureGraphBlueprintsGraphFactory extends SecureGraphBluepr
         }
     }
 
-    private AuthorizationsProvider createAuthorizationsProvider(Map config) {
+    private AuthorizationsProvider createAuthorizationsProvider(GraphConfiguration config) {
         try {
             return ConfigurationUtils.createProvider(config, "authorizationsProvider", null);
         } catch (Exception ex) {

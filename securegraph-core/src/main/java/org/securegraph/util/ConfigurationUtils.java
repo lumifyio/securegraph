@@ -1,27 +1,41 @@
 package org.securegraph.util;
 
+import org.securegraph.GraphConfiguration;
 import org.securegraph.SecureGraphException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.util.Map;
 
 public class ConfigurationUtils {
-    public static <T> T createProvider(Map config, String propPrefix, String defaultProvider) throws SecureGraphException {
-        String implClass = (String) config.get(propPrefix);
-        if (implClass == null) {
-            implClass = defaultProvider;
-        }
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationUtils.class);
+
+    public static <T> T createProvider(GraphConfiguration config, String propPrefix, String defaultProvider) throws SecureGraphException {
+        String implClass = config.getString(propPrefix, defaultProvider);
         return createProvider(implClass, config);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T createProvider(String className, Map config) throws SecureGraphException {
-        Class<Map> constructorParameterClass = Map.class;
+    public static <T> T createProvider(String className, GraphConfiguration config) throws SecureGraphException {
+        LOGGER.debug("creating provider " + className);
+        Class<GraphConfiguration> constructorParameterClass = GraphConfiguration.class;
         try {
             Class<?> clazz = Class.forName(className);
             try {
-                Constructor constructor = clazz.getConstructor(constructorParameterClass);
-                return (T) constructor.newInstance(config);
+                Constructor constructor;
+                try {
+                    constructor = clazz.getConstructor(constructorParameterClass);
+                    return (T) constructor.newInstance(config);
+                } catch (NoSuchMethodException ignore) {
+                    try {
+                        constructor = clazz.getConstructor(Map.class);
+                        return (T) constructor.newInstance(config.getConfig());
+                    } catch (NoSuchMethodException ignoreInner) {
+                        constructor = clazz.getConstructor();
+                        return (T) constructor.newInstance();
+                    }
+                }
             } catch (IllegalArgumentException e) {
                 StringBuilder possibleMatches = new StringBuilder();
                 for (Constructor<?> s : clazz.getConstructors()) {

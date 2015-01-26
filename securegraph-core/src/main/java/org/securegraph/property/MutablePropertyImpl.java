@@ -1,11 +1,10 @@
 package org.securegraph.property;
 
 import org.securegraph.Authorizations;
+import org.securegraph.Metadata;
 import org.securegraph.Visibility;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class MutablePropertyImpl extends MutableProperty {
@@ -14,11 +13,11 @@ public class MutablePropertyImpl extends MutableProperty {
     private Set<Visibility> hiddenVisibilities;
     private Object value;
     private Visibility visibility;
-    private final Map<String, Object> metadata;
+    private final Metadata metadata;
 
-    public MutablePropertyImpl(String key, String name, Object value, Map<String, Object> metadata, Set<Visibility> hiddenVisibilities, Visibility visibility) {
+    public MutablePropertyImpl(String key, String name, Object value, Metadata metadata, Set<Visibility> hiddenVisibilities, Visibility visibility) {
         if (metadata == null) {
-            metadata = new HashMap<String, Object>();
+            metadata = new Metadata();
         }
 
         this.key = key;
@@ -45,7 +44,7 @@ public class MutablePropertyImpl extends MutableProperty {
         return visibility;
     }
 
-    public Map<String, Object> getMetadata() {
+    public Metadata getMetadata() {
         return metadata;
     }
 
@@ -88,5 +87,15 @@ public class MutablePropertyImpl extends MutableProperty {
             this.hiddenVisibilities = new HashSet<Visibility>();
         }
         this.hiddenVisibilities.remove(visibility);
+    }
+
+    @Override
+    protected void addMetadata(String key, Object value, Visibility visibility) {
+        this.metadata.add(key, value, visibility);
+    }
+
+    @Override
+    protected void removeMetadata(String key, Visibility visibility) {
+        this.metadata.remove(key, visibility);
     }
 }

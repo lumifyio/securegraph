@@ -9,7 +9,6 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.util.JavaSerializableUtils;
 
 import java.io.*;
-import java.util.Map;
 
 public class GraphBackup extends GraphToolBase {
     public static final String BASE64_PREFIX = "base64/java:";
@@ -117,18 +116,25 @@ public class GraphBackup extends GraphToolBase {
         if (!(value instanceof StreamingPropertyValue)) {
             json.put("value", objectToJsonString(value));
         }
-        Map<String, Object> metadata = property.getMetadata();
+        Metadata metadata = property.getMetadata();
         if (metadata != null) {
             json.put("metadata", metadataToJson(metadata));
         }
         return json;
     }
 
-    private JSONObject metadataToJson(Map<String, Object> metadata) {
+    private JSONObject metadataToJson(Metadata metadata) {
         JSONObject json = new JSONObject();
-        for (Map.Entry<String, Object> m : metadata.entrySet()) {
-            json.put(m.getKey(), objectToJsonString(m.getValue()));
+        for (Metadata.Entry m : metadata.entrySet()) {
+            json.put(m.getKey(), metadataItemToJson(m));
         }
+        return json;
+    }
+
+    private JSONObject metadataItemToJson(Metadata.Entry entry) {
+        JSONObject json = new JSONObject();
+        json.put("value", objectToJsonString(entry.getValue()));
+        json.put("visibility", entry.getVisibility().getVisibilityString());
         return json;
     }
 
