@@ -12,7 +12,7 @@ public abstract class Property implements Comparable<Property> {
 
     public abstract Visibility getVisibility();
 
-    public abstract Map<String, Object> getMetadata();
+    public abstract Metadata getMetadata();
 
     public abstract Iterable<Visibility> getHiddenVisibilities();
 

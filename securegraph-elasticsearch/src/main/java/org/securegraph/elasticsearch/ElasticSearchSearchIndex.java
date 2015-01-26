@@ -1,7 +1,9 @@
 package org.securegraph.elasticsearch;
 
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -23,7 +25,7 @@ import java.util.Set;
 public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearchIndexBase.class);
 
-    public ElasticSearchSearchIndex(Map config) {
+    public ElasticSearchSearchIndex(GraphConfiguration config) {
         super(config);
     }
 
@@ -32,15 +34,14 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("addElement: " + element.getId());
         }
-        if (!isIndexEdges() && element instanceof Edge) {
+        if (!getConfig().isIndexEdges() && element instanceof Edge) {
             return;
         }
 
         IndexInfo indexInfo = addPropertiesToIndex(element, element.getProperties());
 
         try {
-            boolean mergeExisting = true;
-            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations);
+            XContentBuilder jsonBuilder = buildJsonContentFromElement(graph, indexInfo, element, authorizations);
 
             IndexResponse response = getClient()
                     .prepareIndex(indexInfo.getIndexName(), ElasticSearchSearchIndexBase.ELEMENT_TYPE, element.getId())
@@ -51,22 +52,24 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 throw new SecureGraphException("Could not index document " + element.getId());
             }
 
-            if (isAutoflush()) {
+            if (getConfig().isAutoFlush()) {
                 flush();
             }
         } catch (Exception e) {
             throw new SecureGraphException("Could not add element", e);
         }
 
-        if (isUseEdgeBoost() && element instanceof Edge) {
-            Element vOut = ((Edge) element).getVertex(Direction.OUT, authorizations);
-            if (vOut != null) {
-                addElement(graph, vOut, authorizations);
-            }
-            Element vIn = ((Edge) element).getVertex(Direction.IN, authorizations);
-            if (vIn != null) {
-                addElement(graph, vIn, authorizations);
-            }
+        getConfig().getScoringStrategy().addElement(this, graph, element, authorizations);
+    }
+
+    @Override
+    public void addElementToBulkRequest(Graph graph, BulkRequest bulkRequest, IndexInfo indexInfo, Element element, Authorizations authorizations) {
+        try {
+            XContentBuilder json = buildJsonContentFromElement(graph, indexInfo, element, authorizations);
+            IndexRequest indexRequest = new IndexRequest(indexInfo.getIndexName(), ELEMENT_TYPE, element.getId()).source(json);
+            bulkRequest.add(indexRequest);
+        } catch (IOException ex) {
+            throw new SecureGraphException("Could not add element to bulk request", ex);
         }
     }
 
@@ -85,40 +88,34 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
         }
     }
 
-    public String createJsonForElement(Graph graph, Element element, boolean mergeExisting, Authorizations authorizations) {
+    public String createJsonForElement(Graph graph, Element element, Authorizations authorizations) {
         try {
             String indexName = getIndexName(element);
-            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, isStoreSourceData());
-            return buildJsonContentFromElement(graph, indexInfo, element, mergeExisting, authorizations).string();
+            IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
+            return buildJsonContentFromElement(graph, indexInfo, element, authorizations).string();
         } catch (Exception e) {
             throw new SecureGraphException("Could not create JSON for element", e);
         }
     }
 
-    private XContentBuilder buildJsonContentFromElement(Graph graph, IndexInfo indexInfo, Element element, boolean mergeExisting, Authorizations authorizations) throws IOException {
+    private XContentBuilder buildJsonContentFromElement(Graph graph, IndexInfo indexInfo, Element element, Authorizations authorizations) throws IOException {
         XContentBuilder jsonBuilder;
         jsonBuilder = XContentFactory.jsonBuilder()
                 .startObject();
 
-        if (mergeExisting) {
-            element = requeryWithAuthsAndMergedElement(graph, element, authorizations);
-        }
+        element = requeryWithAuthsAndMergedElement(graph, element, authorizations);
 
         if (element instanceof Vertex) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_VERTEX);
-            if (isUseEdgeBoost()) {
-                int inEdgeCount = ((Vertex) element).getEdgeCount(Direction.IN, authorizations);
-                jsonBuilder.field(ElasticSearchSearchIndexBase.IN_EDGE_COUNT_FIELD_NAME, inEdgeCount);
-                int outEdgeCount = ((Vertex) element).getEdgeCount(Direction.OUT, authorizations);
-                jsonBuilder.field(ElasticSearchSearchIndexBase.OUT_EDGE_COUNT_FIELD_NAME, outEdgeCount);
-            }
+            getConfig().getScoringStrategy().addFieldsToVertexDocument(this, jsonBuilder, (Vertex) element, null, authorizations);
         } else if (element instanceof Edge) {
             jsonBuilder.field(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME, ElasticSearchSearchIndexBase.ELEMENT_TYPE_EDGE);
+            getConfig().getScoringStrategy().addFieldsToEdgeDocument(this, jsonBuilder, (Edge) element, null, authorizations);
         } else {
             throw new SecureGraphException("Unexpected element type " + element.getClass().getName());
         }
 
-        Set<String> visibilityStrings = new HashSet<String>();
+        Set<String> visibilityStrings = new HashSet<>();
         visibilityStrings.add(element.getVisibility().getVisibilityString());
 
         for (Property property : element.getProperties()) {
@@ -129,7 +126,7 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 continue;
             } else if (propertyValue instanceof GeoPoint) {
                 GeoPoint geoPoint = (GeoPoint) propertyValue;
-                Map<String, Object> propertyValueMap = new HashMap<String, Object>();
+                Map<String, Object> propertyValueMap = new HashMap<>();
                 propertyValueMap.put("lat", geoPoint.getLatitude());
                 propertyValueMap.put("lon", geoPoint.getLongitude());
                 jsonBuilder.field(property.getName() + ElasticSearchSearchIndexBase.GEO_PROPERTY_NAME_SUFFIX, propertyValueMap);
@@ -232,7 +229,14 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
 
     @Override
     public GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations) {
-        return new ElasticSearchGraphQuery(getClient(), getIndicesToQuery(), graph, queryString, getAllPropertyDefinitions(), getInEdgeBoost(), getOutEdgeBoost(), authorizations);
+        return new ElasticSearchGraphQuery(
+                getClient(),
+                getConfig().getIndicesToQuery(),
+                graph,
+                queryString,
+                getAllPropertyDefinitions(),
+                getConfig().getScoringStrategy(),
+                authorizations);
     }
 
     @Override

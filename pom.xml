@@ -10,7 +10,7 @@
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.8.1-SNAPSHOT</version>
+    <version>0.9.0-SNAPSHOT</version>
     <name>SecureGraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
@@ -54,16 +54,16 @@
 
     <properties>
         <java.compiler.showWarnings>true</java.compiler.showWarnings>
-        <java.source.version>1.6</java.source.version>
-        <java.target.version>1.6</java.target.version>
+        <java.source.version>1.7</java.source.version>
+        <java.target.version>1.7</java.target.version>
 
         <junit.version>4.11</junit.version>
         <slf4j.version>1.7.5</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <commons-io.version>2.4</commons-io.version>
-        <json.version>20131018</json.version>
+        <json.version>20140107</json.version>
         <commons-codec.version>1.8</commons-codec.version>
-        <jcommander-version>1.32</jcommander-version>
+        <jcommander.version>1.35</jcommander.version>
 
         <maven.plugin.gpg.version>1.4</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>2.9.1</maven.plugin.javadoc.version>
@@ -73,7 +73,18 @@
         <maven.plugin.release.version>2.5</maven.plugin.release.version>
         <maven.plugin.scm.version>1.8.1</maven.plugin.scm.version>
 
-        <elasticsearch.version>1.1.2</elasticsearch.version>
+        <!-- used by: elasticsearch* -->
+        <elasticsearch.version>1.4.0</elasticsearch.version>
+        <groovy.version>2.3.7</groovy.version>
+
+        <!-- used by: accumulo* -->
+        <accumulo.version>1.6.1</accumulo.version>
+        <zookeeper.version>3.4.5</zookeeper.version>
+        <hadoop.version>2.3.0</hadoop.version>
+
+        <!-- used by: examples-base -->
+        <miniweb.version>0.3.0</miniweb.version>
+        <jetty.version>9.2.5.v20141112</jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -114,7 +125,13 @@
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
-                <version>${jcommander-version}</version>
+                <version>${jcommander.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>${groovy.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -206,6 +223,7 @@
         <module>securegraph-elasticsearch-plugin</module>
         <module>securegraph-examples</module>
         <module>securegraph-elasticsearch-graph</module>
+        <module>securegraph-accumulo-migrations</module>
     </modules>
 
     <profiles>

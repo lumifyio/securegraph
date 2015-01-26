@@ -49,6 +49,16 @@ public class ElementMapperGraph extends GraphBase {
     }
 
     @Override
+    public Iterable<GraphMetadataEntry> getMetadata() {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public void setMetadata(String key, Object value) {
+        throw new SecureGraphException("Not supported");
+    }
+
+    @Override
     public GraphQuery query(Authorizations authorizations) {
         throw new SecureGraphException("Not supported");
     }
@@ -90,11 +100,6 @@ public class ElementMapperGraph extends GraphBase {
 
     @Override
     public boolean isFieldBoostSupported() {
-        throw new SecureGraphException("Not supported");
-    }
-
-    @Override
-    public boolean isEdgeBoostSupported() {
         throw new SecureGraphException("Not supported");
     }
 

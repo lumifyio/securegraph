@@ -58,12 +58,12 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIds(direction, new String[]{label}, authorizations), fetchHints, authorizations);
+        return getGraph().getEdges(getEdgeIds(direction, labelToArrayOrNull(label), authorizations), fetchHints, authorizations);
     }
 
     @Override
     public Iterable<String> getEdgeIds(Direction direction, String label, Authorizations authorizations) {
-        return getEdgeIdsWithOtherVertexId(null, direction, new String[]{label}, authorizations);
+        return getEdgeIdsWithOtherVertexId(null, direction, labelToArrayOrNull(label), authorizations);
     }
 
     @Override
@@ -103,12 +103,12 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Edge> getEdges(final Vertex otherVertex, Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, new String[]{label}, authorizations), fetchHints, authorizations);
+        return getGraph().getEdges(getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labelToArrayOrNull(label), authorizations), fetchHints, authorizations);
     }
 
     @Override
     public Iterable<String> getEdgeIds(Vertex otherVertex, Direction direction, String label, Authorizations authorizations) {
-        return getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, new String[]{label}, authorizations);
+        return getEdgeIdsWithOtherVertexId(otherVertex.getId(), direction, labelToArrayOrNull(label), authorizations);
     }
 
     @Override
@@ -186,7 +186,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
             case OUT:
                 return this.outEdges.entrySet();
             case BOTH:
-                return new JoinIterable<Map.Entry<String, EdgeInfo>>(this.inEdges.entrySet(), this.outEdges.entrySet());
+                return new JoinIterable<>(this.inEdges.entrySet(), this.outEdges.entrySet());
             default:
                 throw new SecureGraphException("Unexpected direction: " + direction);
         }
@@ -204,7 +204,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<Vertex> getVertices(Direction direction, String label, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
-        return getVertices(direction, new String[]{label}, fetchHints, authorizations);
+        return getVertices(direction, labelToArrayOrNull(label), fetchHints, authorizations);
     }
 
     @Override
@@ -219,7 +219,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<String> getVertexIds(Direction direction, String label, Authorizations authorizations) {
-        return getVertexIds(direction, new String[]{label}, authorizations);
+        return getVertexIds(direction, labelToArrayOrNull(label), authorizations);
     }
 
     @Override
@@ -231,7 +231,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     public Iterable<String> getVertexIds(Direction direction, String[] labels, Authorizations authorizations) {
         switch (direction) {
             case BOTH:
-                return new JoinIterable<String>(getVertexIds(Direction.IN, labels, authorizations), getVertexIds(Direction.OUT, labels, authorizations));
+                return new JoinIterable<>(getVertexIds(Direction.IN, labels, authorizations), getVertexIds(Direction.OUT, labels, authorizations));
             case IN:
                 return new GetVertexIdsIterable(this.inEdges.values(), labels);
             case OUT:

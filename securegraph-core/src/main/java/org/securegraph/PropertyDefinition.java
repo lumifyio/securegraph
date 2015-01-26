@@ -1,8 +1,10 @@
 package org.securegraph;
 
+import java.io.Serializable;
 import java.util.Set;
 
-public class PropertyDefinition {
+public class PropertyDefinition implements Serializable {
+    private static final long serialVersionUID = 42L;
     private final String propertyName;
     private final Class dataType;
     private final Set<TextIndexHint> textIndexHints;
@@ -44,5 +46,15 @@ public class PropertyDefinition {
 
     public Double getBoost() {
         return boost;
+    }
+
+    @Override
+    public String toString() {
+        return "PropertyDefinition{" +
+                "propertyName='" + propertyName + '\'' +
+                ", dataType=" + dataType +
+                ", textIndexHints=" + textIndexHints +
+                ", boost=" + boost +
+                '}';
     }
 }

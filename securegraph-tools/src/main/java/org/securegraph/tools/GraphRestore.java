@@ -9,8 +9,6 @@ import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.util.JavaSerializableUtils;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class GraphRestore extends GraphToolBase {
     @Parameter(names = {"--in", "-i"}, description = "Input filename")
@@ -127,7 +125,7 @@ public class GraphRestore extends GraphToolBase {
         String key = propertyJson.getString("key");
         String name = propertyJson.getString("name");
         Object value = jsonStringToObject(propertyJson.getString("value"));
-        Map<String, Object> metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
+        Metadata metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
         Visibility visibility = new Visibility(propertyJson.getString("visibility"));
         e.addPropertyValue(key, name, value, metadata, visibility);
     }
@@ -135,7 +133,7 @@ public class GraphRestore extends GraphToolBase {
     private void restoreStreamingPropertyValue(InputStream in, Graph graph, JSONObject propertyJson, Element element, Authorizations authorizations) throws ClassNotFoundException, IOException {
         String key = propertyJson.getString("key");
         String name = propertyJson.getString("name");
-        Map<String, Object> metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
+        Metadata metadata = jsonToPropertyMetadata(propertyJson.optJSONObject("metadata"));
         Visibility visibility = new Visibility(propertyJson.getString("visibility"));
         Class valueType = Class.forName(propertyJson.getString("valueType"));
         InputStream spvin = new StreamingPropertyValueInputStream(in);
@@ -145,15 +143,17 @@ public class GraphRestore extends GraphToolBase {
         element.addPropertyValue(key, name, value, metadata, visibility, authorizations);
     }
 
-    private Map<String, Object> jsonToPropertyMetadata(JSONObject metadataJson) {
-        Map<String, Object> metadata = new HashMap<String, Object>();
+    private Metadata jsonToPropertyMetadata(JSONObject metadataJson) {
+        Metadata metadata = new Metadata();
         if (metadataJson == null) {
             return metadata;
         }
         for (Object key : metadataJson.keySet()) {
             String keyString = (String) key;
-            Object val = jsonStringToObject(metadataJson.getString(keyString));
-            metadata.put(keyString, val);
+            JSONObject metadataItemJson = metadataJson.getJSONObject(keyString);
+            Object val = jsonStringToObject(metadataItemJson.getString("value"));
+            Visibility visibility = new Visibility(metadataItemJson.getString("visibility"));
+            metadata.add(keyString, val, visibility);
         }
         return metadata;
     }

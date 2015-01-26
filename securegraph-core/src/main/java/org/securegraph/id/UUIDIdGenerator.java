@@ -1,10 +1,11 @@
 package org.securegraph.id;
 
-import java.util.Map;
+import org.securegraph.GraphConfiguration;
+
 import java.util.UUID;
 
 public class UUIDIdGenerator implements IdGenerator {
-    public UUIDIdGenerator(Map configuration) {
+    public UUIDIdGenerator(GraphConfiguration configuration) {
 
     }
 

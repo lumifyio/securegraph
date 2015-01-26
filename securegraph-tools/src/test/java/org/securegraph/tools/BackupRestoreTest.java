@@ -50,8 +50,8 @@ public class BackupRestoreTest {
     public void testSaveAndLoad() throws IOException, ClassNotFoundException {
         Graph graph = createGraph();
 
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("metadata1", "metadata1Value");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("metadata1", "metadata1Value", GraphTestBase.VISIBILITY_A);
 
         int largePropertyValueSize = 1000;
         String expectedLargeValue = IOUtils.toString(new LargeStringInputStream(largePropertyValueSize));

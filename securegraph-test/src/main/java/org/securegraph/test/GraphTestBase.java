@@ -10,22 +10,24 @@ import org.junit.runners.JUnit4;
 import org.securegraph.*;
 import org.securegraph.event.*;
 import org.securegraph.mutation.ElementMutation;
+import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.query.*;
 import org.securegraph.search.DefaultSearchIndex;
-import org.securegraph.search.DisableEdgeIndexSupport;
 import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.test.util.LargeStringInputStream;
 import org.securegraph.type.GeoCircle;
 import org.securegraph.type.GeoPoint;
+import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.ToElementIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -182,8 +184,8 @@ public abstract class GraphTestBase {
 
     @Test
     public void testAddVertexPropertyWithMetadata() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("metadata1", "metadata1Value");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("metadata1", "metadata1Value", VISIBILITY_A);
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
@@ -194,10 +196,10 @@ public abstract class GraphTestBase {
         Property prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
         assertNotNull(prop1Metadata);
-        assertEquals(1, prop1Metadata.keySet().size());
-        assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
+        assertEquals(1, prop1Metadata.entrySet().size());
+        assertEquals("metadata1Value", prop1Metadata.getEntry("metadata1", VISIBILITY_A).getValue());
 
-        prop1Metadata.put("metadata2", "metadata2Value");
+        prop1Metadata.add("metadata2", "metadata2Value", VISIBILITY_A);
         v.prepareMutation()
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A)
                 .save(AUTHORIZATIONS_A_AND_B);
@@ -206,19 +208,19 @@ public abstract class GraphTestBase {
         assertEquals(1, count(v.getProperties("prop1")));
         prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
-        assertEquals(2, prop1Metadata.keySet().size());
-        assertEquals("metadata1Value", prop1Metadata.get("metadata1"));
-        assertEquals("metadata2Value", prop1Metadata.get("metadata2"));
+        assertEquals(2, prop1Metadata.entrySet().size());
+        assertEquals("metadata1Value", prop1Metadata.getEntry("metadata1", VISIBILITY_A).getValue());
+        assertEquals("metadata2Value", prop1Metadata.getEntry("metadata2", VISIBILITY_A).getValue());
 
-        // make sure we clear out old values
-        prop1Metadata = new HashMap<String, Object>();
+        // make sure that when we update the value the metadata does not get destroyed
+        prop1Metadata = new Metadata();
         v.setProperty("prop1", "value1", prop1Metadata, VISIBILITY_A, AUTHORIZATIONS_A_AND_B);
 
         v = graph.getVertex("v1", AUTHORIZATIONS_A);
         assertEquals(1, count(v.getProperties("prop1")));
         prop1 = v.getProperties("prop1").iterator().next();
         prop1Metadata = prop1.getMetadata();
-        assertEquals(0, prop1Metadata.keySet().size());
+        assertEquals(2, prop1Metadata.entrySet().size());
     }
 
     @Test
@@ -541,19 +543,41 @@ public abstract class GraphTestBase {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        List<String> vertexIdList = new ArrayList<String>();
+        vertexIdList.add("v1");
+        vertexIdList.add("v2");
+        vertexIdList.add("bad"); // add "bad" to the end of the list to test ordering of results
+        Map<String, Boolean> verticesExist = graph.doVerticesExist(vertexIdList, AUTHORIZATIONS_A);
+        assertEquals(3, vertexIdList.size());
+        assertTrue("v1 exist", verticesExist.get("v1"));
+        assertTrue("v2 exist", verticesExist.get("v2"));
+        assertFalse("bad exist", verticesExist.get("bad"));
+
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertTrue("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
         graph.markVertexHidden(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertFalse("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
         graph.markVertexHidden(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertFalse("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertFalse("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
@@ -564,14 +588,22 @@ public abstract class GraphTestBase {
         assertTrue("v1 should be hidden", v1Hidden.isHidden(AUTHORIZATIONS_A));
 
         graph.markVertexVisible(v1, VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertFalse("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A_AND_B)));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getVertices(AUTHORIZATIONS_B)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
 
         graph.markVertexVisible(v1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1 exists (auth A)", graph.doesVertexExist("v1", AUTHORIZATIONS_A));
+        assertFalse("v1 exists (auth B)", graph.doesVertexExist("v1", AUTHORIZATIONS_B));
+        assertTrue("v1 exists (auth A&B)", graph.doesVertexExist("v1", AUTHORIZATIONS_A_AND_B));
         assertEquals(2, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A)));
     }
@@ -583,7 +615,21 @@ public abstract class GraphTestBase {
         Vertex v3 = graph.addVertex("v3", VISIBILITY_A, AUTHORIZATIONS_A);
         Edge e1 = graph.addEdge("v1tov2", v1, v2, "test", VISIBILITY_A, AUTHORIZATIONS_A);
         Edge e2 = graph.addEdge("v2tov3", v2, v3, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.flush();
 
+        List<String> edgeIdList = new ArrayList<String>();
+        edgeIdList.add("v1tov2");
+        edgeIdList.add("v2tov3");
+        edgeIdList.add("bad");
+        Map<String, Boolean> edgesExist = graph.doEdgesExist(edgeIdList, AUTHORIZATIONS_A);
+        assertEquals(3, edgeIdList.size());
+        assertTrue("v1tov2 exist", edgesExist.get("v1tov2"));
+        assertTrue("v2tov3 exist", edgesExist.get("v2tov3"));
+        assertFalse("bad exist", edgesExist.get("bad"));
+
+        assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
+        assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));
+        assertTrue("v1tov2 exists (auth A&B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A_AND_B));
         assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
@@ -591,7 +637,11 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.findPaths("v1", "v3", 10, AUTHORIZATIONS_A_AND_B)));
 
         graph.markEdgeHidden(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
+        assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));
+        assertFalse("v1tov2 exists (auth A&B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A_AND_B));
         assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
         assertEquals(0, count(graph.getEdges(AUTHORIZATIONS_B)));
         assertEquals(1, count(graph.getEdges(AUTHORIZATIONS_A_AND_B)));
@@ -607,7 +657,11 @@ public abstract class GraphTestBase {
         assertTrue("e1 should be hidden", e1Hidden.isHidden(AUTHORIZATIONS_A_AND_B));
 
         graph.markEdgeVisible(e1, VISIBILITY_A_AND_B, AUTHORIZATIONS_A);
+        graph.flush();
 
+        assertTrue("v1tov2 exists (auth A)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A));
+        assertFalse("v1tov2 exists (auth B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_B));
+        assertTrue("v1tov2 exists (auth A&B)", graph.doesEdgeExist("v1tov2", AUTHORIZATIONS_A_AND_B));
         assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_A)));
         assertEquals(2, count(graph.getEdges(AUTHORIZATIONS_A)));
         assertEquals(1, count(graph.getVertex("v1", AUTHORIZATIONS_A).getEdges(Direction.BOTH, AUTHORIZATIONS_A)));
@@ -686,6 +740,55 @@ public abstract class GraphTestBase {
         v1.markPropertyVisible("key1", "prop1", VISIBILITY_A, VISIBILITY_A_AND_B, AUTHORIZATIONS_A_AND_B);
 
         assertEquals(3, count(graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).getProperties("prop1")));
+    }
+
+    /**
+     * This tests simulates two workspaces w1 (via A) and w1 (vis B).
+     * Both w1 and w2 has e1 on it.
+     * e1 is linked to e2.
+     * <p/>
+     * What happens if w1 (vis A) marks e1 hidden, then deletes itself?
+     */
+    @Test
+    public void testMarkVertexHiddenAndDeleteEdges() {
+        Vertex w1 = graph.addVertex("w1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex w2 = graph.addVertex("w2", VISIBILITY_B, AUTHORIZATIONS_B);
+        Vertex e1 = graph.addVertex("e1", VISIBILITY_EMPTY, AUTHORIZATIONS_A);
+        Vertex e2 = graph.addVertex("e2", VISIBILITY_EMPTY, AUTHORIZATIONS_A);
+        graph.addEdge("w1-e1", w1, e1, "test", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.addEdge("w2-e1", w2, e1, "test", VISIBILITY_B, AUTHORIZATIONS_B);
+        graph.addEdge("e1-e2", e1, e2, "test", VISIBILITY_EMPTY, AUTHORIZATIONS_A);
+        graph.flush();
+
+        e1 = graph.getVertex("e1", AUTHORIZATIONS_EMPTY);
+        graph.markVertexHidden(e1, VISIBILITY_A, AUTHORIZATIONS_EMPTY);
+        graph.flush();
+
+        w1 = graph.getVertex("w1", AUTHORIZATIONS_A);
+        graph.removeVertex(w1, AUTHORIZATIONS_A);
+        graph.flush();
+
+        assertEquals(1, count(graph.getVertices(AUTHORIZATIONS_A)));
+        assertEquals("e2", toList(graph.getVertices(AUTHORIZATIONS_A)).get(0).getId());
+
+        assertEquals(3, count(graph.getVertices(AUTHORIZATIONS_B)));
+        boolean foundW2 = false;
+        boolean foundE1 = false;
+        boolean foundE2 = false;
+        for (Vertex v : graph.getVertices(AUTHORIZATIONS_B)) {
+            if (v.getId().equals("w2")) {
+                foundW2 = true;
+            } else if (v.getId().equals("e1")) {
+                foundE1 = true;
+            } else if (v.getId().equals("e2")) {
+                foundE2 = true;
+            } else {
+                throw new SecureGraphException("Unexpected id: " + v.getId());
+            }
+        }
+        assertTrue("w2", foundW2);
+        assertTrue("e1", foundE1);
+        assertTrue("e2", foundE2);
     }
 
     @Test
@@ -1005,6 +1108,12 @@ public abstract class GraphTestBase {
                 .has("age", Compare.IN, new Integer[]{25, 30})
                 .vertices();
         assertEquals(2, count(vertices));
+
+        vertices = new CompositeGraphQuery(
+                graph.query(AUTHORIZATIONS_A).has("age", 25),
+                graph.query(AUTHORIZATIONS_A).has("age", 30)
+        ).vertices();
+        assertEquals(2, count(vertices));
     }
 
     @Test
@@ -1150,18 +1259,62 @@ public abstract class GraphTestBase {
     }
 
     @Test
-    public void testDisableEdgeIndexing() {
-        if (!(graph instanceof GraphBaseWithSearchIndex)) {
-            LOGGER.info("skipping can't get " + SearchIndex.class.getSimpleName());
+    public void testGraphQueryUpdateVertex() throws NoSuchFieldException, IllegalAccessException {
+        graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                .setProperty("age", 25, VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        Vertex v2 = graph.prepareVertex("v2", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        Vertex v3 = graph.prepareVertex("v3", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.addEdge("v2tov3", v2, v3, "", VISIBILITY_EMPTY, AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        boolean disableUpdateEdgeCountInSearchIndexSuccess = disableUpdateEdgeCountInSearchIndex(graph);
+
+        graph.prepareVertex("v1", VISIBILITY_EMPTY)
+                .setProperty("name", "Joe", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.prepareVertex("v2", VISIBILITY_EMPTY)
+                .setProperty("name", "Bob", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.prepareVertex("v3", VISIBILITY_EMPTY)
+                .setProperty("name", "Same", VISIBILITY_EMPTY)
+                .save(AUTHORIZATIONS_A_AND_B);
+        graph.flush();
+
+        List<Vertex> allVertices = toList(graph.query(AUTHORIZATIONS_A_AND_B).vertices());
+        assertEquals(3, count(allVertices));
+        if (disableUpdateEdgeCountInSearchIndexSuccess) {
+            assertEquals(
+                    "if edge indexing was disabled and updating vertices does not destroy the edge counts " +
+                            "that were already in place 'v1' should be last since it has no edges",
+                    "v1", allVertices.get(2).getId());
+        }
+
+        Iterable<Vertex> vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("age", Compare.EQUAL, 25)
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("name", Compare.EQUAL, "Joe")
+                .vertices();
+        assertEquals(1, count(vertices));
+
+        vertices = graph.query(AUTHORIZATIONS_A_AND_B)
+                .has("age", Compare.EQUAL, 25)
+                .has("name", Compare.EQUAL, "Joe")
+                .vertices();
+        assertEquals(1, count(vertices));
+    }
+
+    @Test
+    public void testDisableEdgeIndexing() throws NoSuchFieldException, IllegalAccessException {
+        if (!disableEdgeIndexing(graph)) {
+            LOGGER.info("skipping " + SearchIndex.class.getSimpleName() + " doesn't support disabling index");
             return;
         }
-        GraphBaseWithSearchIndex graphBaseWithSearchIndex = (GraphBaseWithSearchIndex) graph;
-        SearchIndex searchIndex = graphBaseWithSearchIndex.getSearchIndex();
-        if (!(searchIndex instanceof DisableEdgeIndexSupport)) {
-            LOGGER.info("skipping " + SearchIndex.class.getSimpleName() + " doesn't support " + DisableEdgeIndexSupport.class.getSimpleName());
-            return;
-        }
-        ((DisableEdgeIndexSupport) searchIndex).setIndexEdges(false);
 
         Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
         Vertex v2 = graph.prepareVertex("v2", VISIBILITY_A).save(AUTHORIZATIONS_A_AND_B);
@@ -1763,7 +1916,7 @@ public abstract class GraphTestBase {
 
     @Test
     public void testVertexBoost() throws Exception {
-        if (!graph.isEdgeBoostSupported()) {
+        if (!isEdgeBoostSupported()) {
             LOGGER.warn("Boost not supported");
             return;
         }
@@ -1777,6 +1930,10 @@ public abstract class GraphTestBase {
 
         graph.addEdge("e1", v3, v2, "link", VISIBILITY_A, AUTHORIZATIONS_A);
         graph.flush();
+
+        v1.prepareMutation().save(AUTHORIZATIONS_A_AND_B);
+        v2.prepareMutation().save(AUTHORIZATIONS_A_AND_B);
+        v3.prepareMutation().save(AUTHORIZATIONS_A_AND_B);
 
         assertVertexIds(graph.query(AUTHORIZATIONS_A).vertices(), new String[]{"v2", "v3", "v1"});
     }
@@ -1841,11 +1998,11 @@ public abstract class GraphTestBase {
 
     @Test
     public void testChangeVisibilityVertexProperties() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("prop1_key1", "value1");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("prop1_key1", "value1", VISIBILITY_EMPTY);
 
-        Map<String, Object> prop2Metadata = new HashMap<String, Object>();
-        prop2Metadata.put("prop2_key1", "value1");
+        Metadata prop2Metadata = new Metadata();
+        prop2Metadata.add("prop2_key1", "value1", VISIBILITY_EMPTY);
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
@@ -1866,7 +2023,10 @@ public abstract class GraphTestBase {
         assertEquals(0, count(graph.query(AUTHORIZATIONS_A).has("prop1", "value1").vertices()));
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
-        assertNotNull(v1.getProperty("prop1"));
+        Property v1Prop1 = v1.getProperty("prop1");
+        assertNotNull(v1Prop1);
+        assertEquals(1, toList(v1Prop1.getMetadata().entrySet()).size());
+        assertEquals("value1", v1Prop1.getMetadata().getValue("prop1_key1"));
         assertNotNull(v1.getProperty("prop2"));
 
         // alter and set property in one mutation
@@ -1981,8 +2141,8 @@ public abstract class GraphTestBase {
 
     @Test
     public void testChangePropertyMetadata() {
-        Map<String, Object> prop1Metadata = new HashMap<String, Object>();
-        prop1Metadata.put("prop1_key1", "valueOld");
+        Metadata prop1Metadata = new Metadata();
+        prop1Metadata.add("prop1_key1", "valueOld", VISIBILITY_EMPTY);
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("prop1", "value1", prop1Metadata, VISIBILITY_EMPTY)
@@ -1991,21 +2151,46 @@ public abstract class GraphTestBase {
 
         Vertex v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         v1.prepareMutation()
-                .alterPropertyMetadata("prop1", "prop1_key1", "valueNew")
+                .setPropertyMetadata("prop1", "prop1_key1", "valueNew", VISIBILITY_EMPTY)
                 .save(AUTHORIZATIONS_A_AND_B);
-        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
+        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().getEntry("prop1_key1", VISIBILITY_EMPTY).getValue());
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().get("prop1_key1"));
+        assertEquals("valueNew", v1.getProperty("prop1").getMetadata().getEntry("prop1_key1", VISIBILITY_EMPTY).getValue());
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
         v1.prepareMutation()
-                .alterPropertyMetadata("prop2", "prop2_key1", "valueNew")
+                .setPropertyMetadata("prop2", "prop2_key1", "valueNew", VISIBILITY_EMPTY)
                 .save(AUTHORIZATIONS_A_AND_B);
-        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().get("prop2_key1"));
+        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().getEntry("prop2_key1", VISIBILITY_EMPTY).getValue());
 
         v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
-        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().get("prop2_key1"));
+        assertEquals("valueNew", v1.getProperty("prop2").getMetadata().getEntry("prop2_key1", VISIBILITY_EMPTY).getValue());
+    }
+
+    @Test
+    public void testMetadata() {
+        Vertex v1 = graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_A)
+                .setProperty("prop1", "value1", VISIBILITY_B)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        ExistingElementMutation<Vertex> m = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B).prepareMutation();
+        m.setPropertyMetadata(v1.getProperty("prop1", VISIBILITY_A), "metadata1", "metadata-value1aa", VISIBILITY_A);
+        m.setPropertyMetadata(v1.getProperty("prop1", VISIBILITY_A), "metadata1", "metadata-value1ab", VISIBILITY_B);
+        m.setPropertyMetadata(v1.getProperty("prop1", VISIBILITY_B), "metadata1", "metadata-value1bb", VISIBILITY_B);
+        m.save(AUTHORIZATIONS_A_AND_B);
+
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A_AND_B);
+
+        Property prop1A = v1.getProperty("prop1", VISIBILITY_A);
+        assertEquals(2, prop1A.getMetadata().entrySet().size());
+        assertEquals("metadata-value1aa", prop1A.getMetadata().getValue("metadata1", VISIBILITY_A));
+        assertEquals("metadata-value1ab", prop1A.getMetadata().getValue("metadata1", VISIBILITY_B));
+
+        Property prop1B = v1.getProperty("prop1", VISIBILITY_B);
+        assertEquals(1, prop1B.getMetadata().entrySet().size());
+        assertEquals("metadata-value1bb", prop1B.getMetadata().getValue("metadata1", VISIBILITY_B));
     }
 
     @Test
@@ -2205,6 +2390,20 @@ public abstract class GraphTestBase {
         assertEquals("11", v.getId());
     }
 
+    @Test
+    public void testGraphMetadata() {
+        List<GraphMetadataEntry> existingMetadata = toList(graph.getMetadata());
+
+        graph.setMetadata("test1", "value1");
+        graph.setMetadata("test2", "value2");
+
+        assertEquals("value1", graph.getMetadata("test1"));
+        assertEquals("value2", graph.getMetadata("test2"));
+
+        List<GraphMetadataEntry> newMetadata = toList(graph.getMetadata());
+        assertEquals(existingMetadata.size() + 2, newMetadata.size());
+    }
+
     private List<Vertex> getVertices(long count) {
         List<Vertex> vertices = new ArrayList<Vertex>();
         for (int i = 0; i < count; i++) {
@@ -2223,12 +2422,38 @@ public abstract class GraphTestBase {
         return graphBaseWithSearchIndex.getSearchIndex() instanceof DefaultSearchIndex;
     }
 
-    protected void assertVertexIds(Iterable<Vertex> vertices, String[] ids) {
+    protected void assertVertexIds(Iterable<Vertex> vertices, String[] expectedIds) {
+        String verticesIdsString = idsToString(vertices);
+        String expectedIdsString = idsToString(expectedIds);
         List<Vertex> verticesList = toList(vertices);
-        assertEquals("ids length mismatch", ids.length, verticesList.size());
-        for (int i = 0; i < ids.length; i++) {
-            assertEquals("at offset: " + i, ids[i], verticesList.get(i).getId());
+        assertEquals("ids length mismatch found:[" + verticesIdsString + "] expected:[" + expectedIdsString + "]", expectedIds.length, verticesList.size());
+        for (int i = 0; i < expectedIds.length; i++) {
+            assertEquals("at offset: " + i + " found:[" + verticesIdsString + "] expected:[" + expectedIdsString + "]", expectedIds[i], verticesList.get(i).getId());
         }
+    }
+
+    private String idsToString(String[] ids) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String id : ids) {
+            if (!first) {
+                sb.append(", ");
+            }
+            sb.append(id);
+            first = false;
+        }
+        return sb.toString();
+    }
+
+    private String idsToString(Iterable<Vertex> vertices) {
+        List<String> idsList = toList(new ConvertingIterable<Vertex, String>(vertices) {
+            @Override
+            protected String convert(Vertex o) {
+                return o.getId();
+            }
+        });
+        String[] idsArray = idsList.toArray(new String[idsList.size()]);
+        return idsToString(idsArray);
     }
 
     private void assertEvents(GraphEvent... expectedEvents) {
@@ -2246,4 +2471,60 @@ public abstract class GraphTestBase {
             assertEquals("at offset: " + i, ids[i], edgesList.get(i).getId());
         }
     }
+
+    protected boolean disableUpdateEdgeCountInSearchIndex(Graph graph) {
+        return false;
+    }
+
+    protected boolean disableEdgeIndexing(Graph graph) {
+        try {
+            if (!(graph instanceof GraphBaseWithSearchIndex)) {
+                LOGGER.debug("Graph does not have a search index");
+                return false;
+            }
+
+            SearchIndex searchIndex = ((GraphBaseWithSearchIndex) graph).getSearchIndex();
+
+            Field configField = findPrivateField(searchIndex.getClass(), "config");
+            if (configField == null) {
+                LOGGER.debug("Could not find 'config' field");
+                return false;
+            }
+
+            configField.setAccessible(true);
+
+            Object config = configField.get(searchIndex);
+            if (config == null) {
+                LOGGER.debug("Could not get 'config' field");
+                return false;
+            }
+
+            Field indexEdgesField = findPrivateField(config.getClass(), "indexEdges");
+            if (indexEdgesField == null) {
+                LOGGER.debug("Could not find 'indexEdgesField' field");
+                return false;
+            }
+
+            indexEdgesField.setAccessible(true);
+
+            indexEdgesField.set(config, false);
+
+            return true;
+        } catch (Exception ex) {
+            throw new SecureGraphException("Could not disableEdgeIndexing", ex);
+        }
+    }
+
+    private Field findPrivateField(Class clazz, String name) {
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            if (clazz.getSuperclass() != null) {
+                return findPrivateField(clazz.getSuperclass(), name);
+            }
+            return null;
+        }
+    }
+
+    protected abstract boolean isEdgeBoostSupported();
 }
