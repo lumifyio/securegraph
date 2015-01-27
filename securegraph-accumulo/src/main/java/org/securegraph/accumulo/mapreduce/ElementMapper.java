@@ -82,7 +82,15 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                AccumuloVertex vertex = new AccumuloVertex(null, getVertexId(), getVisibility(), getProperties(), null, authorizations);
+                AccumuloVertex vertex = new AccumuloVertex(
+                        null,
+                        getVertexId(),
+                        getVisibility(),
+                        getProperties(),
+                        null,
+                        authorizations,
+                        System.currentTimeMillis()
+                );
                 elementMutationBuilder.saveVertex(vertex);
                 return vertex;
             }
@@ -101,7 +109,18 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return new EdgeBuilderByVertexId(edgeId, outVertexId, inVertexId, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertexId(), getInVertexId(), getLabel(), getVisibility(), getProperties(), null, authorizations);
+                AccumuloEdge edge = new AccumuloEdge(
+                        null,
+                        getEdgeId(),
+                        getOutVertexId(),
+                        getInVertexId(),
+                        getLabel(),
+                        getVisibility(),
+                        getProperties(),
+                        null,
+                        authorizations,
+                        System.currentTimeMillis()
+                );
                 elementMutationBuilder.saveEdge(edge);
                 return edge;
             }
@@ -116,7 +135,18 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return new EdgeBuilder(edgeId, outVertex, inVertex, label, visibility) {
             @Override
             public Edge save(Authorizations authorizations) {
-                AccumuloEdge edge = new AccumuloEdge(null, getEdgeId(), getOutVertex().getId(), getInVertex().getId(), getLabel(), getVisibility(), getProperties(), null, authorizations);
+                AccumuloEdge edge = new AccumuloEdge(
+                        null,
+                        getEdgeId(),
+                        getOutVertex().getId(),
+                        getInVertex().getId(),
+                        getLabel(),
+                        getVisibility(),
+                        getProperties(),
+                        null,
+                        authorizations,
+                        System.currentTimeMillis()
+                );
                 elementMutationBuilder.saveEdge(edge);
                 return edge;
             }

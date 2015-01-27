@@ -7,7 +7,7 @@ import org.securegraph.mutation.ExistingElementMutationImpl;
 
 import java.io.Serializable;
 
-public abstract class AccumuloElement<T extends Element> extends ElementBase<T> implements Serializable {
+public abstract class AccumuloElement<T extends Element> extends ElementBase<T> implements Serializable, HasTimestamp {
     private static final long serialVersionUID = 1L;
     public static final Text CF_HIDDEN = new Text("H");
     public static final Text CQ_HIDDEN = new Text("H");
@@ -15,9 +15,19 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
     public static final Text CF_PROPERTY = new Text("PROP");
     public static final Text CF_PROPERTY_HIDDEN = new Text("PROPH");
     public static final Text CF_PROPERTY_METADATA = new Text("PROPMETA");
+    private final long timestamp;
 
-    protected AccumuloElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+    protected AccumuloElement(
+            Graph graph,
+            String id,
+            Visibility visibility,
+            Iterable<Property> properties,
+            Iterable<Visibility> hiddenVisibilities,
+            Authorizations authorizations,
+            long timestamp
+    ) {
         super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -67,5 +77,10 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
         if (mutation.getNewElementVisibility() != null) {
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());
         }
+    }
+
+    @Override
+    public long getTimestamp() {
+        return timestamp;
     }
 }

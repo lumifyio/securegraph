@@ -61,7 +61,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     private BatchWriter dataWriter;
     private BatchWriter metadataWriter;
     private ElementMutationBuilder elementMutationBuilder;
-    private final Queue<GraphEvent> graphEventQueue = new LinkedList<GraphEvent>();
+    private final Queue<GraphEvent> graphEventQueue = new LinkedList<>();
     private Integer accumuloGraphVersion;
     private boolean foundValueSerializerMetadata;
 
@@ -211,7 +211,15 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                AccumuloVertex vertex = new AccumuloVertex(AccumuloGraph.this, getVertexId(), getVisibility(), getProperties(), null, authorizations);
+                AccumuloVertex vertex = new AccumuloVertex(
+                        AccumuloGraph.this,
+                        getVertexId(),
+                        getVisibility(),
+                        getProperties(),
+                        null,
+                        authorizations,
+                        System.currentTimeMillis()
+                );
 
                 elementMutationBuilder.saveVertex(vertex);
 
@@ -486,7 +494,18 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
     }
 
     private Edge savePreparedEdge(EdgeBuilderBase edgeBuilder, String outVertexId, String inVertexId, AddEdgeToVertexRunnable addEdgeToVertex, Authorizations authorizations) {
-        AccumuloEdge edge = new AccumuloEdge(AccumuloGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), edgeBuilder.getProperties(), null, authorizations);
+        AccumuloEdge edge = new AccumuloEdge(
+                AccumuloGraph.this,
+                edgeBuilder.getEdgeId(),
+                outVertexId,
+                inVertexId,
+                edgeBuilder.getLabel(),
+                edgeBuilder.getVisibility(),
+                edgeBuilder.getProperties(),
+                null,
+                authorizations,
+                System.currentTimeMillis()
+        );
         elementMutationBuilder.saveEdge(edge);
 
         if (addEdgeToVertex != null) {
@@ -761,13 +780,13 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         final AccumuloGraph graph = this;
         final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
 
-        final List<Range> ranges = new ArrayList<Range>();
+        final List<Range> ranges = new ArrayList<>();
         for (String id : ids) {
             Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + id);
             ranges.add(new Range(rowKey));
         }
         if (ranges.size() == 0) {
-            return new EmptyClosableIterable<Vertex>();
+            return new EmptyClosableIterable<>();
         }
 
         return new LookAheadIterable<Map.Entry<Key, Value>, Vertex>() {
@@ -1020,13 +1039,13 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         final AccumuloGraph graph = this;
         final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
 
-        final List<Range> ranges = new ArrayList<Range>();
+        final List<Range> ranges = new ArrayList<>();
         for (String id : ids) {
             Text rowKey = new Text(AccumuloConstants.EDGE_ROW_KEY_PREFIX + id);
             ranges.add(new Range(rowKey));
         }
         if (ranges.size() == 0) {
-            return new EmptyClosableIterable<Edge>();
+            return new EmptyClosableIterable<>();
         }
 
         return new LookAheadIterable<Map.Entry<Key, Value>, Edge>() {
@@ -1285,7 +1304,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             return;
         }
 
-        List<Property> propertiesToSave = new ArrayList<Property>();
+        List<Property> propertiesToSave = new ArrayList<>();
         for (SetPropertyMetadata apm : setPropertyMetadatas) {
             Property property = element.getProperty(apm.getPropertyKey(), apm.getPropertyName(), apm.getPropertyVisibility());
             if (property == null) {
@@ -1332,7 +1351,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             return new HashSet<String>();
         }
 
-        List<Range> ranges = new ArrayList<Range>();
+        List<Range> ranges = new ArrayList<>();
         for (String vertexId : vertexIdsSet) {
             Text rowKey = new Text(AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertexId);
             Range range = new Range(rowKey);
@@ -1346,7 +1365,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             batchScanner.setRanges(ranges);
 
             Iterator<Map.Entry<Key, Value>> it = batchScanner.iterator();
-            Set<String> edgeIds = new HashSet<String>();
+            Set<String> edgeIds = new HashSet<>();
             while (it.hasNext()) {
                 Map.Entry<Key, Value> c = it.next();
                 if (!c.getKey().getColumnFamily().equals(AccumuloVertex.CF_OUT_EDGE)) {
@@ -1384,7 +1403,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             protected Iterator<Map.Entry<Key, Value>> createIterator() {
                 try {
                     batchScanner = connector.createBatchScanner(getMetadataTableName(), toAccumuloAuthorizations(METADATA_AUTHORIZATIONS), 1);
-                    Collection<Range> ranges = new ArrayList<Range>();
+                    Collection<Range> ranges = new ArrayList<>();
                     if (range == null) {
                         ranges.add(new Range());
                     } else {

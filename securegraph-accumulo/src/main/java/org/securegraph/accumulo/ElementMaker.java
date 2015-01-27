@@ -19,6 +19,7 @@ public abstract class ElementMaker<T> {
     private final Map<String, byte[]> propertyValues = new HashMap<>();
     private final Map<String, Visibility> propertyVisibilities = new HashMap<>();
     private final Map<String, LazyPropertyMetadata> propertyMetadata = new HashMap<>();
+    private final Map<String, Long> propertyTimestamps = new HashMap<>();
     private final Set<HiddenProperty> hiddenProperties = new HashSet<>();
     private final Set<Visibility> hiddenVisibilities = new HashSet<>();
     private final AccumuloGraph graph;
@@ -64,7 +65,7 @@ public abstract class ElementMaker<T> {
             }
 
             if (AccumuloElement.CF_PROPERTY.compareTo(columnFamily) == 0) {
-                extractPropertyData(columnQualifier, columnVisibility, value);
+                extractPropertyData(col, columnVisibility);
                 continue;
             }
 
@@ -120,6 +121,7 @@ public abstract class ElementMaker<T> {
             String propertyName = propertyNames.get(key);
             byte[] propertyValue = propertyValueEntry.getValue();
             Visibility propertyVisibility = propertyVisibilities.get(key);
+            long propertyTimestamp = propertyTimestamps.get(key);
             Set<Visibility> propertyHiddenVisibilities = getPropertyHiddenVisibilities(propertyKey, propertyName, propertyVisibility);
             if (!includeHidden && isHidden(propertyKey, propertyName, propertyVisibility)) {
                 continue;
@@ -133,7 +135,8 @@ public abstract class ElementMaker<T> {
                     propertyValue,
                     metadata,
                     propertyHiddenVisibilities,
-                    propertyVisibility
+                    propertyVisibility,
+                    propertyTimestamp
             );
             results.add(property);
         }
@@ -203,14 +206,18 @@ public abstract class ElementMaker<T> {
         return lazyPropertyMetadata;
     }
 
-    private void extractPropertyData(Text columnQualifier, ColumnVisibility columnVisibility, Value value) {
+    private void extractPropertyData(Map.Entry<Key, Value> column, ColumnVisibility columnVisibility) {
+        Text columnQualifier = column.getKey().getColumnQualifier();
+        Value value = column.getValue();
         Visibility visibility = AccumuloGraph.accumuloVisibilityToVisibility(columnVisibility);
         String propertyName = getPropertyNameFromColumnQualifier(columnQualifier.toString());
         String key = propertyColumnQualifierToKey(columnQualifier, visibility);
+        long timestamp = column.getKey().getTimestamp();
         propertyColumnQualifier.put(key, columnQualifier.toString());
         propertyNames.put(key, propertyName);
         propertyValues.put(key, value.get());
         propertyVisibilities.put(key, visibility);
+        propertyTimestamps.put(key, timestamp);
     }
 
     private String propertyColumnQualifierToKey(Text columnQualifier, Visibility visibility) {

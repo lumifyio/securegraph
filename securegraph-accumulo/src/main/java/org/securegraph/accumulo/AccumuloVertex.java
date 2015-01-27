@@ -26,12 +26,40 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     private final Map<String, EdgeInfo> inEdges;
     private final Map<String, EdgeInfo> outEdges;
 
-    public AccumuloVertex(AccumuloGraph graph, String vertexId, Visibility vertexVisibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
-        this(graph, vertexId, vertexVisibility, properties, hiddenVisibilities, new HashMap<String, EdgeInfo>(), new HashMap<String, EdgeInfo>(), authorizations);
+    public AccumuloVertex(
+            AccumuloGraph graph,
+            String vertexId,
+            Visibility vertexVisibility,
+            Iterable<Property> properties,
+            Iterable<Visibility> hiddenVisibilities,
+            Authorizations authorizations,
+            long timestamp
+    ) {
+        this(
+                graph,
+                vertexId,
+                vertexVisibility,
+                properties,
+                hiddenVisibilities,
+                new HashMap<String, EdgeInfo>(),
+                new HashMap<String, EdgeInfo>(),
+                authorizations,
+                timestamp
+        );
     }
 
-    AccumuloVertex(AccumuloGraph graph, String vertexId, Visibility vertexVisibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Map<String, EdgeInfo> inEdges, Map<String, EdgeInfo> outEdges, Authorizations authorizations) {
-        super(graph, vertexId, vertexVisibility, properties, hiddenVisibilities, authorizations);
+    AccumuloVertex(
+            AccumuloGraph graph,
+            String vertexId,
+            Visibility vertexVisibility,
+            Iterable<Property> properties,
+            Iterable<Visibility> hiddenVisibilities,
+            Map<String, EdgeInfo> inEdges,
+            Map<String, EdgeInfo> outEdges,
+            Authorizations authorizations,
+            long timestamp
+    ) {
+        super(graph, vertexId, vertexVisibility, properties, hiddenVisibilities, authorizations, timestamp);
         this.inEdges = inEdges;
         this.outEdges = outEdges;
     }

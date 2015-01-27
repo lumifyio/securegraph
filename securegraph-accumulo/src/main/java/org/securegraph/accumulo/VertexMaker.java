@@ -16,6 +16,7 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private final Map<String, EdgeInfo> outEdges = new HashMap<String, EdgeInfo>();
     private final Map<String, EdgeInfo> inEdges = new HashMap<String, EdgeInfo>();
     private final Set<String> hiddenEdges = new HashSet<String>();
+    private long timestamp;
 
     public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
         super(graph, row, authorizations);
@@ -26,6 +27,11 @@ public class VertexMaker extends ElementMaker<Vertex> {
     protected void processColumn(Key key, Value value) {
         Text columnFamily = key.getColumnFamily();
         Text columnQualifier = key.getColumnQualifier();
+
+        if (AccumuloVertex.CF_SIGNAL.compareTo(columnFamily) == 0) {
+            this.timestamp = key.getTimestamp();
+            return;
+        }
 
         if (AccumuloVertex.CF_OUT_EDGE_HIDDEN.compareTo(columnFamily) == 0
                 || AccumuloVertex.CF_IN_EDGE_HIDDEN.compareTo(columnFamily) == 0) {
@@ -79,7 +85,9 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.getHiddenVisibilities(),
                 this.inEdges,
                 this.outEdges,
-                this.getAuthorizations());
+                this.getAuthorizations(),
+                timestamp
+        );
     }
 
 }

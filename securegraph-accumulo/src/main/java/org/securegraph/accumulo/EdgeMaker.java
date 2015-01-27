@@ -16,6 +16,7 @@ public class EdgeMaker extends ElementMaker<Edge> {
     private String inVertexId;
     private String outVertexId;
     private String label;
+    private long timestamp;
 
     public EdgeMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
         super(graph, row, authorizations);
@@ -29,6 +30,7 @@ public class EdgeMaker extends ElementMaker<Edge> {
 
         if (AccumuloEdge.CF_SIGNAL.compareTo(columnFamily) == 0) {
             this.label = columnQualifier.toString();
+            this.timestamp = key.getTimestamp();
             return;
         }
 
@@ -66,6 +68,8 @@ public class EdgeMaker extends ElementMaker<Edge> {
                 this.getVisibility(),
                 this.getProperties(includeHidden),
                 this.getHiddenVisibilities(),
-                this.getAuthorizations());
+                this.getAuthorizations(),
+                this.timestamp
+        );
     }
 }

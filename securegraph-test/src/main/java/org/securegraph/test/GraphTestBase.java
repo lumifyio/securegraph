@@ -181,7 +181,7 @@ public abstract class GraphTestBase {
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
     }
-    
+
     @Test
     public void testAddVertexPropertyWithMetadata() {
         Metadata prop1Metadata = new Metadata();
@@ -192,8 +192,16 @@ public abstract class GraphTestBase {
                 .save(AUTHORIZATIONS_A_AND_B);
 
         Vertex v = graph.getVertex("v1", AUTHORIZATIONS_A);
+        if (v instanceof HasTimestamp) {
+            assertTrue("timestamp should be more than 0", ((HasTimestamp) v).getTimestamp() > 0);
+        }
+
         assertEquals(1, count(v.getProperties("prop1")));
         Property prop1 = v.getProperties("prop1").iterator().next();
+        if (prop1 instanceof HasTimestamp) {
+            assertTrue("timestamp should be more than 0", ((HasTimestamp) prop1).getTimestamp() > 0);
+        }
+
         prop1Metadata = prop1.getMetadata();
         assertNotNull(prop1Metadata);
         assertEquals(1, prop1Metadata.entrySet().size());
@@ -1805,7 +1813,7 @@ public abstract class GraphTestBase {
         Random random = new Random(100);
 
         startTime = new Date();
-        List<Vertex> vertices = new ArrayList<Vertex>();
+        List<Vertex> vertices = new ArrayList<>();
         for (int i = 0; i < totalNumberOfVertices; i++) {
             vertices.add(graph.addVertex("v" + i, VISIBILITY_A, AUTHORIZATIONS_A));
         }

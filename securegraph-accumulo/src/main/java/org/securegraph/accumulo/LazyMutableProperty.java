@@ -1,6 +1,7 @@
 package org.securegraph.accumulo;
 
 import org.securegraph.Authorizations;
+import org.securegraph.HasTimestamp;
 import org.securegraph.Metadata;
 import org.securegraph.Visibility;
 import org.securegraph.accumulo.serializer.ValueSerializer;
@@ -9,11 +10,12 @@ import org.securegraph.property.MutableProperty;
 import java.util.HashSet;
 import java.util.Set;
 
-public class LazyMutableProperty extends MutableProperty {
+public class LazyMutableProperty extends MutableProperty implements HasTimestamp {
     private final AccumuloGraph graph;
     private final ValueSerializer valueSerializer;
     private final String propertyKey;
     private final String propertyName;
+    private final long timestamp;
     private Set<Visibility> hiddenVisibilities;
     private byte[] propertyValue;
     private final LazyPropertyMetadata metadata;
@@ -21,7 +23,17 @@ public class LazyMutableProperty extends MutableProperty {
     private transient Object cachedPropertyValue;
     private transient Metadata cachedMetadata;
 
-    public LazyMutableProperty(AccumuloGraph graph, ValueSerializer valueSerializer, String propertyKey, String propertyName, byte[] propertyValue, LazyPropertyMetadata metadata, Set<Visibility> hiddenVisibilities, Visibility visibility) {
+    public LazyMutableProperty(
+            AccumuloGraph graph,
+            ValueSerializer valueSerializer,
+            String propertyKey,
+            String propertyName,
+            byte[] propertyValue,
+            LazyPropertyMetadata metadata,
+            Set<Visibility> hiddenVisibilities,
+            Visibility visibility,
+            long timestamp
+    ) {
         this.graph = graph;
         this.valueSerializer = valueSerializer;
         this.propertyKey = propertyKey;
@@ -30,6 +42,7 @@ public class LazyMutableProperty extends MutableProperty {
         this.metadata = metadata;
         this.visibility = visibility;
         this.hiddenVisibilities = hiddenVisibilities;
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -125,5 +138,10 @@ public class LazyMutableProperty extends MutableProperty {
             }
         }
         return false;
+    }
+
+    @Override
+    public long getTimestamp() {
+        return timestamp;
     }
 }

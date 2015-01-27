@@ -241,7 +241,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     @Override
-    public abstract ExistingElementMutation<T> prepareMutation();
+    public abstract <T extends Element> ExistingElementMutation<T> prepareMutation();
 
     @Override
     public abstract void removeProperty(String key, String name, Authorizations authorizations);
