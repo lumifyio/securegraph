@@ -181,7 +181,7 @@ public abstract class GraphTestBase {
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
         assertEquals(expectedLargeValue, IOUtils.toString(value.getInputStream()));
     }
-
+    
     @Test
     public void testAddVertexPropertyWithMetadata() {
         Metadata prop1Metadata = new Metadata();

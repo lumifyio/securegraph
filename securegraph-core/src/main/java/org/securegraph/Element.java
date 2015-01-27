@@ -157,7 +157,7 @@ public interface Element {
      *
      * @return The mutation builder.
      */
-    ExistingElementMutation prepareMutation();
+    <T extends Element> ExistingElementMutation<T> prepareMutation();
 
     /**
      * Removes a property given it's key and name from the element. Only properties which you have access to can be removed using

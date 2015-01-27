@@ -14,13 +14,13 @@ import java.util.*;
 
 public abstract class ElementMaker<T> {
     private final Iterator<Map.Entry<Key, Value>> row;
-    private final Map<String, String> propertyNames = new HashMap<String, String>();
-    private final Map<String, String> propertyColumnQualifier = new HashMap<String, String>();
-    private final Map<String, byte[]> propertyValues = new HashMap<String, byte[]>();
-    private final Map<String, Visibility> propertyVisibilities = new HashMap<String, Visibility>();
-    private final Map<String, LazyPropertyMetadata> propertyMetadata = new HashMap<String, LazyPropertyMetadata>();
-    private final Set<HiddenProperty> hiddenProperties = new HashSet<HiddenProperty>();
-    private final Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
+    private final Map<String, String> propertyNames = new HashMap<>();
+    private final Map<String, String> propertyColumnQualifier = new HashMap<>();
+    private final Map<String, byte[]> propertyValues = new HashMap<>();
+    private final Map<String, Visibility> propertyVisibilities = new HashMap<>();
+    private final Map<String, LazyPropertyMetadata> propertyMetadata = new HashMap<>();
+    private final Set<HiddenProperty> hiddenProperties = new HashSet<>();
+    private final Set<Visibility> hiddenVisibilities = new HashSet<>();
     private final AccumuloGraph graph;
     private final Authorizations authorizations;
     private String id;
@@ -42,7 +42,7 @@ public abstract class ElementMaker<T> {
 
             Text columnFamily = col.getKey().getColumnFamily();
             Text columnQualifier = col.getKey().getColumnQualifier();
-            ColumnVisibility columnVisibility = getGraph().visibilityToAccumuloVisibility(col.getKey().getColumnVisibility().toString());
+            ColumnVisibility columnVisibility = AccumuloGraph.visibilityToAccumuloVisibility(col.getKey().getColumnVisibility().toString());
             Value value = col.getValue();
 
             if (columnFamily.equals(AccumuloGraph.DELETE_ROW_COLUMN_FAMILY)
@@ -113,7 +113,7 @@ public abstract class ElementMaker<T> {
     }
 
     protected List<Property> getProperties(boolean includeHidden) {
-        List<Property> results = new ArrayList<Property>(propertyValues.size());
+        List<Property> results = new ArrayList<>(propertyValues.size());
         for (Map.Entry<String, byte[]> propertyValueEntry : propertyValues.entrySet()) {
             String key = propertyValueEntry.getKey();
             String propertyKey = getPropertyKeyFromColumnQualifier(propertyColumnQualifier.get(key));
@@ -125,7 +125,17 @@ public abstract class ElementMaker<T> {
                 continue;
             }
             LazyPropertyMetadata metadata = propertyMetadata.get(key);
-            results.add(new LazyMutableProperty(getGraph(), getGraph().getValueSerializer(), propertyKey, propertyName, propertyValue, metadata, propertyHiddenVisibilities, propertyVisibility));
+            LazyMutableProperty property = new LazyMutableProperty(
+                    getGraph(),
+                    getGraph().getValueSerializer(),
+                    propertyKey,
+                    propertyName,
+                    propertyValue,
+                    metadata,
+                    propertyHiddenVisibilities,
+                    propertyVisibility
+            );
+            results.add(property);
         }
         return results;
     }
@@ -135,7 +145,7 @@ public abstract class ElementMaker<T> {
         for (HiddenProperty hiddenProperty : hiddenProperties) {
             if (hiddenProperty.matches(propertyKey, propertyName, propertyVisibility)) {
                 if (hiddenVisibilities == null) {
-                    hiddenVisibilities = new HashSet<Visibility>();
+                    hiddenVisibilities = new HashSet<>();
                 }
                 hiddenVisibilities.add(hiddenProperty.getHiddenVisibility());
             }
