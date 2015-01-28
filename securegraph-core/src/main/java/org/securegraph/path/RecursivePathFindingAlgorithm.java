@@ -14,20 +14,20 @@ import static org.securegraph.util.IterableUtils.toSet;
 public class RecursivePathFindingAlgorithm implements PathFindingAlgorithm {
     @Override
     public Iterable<Path> findPaths(Graph graph, final Vertex sourceVertex, Vertex destVertex, int hops, ProgressCallback progressCallback, final Authorizations authorizations) {
-        progressCallback.progress(0, "Finding path");
+        progressCallback.progress(0, ProgressCallback.Step.FINDING_PATH);
 
-        Set<String> seenVertices = new HashSet<String>();
+        Set<String> seenVertices = new HashSet<>();
         seenVertices.add(sourceVertex.getId());
 
         Path startPath = new Path(sourceVertex.getId());
 
-        List<Path> foundPaths = new ArrayList<Path>();
+        List<Path> foundPaths = new ArrayList<>();
         if (hops == 2) {
             findPathsSetIntersection(foundPaths, sourceVertex, destVertex, progressCallback, authorizations);
         } else {
             findPathsRecursive(foundPaths, sourceVertex, destVertex, hops, hops, seenVertices, startPath, progressCallback, authorizations);
         }
-        progressCallback.progress(1, "Complete");
+        progressCallback.progress(1, ProgressCallback.Step.COMPLETE);
         return foundPaths;
     }
 
@@ -35,16 +35,16 @@ public class RecursivePathFindingAlgorithm implements PathFindingAlgorithm {
         String sourceVertexId = sourceVertex.getId();
         String destVertexId = destVertex.getId();
 
-        progressCallback.progress(0.1, "Searching source vertex edges");
+        progressCallback.progress(0.1, ProgressCallback.Step.SEARCHING_SOURCE_VERTEX_EDGES);
         Set<String> sourceVertexConnectedVertexIds = toSet(sourceVertex.getVertexIds(Direction.BOTH, authorizations));
 
-        progressCallback.progress(0.3, "Searching destination vertex edges");
+        progressCallback.progress(0.3, ProgressCallback.Step.SEARCHING_DESTINATION_VERTEX_EDGES);
         Set<String> destVertexConnectedVertexIds = toSet(destVertex.getVertexIds(Direction.BOTH, authorizations));
 
-        progressCallback.progress(0.6, "Merging edges");
+        progressCallback.progress(0.6, ProgressCallback.Step.MERGING_EDGES);
         sourceVertexConnectedVertexIds.retainAll(destVertexConnectedVertexIds);
 
-        progressCallback.progress(0.9, "Adding paths");
+        progressCallback.progress(0.9, ProgressCallback.Step.ADDING_PATHS);
         for (String connectedVertexId : sourceVertexConnectedVertexIds) {
             foundPaths.add(new Path(sourceVertexId, connectedVertexId, destVertexId));
         }
@@ -69,7 +69,7 @@ public class RecursivePathFindingAlgorithm implements PathFindingAlgorithm {
                 if (firstLevelRecursion) {
                     // this will never get to 100% since i starts at 0. which is good. 100% signifies done and we still have work to do.
                     double progressPercent = (double) i / (double) vertexCount;
-                    progressCallback.progress(progressPercent, "Searching edges " + (i + 1) + " of " + vertexCount);
+                    progressCallback.progress(progressPercent, ProgressCallback.Step.SEARCHING_EDGES, i + 1, vertexCount);
                 }
                 if (!seenVertices.contains(child.getId())) {
                     findPathsRecursive(foundPaths, child, destVertex, hops - 1, totalHops, seenVertices, new Path(currentPath, child.getId()), progressCallback, authorizations);

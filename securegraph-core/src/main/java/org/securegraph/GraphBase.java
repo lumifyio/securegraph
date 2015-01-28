@@ -240,8 +240,8 @@ public abstract class GraphBase implements Graph {
     public Iterable<Path> findPaths(Vertex sourceVertex, Vertex destVertex, int maxHops, Authorizations authorizations) {
         ProgressCallback progressCallback = new ProgressCallback() {
             @Override
-            public void progress(double progressPercent, String message) {
-                LOGGER.debug(String.format("findPaths progress %d%%: %s", (int) (progressPercent * 100.0), message));
+            public void progress(double progressPercent, Step step, Integer edgeIndex, Integer vertexCount) {
+                LOGGER.debug(String.format("findPaths progress %d%%: %s", (int) (progressPercent * 100.0), step.formatMessage(edgeIndex,vertexCount)));
             }
         };
         return findPaths(sourceVertex, destVertex, maxHops, progressCallback, authorizations);
