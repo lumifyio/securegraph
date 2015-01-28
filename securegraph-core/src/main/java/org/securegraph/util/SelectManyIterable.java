@@ -43,8 +43,11 @@ public abstract class SelectManyIterable<TSource, TDest> implements Iterable<TDe
                 while (true) {
                     if (innerIterator != null) {
                         if (innerIterator.hasNext()) {
-                            this.next = innerIterator.next();
-                            return;
+                            TDest dest = innerIterator.next();
+                            if (isIncluded(dest)) {
+                                this.next = dest;
+                                return;
+                            }
                         } else {
                             innerIterator = null;
                         }
@@ -61,5 +64,9 @@ public abstract class SelectManyIterable<TSource, TDest> implements Iterable<TDe
         };
     }
 
-    public abstract Iterable<TDest> getIterable(TSource source);
+    protected boolean isIncluded(TDest dest) {
+        return true;
+    }
+
+    protected abstract Iterable<TDest> getIterable(TSource source);
 }

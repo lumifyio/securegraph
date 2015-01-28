@@ -1119,6 +1119,7 @@ public abstract class GraphTestBase {
 
         vertices = new CompositeGraphQuery(
                 graph.query(AUTHORIZATIONS_A).has("age", 25),
+                graph.query(AUTHORIZATIONS_A).has("age", 25),
                 graph.query(AUTHORIZATIONS_A).has("age", 30)
         ).vertices();
         assertEquals(2, count(vertices));
