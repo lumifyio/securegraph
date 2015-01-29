@@ -139,6 +139,12 @@ public class ElasticSearchSearchIndex extends ElasticSearchSearchIndexBase {
                 if (!streamingPropertyValue.isSearchIndex()) {
                     continue;
                 }
+
+                PropertyDefinition propertyDefinition = indexInfo.getPropertyDefinitions().get(property.getName());
+                if (propertyDefinition != null && !propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
+                    continue;
+                }
+
                 Class valueType = streamingPropertyValue.getValueType();
                 if (valueType == String.class) {
                     InputStream in = streamingPropertyValue.getInputStream();

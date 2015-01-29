@@ -343,6 +343,12 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
             if (!streamingPropertyValue.isSearchIndex()) {
                 return null;
             }
+
+            PropertyDefinition propertyDefinition = indexInfo.getPropertyDefinitions().get(property.getName());
+            if (propertyDefinition != null && !propertyDefinition.getTextIndexHints().contains(TextIndexHint.FULL_TEXT)) {
+                return null;
+            }
+
             Class valueType = streamingPropertyValue.getValueType();
             if (valueType == String.class) {
                 InputStream in = streamingPropertyValue.getInputStream();

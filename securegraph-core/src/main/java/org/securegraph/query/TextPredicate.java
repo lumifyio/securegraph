@@ -4,6 +4,7 @@ import org.securegraph.Property;
 import org.securegraph.PropertyDefinition;
 import org.securegraph.SecureGraphException;
 import org.securegraph.TextIndexHint;
+import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.type.GeoPoint;
 
 import java.util.Map;
@@ -24,23 +25,12 @@ public enum TextPredicate implements Predicate {
 
     private boolean evaluate(Property property, Object second, PropertyDefinition propertyDefinition) {
         Object first = property.getValue();
-        if (!(first instanceof String || first instanceof GeoPoint) || !(second instanceof String || second instanceof GeoPoint)) {
+        if (!canEvaulate(first) || !canEvaulate(second)) {
             throw new SecureGraphException("Text predicates are only valid for string or GeoPoint fields");
         }
 
-        if (first instanceof GeoPoint) {
-            first = ((GeoPoint) first).getDescription();
-        }
-
-        if (second instanceof GeoPoint) {
-            second = ((GeoPoint) second).getDescription();
-        }
-
-        String firstString = (String) first;
-        firstString = firstString.toLowerCase();
-
-        String secondString =   (String) second;
-        secondString = secondString.toLowerCase();
+        String firstString = valueToString(first);
+        String secondString = valueToString(second);
 
         switch (this) {
             case CONTAINS:
@@ -51,5 +41,28 @@ public enum TextPredicate implements Predicate {
             default:
                 throw new IllegalArgumentException("Invalid text predicate: " + this);
         }
+    }
+
+    private String valueToString(Object val) {
+        if (val instanceof GeoPoint) {
+            val = ((GeoPoint) val).getDescription();
+        } else if (val instanceof StreamingPropertyValue) {
+            val = ((StreamingPropertyValue) val).readToString();
+        }
+
+        return ((String) val).toLowerCase();
+    }
+
+    private boolean canEvaulate(Object first) {
+        if (first instanceof String) {
+            return true;
+        }
+        if (first instanceof GeoPoint) {
+            return true;
+        }
+        if (first instanceof StreamingPropertyValue && ((StreamingPropertyValue) first).getValueType() == String.class) {
+            return true;
+        }
+        return false;
     }
 }

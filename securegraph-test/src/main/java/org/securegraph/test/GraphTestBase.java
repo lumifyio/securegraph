@@ -1895,6 +1895,24 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testTextIndexStreamingPropertyValue() throws Exception {
+        graph.defineProperty("none").dataType(String.class).textIndexHint(TextIndexHint.NONE).define();
+        graph.defineProperty("both").dataType(String.class).textIndexHint(TextIndexHint.ALL).define();
+        graph.defineProperty("fullText").dataType(String.class).textIndexHint(TextIndexHint.FULL_TEXT).define();
+
+        graph.prepareVertex("v1", VISIBILITY_A)
+                .setProperty("none", StreamingPropertyValue.create("Test Value"), VISIBILITY_A)
+                .setProperty("both", StreamingPropertyValue.create("Test Value"), VISIBILITY_A)
+                .setProperty("fullText", StreamingPropertyValue.create("Test Value"), VISIBILITY_A)
+                .save(AUTHORIZATIONS_A_AND_B);
+
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("both", TextPredicate.CONTAINS, "Test").vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("fullText", TextPredicate.CONTAINS, "Test").vertices()));
+        assertEquals("unindexed property shouldn't match partials", 0, count(graph.query(AUTHORIZATIONS_A).has("none", "Test").vertices()));
+        assertEquals("unindexed property shouldn't match partials", 0, count(graph.query(AUTHORIZATIONS_A).has("none", TextPredicate.CONTAINS, "Test").vertices()));
+    }
+
+    @Test
     public void testFieldBoost() throws Exception {
         if (!graph.isFieldBoostSupported()) {
             LOGGER.warn("Boost not supported");

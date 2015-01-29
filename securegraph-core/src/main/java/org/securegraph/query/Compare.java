@@ -4,6 +4,7 @@ import org.securegraph.DateOnly;
 import org.securegraph.Property;
 import org.securegraph.PropertyDefinition;
 import org.securegraph.TextIndexHint;
+import org.securegraph.property.StreamingPropertyValue;
 
 import java.util.Date;
 import java.util.Map;
@@ -80,6 +81,13 @@ public enum Compare implements Predicate {
     }
 
     private int compare(Object first, Object second) {
+        if (first instanceof StreamingPropertyValue && ((StreamingPropertyValue) first).getValueType() == String.class) {
+            first = ((StreamingPropertyValue) first).readToString();
+        }
+        if (second instanceof StreamingPropertyValue && ((StreamingPropertyValue) second).getValueType() == String.class) {
+            second = ((StreamingPropertyValue) second).readToString();
+        }
+
         if (first instanceof Number && second instanceof Number) {
             double firstDouble = ((Number) first).doubleValue();
             double secondDouble = ((Number) second).doubleValue();
