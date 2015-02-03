@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 
+import static org.securegraph.util.IterableUtils.toSet;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
 public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
@@ -80,13 +81,20 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
     }
 
     protected void loadIndexInfos() {
+        Set<String> indicesToQuery = toSet(getConfig().getIndicesToQuery());
         Map<String, IndexStats> indices = client.admin().indices().prepareStats().execute().actionGet().getIndices();
         for (String indexName : indices.keySet()) {
+            if (!indicesToQuery.contains(indexName)) {
+                LOGGER.debug("skipping index " + indexName + ", not in indicesToQuery");
+                continue;
+            }
+
             IndexInfo indexInfo = indexInfos.get(indexName);
             if (indexInfo != null) {
                 continue;
             }
 
+            LOGGER.debug("loading index info for " + indexName);
             indexInfo = createIndexInfo(indexName);
             indexInfos.put(indexName, indexInfo);
         }

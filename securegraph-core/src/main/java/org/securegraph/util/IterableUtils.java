@@ -32,6 +32,13 @@ public class IterableUtils {
     }
 
     @SuppressWarnings("unchecked")
+    public static <T> Set<T> toSet(T[] iterable) {
+        Set<T> results = new HashSet<T>();
+        Collections.addAll(results, iterable);
+        return results;
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T> T[] toArray(Iterable<? extends T> iterable, Class<T> type) {
         List<? extends T> list = toList(iterable);
         T[] array = (T[]) Array.newInstance(type, list.size());
