@@ -1,7 +1,7 @@
 package org.securegraph;
 
 import org.securegraph.mutation.ElementMutation;
-import org.securegraph.mutation.ExistingElementMutation;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.PropertyValue;
 import org.securegraph.util.ConvertingIterable;
@@ -10,27 +10,36 @@ import org.securegraph.util.FilterIterable;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public abstract class ElementBase<T extends Element> implements Element {
+public abstract class ElementBase implements Element {
     private final Graph graph;
     private final String id;
     private Visibility visibility;
-    private Set<Visibility> hiddenVisibilities = new HashSet<Visibility>();
+    private Set<Visibility> hiddenVisibilities = new HashSet<>();
 
     private final ConcurrentSkipListSet<Property> properties;
+    private ConcurrentSkipListSet<PropertyRemoveMutation> propertyRemoveMutations;
     private final Authorizations authorizations;
 
-    protected ElementBase(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
+    protected ElementBase(
+            Graph graph,
+            String id,
+            Visibility visibility,
+            Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
+            Iterable<Visibility> hiddenVisibilities,
+            Authorizations authorizations
+    ) {
         this.graph = graph;
         this.id = id;
         this.visibility = visibility;
-        this.properties = new ConcurrentSkipListSet<Property>();
+        this.properties = new ConcurrentSkipListSet<>();
         this.authorizations = authorizations;
         if (hiddenVisibilities != null) {
             for (Visibility v : hiddenVisibilities) {
                 this.hiddenVisibilities.add(v);
             }
         }
-        updatePropertiesInternal(properties);
+        updatePropertiesInternal(properties, propertyRemoveMutations);
     }
 
     @Override
@@ -147,6 +156,10 @@ public abstract class ElementBase<T extends Element> implements Element {
         return this.properties;
     }
 
+    public Iterable<PropertyRemoveMutation> getPropertyRemoveMutations() {
+        return this.propertyRemoveMutations;
+    }
+
     @Override
     public Iterable<Property> getProperties(final String name) {
         return new FilterIterable<Property>(getProperties()) {
@@ -169,7 +182,19 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     // this method differs setProperties in that it only updates the in memory representation of the properties
-    protected void updatePropertiesInternal(Iterable<Property> properties) {
+    protected void updatePropertiesInternal(Iterable<Property> properties, Iterable<PropertyRemoveMutation> propertyRemoves) {
+        if (propertyRemoves != null) {
+            this.propertyRemoveMutations = new ConcurrentSkipListSet<>();
+            for (PropertyRemoveMutation propertyRemoveMutation : propertyRemoves) {
+                removePropertyInternal(
+                        propertyRemoveMutation.getKey(),
+                        propertyRemoveMutation.getName(),
+                        propertyRemoveMutation.getVisibility()
+                );
+                this.propertyRemoveMutations.add(propertyRemoveMutation);
+            }
+        }
+
         for (Property property : properties) {
             if (property.getKey() == null) {
                 throw new IllegalArgumentException("key is required for property");
@@ -191,6 +216,14 @@ public abstract class ElementBase<T extends Element> implements Element {
         }
     }
 
+    protected Property removePropertyInternal(String key, String name, Visibility visibility) {
+        Property property = getProperty(key, name, visibility);
+        if (property != null) {
+            this.properties.remove(property);
+        }
+        return property;
+    }
+
     protected Property removePropertyInternal(String key, String name) {
         Property property = getProperty(key, name);
         if (property != null) {
@@ -200,7 +233,7 @@ public abstract class ElementBase<T extends Element> implements Element {
     }
 
     protected Iterable<Property> removePropertyInternal(String name) {
-        List<Property> removedProperties = new ArrayList<Property>();
+        List<Property> removedProperties = new ArrayList<>();
         for (Property p : this.properties) {
             if (p.getName().equals(name)) {
                 removedProperties.add(p);
@@ -239,9 +272,6 @@ public abstract class ElementBase<T extends Element> implements Element {
         }
         return super.equals(obj);
     }
-
-    @Override
-    public abstract <T extends Element> ExistingElementMutation<T> prepareMutation();
 
     @Override
     public abstract void removeProperty(String key, String name, Authorizations authorizations);

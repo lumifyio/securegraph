@@ -13,7 +13,16 @@ public interface SearchIndex {
 
     void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations);
 
-    void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations);
+    void removeProperty(
+            Graph graph,
+            Element element,
+            String propertyKey,
+            String propertyName,
+            Visibility propertyVisibility,
+            Authorizations authorizations
+    );
+
+    void addElements(Graph graph, Iterable<? extends Element> elements, Authorizations authorizations);
 
     GraphQuery queryGraph(Graph graph, String queryString, Authorizations authorizations);
 

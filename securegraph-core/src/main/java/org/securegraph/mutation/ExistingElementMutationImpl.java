@@ -10,10 +10,11 @@ import java.util.List;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
 public abstract class ExistingElementMutationImpl<T extends Element> implements ElementMutation<T>, ExistingElementMutation<T> {
-    private final List<Property> properties = new ArrayList<Property>();
+    private final List<Property> properties = new ArrayList<>();
+    private final List<PropertyRemoveMutation> propertyRemoves = new ArrayList<>();
     private Visibility newElementVisibility;
-    private final List<AlterPropertyVisibility> alterPropertyVisibilities = new ArrayList<AlterPropertyVisibility>();
-    private final List<SetPropertyMetadata> setPropertyMetadatas = new ArrayList<SetPropertyMetadata>();
+    private final List<AlterPropertyVisibility> alterPropertyVisibilities = new ArrayList<>();
+    private final List<SetPropertyMetadata> setPropertyMetadatas = new ArrayList<>();
     private final T element;
     private IndexHint indexHint = IndexHint.INDEX;
 
@@ -44,6 +45,45 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     public Iterable<Property> getProperties() {
         return properties;
+    }
+
+    @Override
+    public Iterable<PropertyRemoveMutation> getPropertyRemoves() {
+        return propertyRemoves;
+    }
+
+    @Override
+    public ElementMutation<T> removeProperty(Property property) {
+        propertyRemoves.add(new PropertyPropertyRemoveMutation(property));
+        return this;
+    }
+
+    @Override
+    public ExistingElementMutation<T> removeProperties(String name) {
+        for (Property prop : this.element.getProperties(name)) {
+            removeProperty(prop);
+        }
+        return this;
+    }
+
+    @Override
+    public ExistingElementMutation<T> removeProperties(String key, String name) {
+        for (Property prop : this.element.getProperties(key, name)) {
+            removeProperty(prop);
+        }
+        return this;
+    }
+
+    @Override
+    public ElementMutation<T> removeProperty(String name, Visibility visibility) {
+        removeProperty(this.element.getProperty(name, visibility));
+        return this;
+    }
+
+    @Override
+    public ElementMutation<T> removeProperty(String key, String name, Visibility visibility) {
+        removeProperty(this.element.getProperty(key, name, visibility));
+        return this;
     }
 
     @Override

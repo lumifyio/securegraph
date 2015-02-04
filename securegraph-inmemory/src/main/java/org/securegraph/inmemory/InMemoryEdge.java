@@ -3,16 +3,28 @@ package org.securegraph.inmemory;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.PropertyRemoveMutation;
 
 import java.util.EnumSet;
 
-public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
+public class InMemoryEdge extends InMemoryElement implements Edge {
     private final String outVertexId;
     private final String inVertexId;
     private final String label;
 
-    protected InMemoryEdge(Graph graph, String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
-        super(graph, edgeId, visibility, properties, hiddenVisibilities, authorizations);
+    protected InMemoryEdge(
+            Graph graph,
+            String edgeId,
+            String outVertexId,
+            String inVertexId,
+            String label,
+            Visibility visibility,
+            Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
+            Iterable<Visibility> hiddenVisibilities,
+            Authorizations authorizations
+    ) {
+        super(graph, edgeId, visibility, properties, propertyRemoveMutations, hiddenVisibilities, authorizations);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
         this.label = label;
@@ -66,6 +78,7 @@ public class InMemoryEdge extends InMemoryElement<Edge> implements Edge {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ExistingElementMutation<Edge> prepareMutation() {
         return new ExistingElementMutationImpl<Edge>(this) {
             @Override

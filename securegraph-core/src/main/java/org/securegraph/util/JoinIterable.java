@@ -8,6 +8,7 @@ import java.util.Queue;
 public class JoinIterable<T> implements Iterable<T> {
     private final Iterable<T>[] iterables;
 
+    @SafeVarargs
     public JoinIterable(Iterable<T>... iterables) {
         this.iterables = iterables;
     }
@@ -33,7 +34,7 @@ public class JoinIterable<T> implements Iterable<T> {
             };
         }
 
-        final Queue<Iterable<T>> iterables = new LinkedList<Iterable<T>>();
+        final Queue<Iterable<T>> iterables = new LinkedList<>();
         Collections.addAll(iterables, this.iterables);
         final IteratorWrapper it = new IteratorWrapper();
         it.iterator = iterables.remove().iterator();

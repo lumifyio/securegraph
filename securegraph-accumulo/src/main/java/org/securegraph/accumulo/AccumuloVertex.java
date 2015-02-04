@@ -4,6 +4,7 @@ import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.query.VertexQuery;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.JoinIterable;
@@ -17,7 +18,7 @@ import java.util.Map;
 import static org.securegraph.util.IterableUtils.count;
 import static org.securegraph.util.IterableUtils.toSet;
 
-public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
+public class AccumuloVertex extends AccumuloElement implements Vertex {
     public static final Text CF_SIGNAL = new Text("V");
     public static final Text CF_OUT_EDGE = new Text("EOUT");
     public static final Text CF_OUT_EDGE_HIDDEN = new Text("EOUTH");
@@ -31,6 +32,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
             String vertexId,
             Visibility vertexVisibility,
             Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
             Iterable<Visibility> hiddenVisibilities,
             Authorizations authorizations,
             long timestamp
@@ -40,6 +42,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
                 vertexId,
                 vertexVisibility,
                 properties,
+                propertyRemoveMutations,
                 hiddenVisibilities,
                 new HashMap<String, EdgeInfo>(),
                 new HashMap<String, EdgeInfo>(),
@@ -53,13 +56,14 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
             String vertexId,
             Visibility vertexVisibility,
             Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
             Iterable<Visibility> hiddenVisibilities,
             Map<String, EdgeInfo> inEdges,
             Map<String, EdgeInfo> outEdges,
             Authorizations authorizations,
             long timestamp
     ) {
-        super(graph, vertexId, vertexVisibility, properties, hiddenVisibilities, authorizations, timestamp);
+        super(graph, vertexId, vertexVisibility, properties, propertyRemoveMutations, hiddenVisibilities, authorizations, timestamp);
         this.inEdges = inEdges;
         this.outEdges = outEdges;
     }
@@ -161,7 +165,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
     @Override
     public Iterable<String> getEdgeLabels(Direction direction, Authorizations authorizations) {
-        return toSet(new ConvertingIterable<Map.Entry<String, EdgeInfo>, String>(getEdgeInfos(direction, authorizations)) {
+        return toSet(new ConvertingIterable<Map.Entry<String, EdgeInfo>, String>(getEdgeInfos(direction)) {
             @Override
             protected String convert(Map.Entry<String, EdgeInfo> o) {
                 return o.getValue().getLabel();
@@ -174,6 +178,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
         return getVertices(direction, FetchHint.ALL, authorizations);
     }
 
+    @SuppressWarnings("unused")
     public Iterable<String> getEdgeIdsWithOtherVertexId(final String otherVertexId, final Direction direction, final String[] labels, final Authorizations authorizations) {
         return new LookAheadIterable<Map.Entry<String, EdgeInfo>, String>() {
             @Override
@@ -202,12 +207,12 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
 
             @Override
             protected Iterator<Map.Entry<String, EdgeInfo>> createIterator() {
-                return getEdgeInfos(direction, authorizations).iterator();
+                return getEdgeInfos(direction).iterator();
             }
         };
     }
 
-    private Iterable<Map.Entry<String, EdgeInfo>> getEdgeInfos(Direction direction, Authorizations authorizations) {
+    private Iterable<Map.Entry<String, EdgeInfo>> getEdgeInfos(Direction direction) {
         switch (direction) {
             case IN:
                 return this.inEdges.entrySet();
@@ -259,7 +264,9 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     public Iterable<String> getVertexIds(Direction direction, String[] labels, Authorizations authorizations) {
         switch (direction) {
             case BOTH:
-                return new JoinIterable<>(getVertexIds(Direction.IN, labels, authorizations), getVertexIds(Direction.OUT, labels, authorizations));
+                Iterable<String> inVertexIds = getVertexIds(Direction.IN, labels, authorizations);
+                Iterable<String> outVertexIds = getVertexIds(Direction.OUT, labels, authorizations);
+                return new JoinIterable<>(inVertexIds, outVertexIds);
             case IN:
                 return new GetVertexIdsIterable(this.inEdges.values(), labels);
             case OUT:
@@ -296,6 +303,7 @@ public class AccumuloVertex extends AccumuloElement<Vertex> implements Vertex {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ExistingElementMutation<Vertex> prepareMutation() {
         return new ExistingElementMutationImpl<Vertex>(this) {
             @Override

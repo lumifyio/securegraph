@@ -60,9 +60,38 @@ public interface ElementMutation<T extends Element> {
     ElementMutation<T> addPropertyValue(String key, String name, Object value, Metadata metadata, Visibility visibility);
 
     /**
+     * Removes a property.
+     *
+     * @param property the property to remove.
+     */
+    ElementMutation<T> removeProperty(Property property);
+
+    /**
+     * Removes the default property with that name.
+     *
+     * @param name       the property name to remove.
+     * @param visibility the visibility of the property to remove.
+     */
+    ElementMutation<T> removeProperty(String name, Visibility visibility);
+
+    /**
+     * Removes a property.
+     *
+     * @param key        the key of the property to remove.
+     * @param name       the name of the property to remove.
+     * @param visibility the visibility of the property to remove.
+     */
+    ElementMutation<T> removeProperty(String key, String name, Visibility visibility);
+
+    /**
      * Gets the properties currently in this mutation.
      */
     Iterable<Property> getProperties();
+
+    /**
+     * Gets the properties currently being removed in this mutation.
+     */
+    Iterable<PropertyRemoveMutation> getPropertyRemoves();
 
     /**
      * Sets the index hint of this element.

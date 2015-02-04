@@ -4,10 +4,11 @@ import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.PropertyRemoveMutation;
 
 import java.util.EnumSet;
 
-public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
+public class AccumuloEdge extends AccumuloElement implements Edge {
     public static final Text CF_SIGNAL = new Text("E");
     public static final Text CF_OUT_VERTEX = new Text("EOUT");
     public static final Text CF_IN_VERTEX = new Text("EIN");
@@ -23,11 +24,12 @@ public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
             String label,
             Visibility visibility,
             Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
             Iterable<Visibility> hiddenVisibilities,
             Authorizations authorizations,
             long timestamp
     ) {
-        super(graph, id, visibility, properties, hiddenVisibilities, authorizations, timestamp);
+        super(graph, id, visibility, properties, propertyRemoveMutations, hiddenVisibilities, authorizations, timestamp);
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
         this.label = label;
@@ -81,6 +83,7 @@ public class AccumuloEdge extends AccumuloElement<Edge> implements Edge {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ExistingElementMutation<Edge> prepareMutation() {
         return new ExistingElementMutationImpl<Edge>(this) {
             @Override

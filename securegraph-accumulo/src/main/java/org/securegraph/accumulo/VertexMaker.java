@@ -13,9 +13,9 @@ public class VertexMaker extends ElementMaker<Vertex> {
     private static final String VISIBILITY_SIGNAL = AccumuloVertex.CF_SIGNAL.toString();
 
     private final AccumuloGraph graph;
-    private final Map<String, EdgeInfo> outEdges = new HashMap<String, EdgeInfo>();
-    private final Map<String, EdgeInfo> inEdges = new HashMap<String, EdgeInfo>();
-    private final Set<String> hiddenEdges = new HashSet<String>();
+    private final Map<String, EdgeInfo> outEdges = new HashMap<>();
+    private final Map<String, EdgeInfo> inEdges = new HashMap<>();
+    private final Set<String> hiddenEdges = new HashSet<>();
     private long timestamp;
 
     public VertexMaker(AccumuloGraph graph, Iterator<Map.Entry<Key, Value>> row, Authorizations authorizations) {
@@ -82,6 +82,7 @@ public class VertexMaker extends ElementMaker<Vertex> {
                 this.getId(),
                 this.getVisibility(),
                 this.getProperties(includeHidden),
+                null,
                 this.getHiddenVisibilities(),
                 this.inEdges,
                 this.outEdges,

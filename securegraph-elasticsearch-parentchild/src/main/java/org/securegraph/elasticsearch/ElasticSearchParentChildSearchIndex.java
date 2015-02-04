@@ -125,18 +125,26 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     @Override
-    public void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations) {
+    public void removeProperty(
+            Graph graph,
+            Element element,
+            String propertyKey,
+            String propertyName,
+            Visibility propertyVisibility,
+            Authorizations authorizations
+    ) {
+        String propertyString = propertyKey + ":" + propertyName + ":" + propertyVisibility.getVisibilityString();
         String indexName = getIndexName(element);
-        String id = getChildDocId(element, property);
+        String id = getChildDocId(element, propertyKey, propertyName, propertyVisibility);
         DeleteResponse deleteResponse = getClient().delete(
                 getClient()
                         .prepareDelete(indexName, PROPERTY_TYPE, id)
                         .request()
         ).actionGet();
         if (!deleteResponse.isFound()) {
-            LOGGER.warn("Could not remove property " + element.getId() + " " + property.toString());
+            LOGGER.warn("Could not remove property " + element.getId() + " " + propertyString);
         }
-        LOGGER.debug("deleted property " + element.getId() + " " + property.toString());
+        LOGGER.debug("deleted property " + element.getId() + " " + propertyString);
     }
 
     @Override
@@ -172,7 +180,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     @Override
-    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
+    public void addElements(Graph graph, Iterable<? extends Element> elements, Authorizations authorizations) {
         int totalCount = 0;
         Map<IndexInfo, BulkRequestWithCount> bulkRequests = new HashMap<>();
         for (Element element : elements) {
@@ -225,6 +233,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
         }
     }
 
+    @SuppressWarnings("unused")
     public IndexRequest getPropertyDocumentIndexRequest(Element element, Property property) throws IOException {
         String indexName = getIndexName(element);
         IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
@@ -247,9 +256,14 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
     }
 
     private String getChildDocId(Element element, Property property) {
-        return element.getId() + "_" + property.getName() + "_" + property.getKey();
+        return getChildDocId(element, property.getKey(), property.getName(), property.getVisibility());
     }
 
+    private String getChildDocId(Element element, String key, String name, Visibility visibility) {
+        return element.getId() + "_" + name + "_" + key;
+    }
+
+    @SuppressWarnings("unused")
     public IndexRequest getParentDocumentIndexRequest(Element element, Authorizations authorizations) throws IOException {
         String indexName = getIndexName(element);
         IndexInfo indexInfo = ensureIndexCreatedAndInitialized(indexName, getConfig().isStoreSourceData());
@@ -311,7 +325,7 @@ public class ElasticSearchParentChildSearchIndex extends ElasticSearchSearchInde
 
     private String[] getParentDocumentFields() {
         if (this.parentDocumentFields == null) {
-            List<String> fields = new ArrayList<String>();
+            List<String> fields = new ArrayList<>();
             fields.add(ElasticSearchSearchIndexBase.ELEMENT_TYPE_FIELD_NAME);
             fields.add(VISIBILITY_FIELD_NAME);
             fields.addAll(getConfig().getScoringStrategy().getFieldNames());

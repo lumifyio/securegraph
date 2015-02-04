@@ -4,6 +4,7 @@ import org.securegraph.*;
 import org.securegraph.inmemory.util.EdgeToEdgeIdIterable;
 import org.securegraph.mutation.ExistingElementMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.query.VertexQuery;
 import org.securegraph.util.ConvertingIterable;
 import org.securegraph.util.FilterIterable;
@@ -13,9 +14,17 @@ import java.util.EnumSet;
 import static org.securegraph.util.IterableUtils.count;
 import static org.securegraph.util.IterableUtils.toSet;
 
-public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
-    public InMemoryVertex(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
-        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
+public class InMemoryVertex extends InMemoryElement implements Vertex {
+    public InMemoryVertex(
+            Graph graph,
+            String id,
+            Visibility visibility,
+            Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
+            Iterable<Visibility> hiddenVisibilities,
+            Authorizations authorizations
+    ) {
+        super(graph, id, visibility, properties, propertyRemoveMutations, hiddenVisibilities, authorizations);
     }
 
     @Override
@@ -170,7 +179,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, authorizations)) {
             @Override
             protected Vertex convert(Edge edge) {
-                return getOtherVertexFromEdge(edge, fetchHints, authorizations);
+                return getOtherVertexFromEdge(edge, authorizations);
             }
         };
     }
@@ -195,7 +204,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
         return new ConvertingIterable<Edge, Vertex>(getEdges(direction, labels, authorizations)) {
             @Override
             protected Vertex convert(Edge edge) {
-                return getOtherVertexFromEdge(edge, fetchHints, authorizations);
+                return getOtherVertexFromEdge(edge, authorizations);
             }
         };
     }
@@ -230,7 +239,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
         };
     }
 
-    private Vertex getOtherVertexFromEdge(Edge edge, EnumSet<FetchHint> fetchHints, Authorizations authorizations) {
+    private Vertex getOtherVertexFromEdge(Edge edge, Authorizations authorizations) {
         if (edge.getVertexId(Direction.IN).equals(getId())) {
             return edge.getVertex(Direction.OUT, authorizations);
         }
@@ -251,6 +260,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ExistingElementMutation<Vertex> prepareMutation() {
         return new ExistingElementMutationImpl<Vertex>(this) {
             @Override
@@ -261,6 +271,7 @@ public class InMemoryVertex extends InMemoryElement<Vertex> implements Vertex {
         };
     }
 
+    @SuppressWarnings("unused")
     public static InMemoryVertex updateOrCreate(InMemoryGraph graph, InMemoryVertex existingVertex, InMemoryVertex newVertex, Authorizations authorizations) {
         if (existingVertex == null) {
             return newVertex;

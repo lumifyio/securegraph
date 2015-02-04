@@ -3,10 +3,9 @@ package org.securegraph.inmemory;
 import org.securegraph.*;
 import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
-import org.securegraph.id.UUIDIdGenerator;
 import org.securegraph.mutation.AlterPropertyVisibility;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.mutation.SetPropertyMetadata;
-import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.search.IndexHint;
 import org.securegraph.search.SearchIndex;
 import org.securegraph.util.ConvertingIterable;
@@ -21,11 +20,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
     private static final InMemoryGraphConfiguration DEFAULT_CONFIGURATION = new InMemoryGraphConfiguration(new HashMap());
     private final Map<String, InMemoryVertex> vertices;
     private final Map<String, InMemoryEdge> edges;
-    private final Map<String, Object> metadata = new HashMap<String, Object>();
-
-    protected InMemoryGraph() {
-        this(DEFAULT_CONFIGURATION, new UUIDIdGenerator(DEFAULT_CONFIGURATION), new DefaultSearchIndex(DEFAULT_CONFIGURATION));
-    }
+    private final Map<String, Object> metadata = new HashMap<>();
 
     protected InMemoryGraph(InMemoryGraphConfiguration configuration, IdGenerator idGenerator, SearchIndex searchIndex) {
         this(configuration, idGenerator, searchIndex, new HashMap<String, InMemoryVertex>(), new HashMap<String, InMemoryEdge>());
@@ -66,7 +61,7 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return new VertexBuilder(vertexId, visibility) {
             @Override
             public Vertex save(Authorizations authorizations) {
-                InMemoryVertex newVertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), getProperties(), null, authorizations);
+                InMemoryVertex newVertex = new InMemoryVertex(InMemoryGraph.this, getVertexId(), getVisibility(), getProperties(), getPropertyRemoves(), null, authorizations);
 
                 // to more closely simulate how accumulo works. add a potentially sparse (in case of an update) vertex to the search index.
                 if (getIndexHint() != IndexHint.DO_NOT_INDEX) {
@@ -81,6 +76,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
                     fireGraphEvent(new AddVertexEvent(InMemoryGraph.this, vertex));
                     for (Property property : getProperties()) {
                         fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, vertex, property));
+                    }
+                    for (PropertyRemoveMutation propertyRemoveMutation : getPropertyRemoves()) {
+                        fireGraphEvent(new RemovePropertyEvent(InMemoryGraph.this, vertex, propertyRemoveMutation));
                     }
                 }
 
@@ -184,9 +182,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
 
         if (element instanceof Vertex) {
-            this.vertices.get(element.getId()).markPropertyHiddenInternal(property, visibility, authorizations);
+            this.vertices.get(element.getId()).markPropertyHiddenInternal(property, visibility);
         } else if (element instanceof Edge) {
-            this.edges.get(element.getId()).markPropertyHiddenInternal(property, visibility, authorizations);
+            this.edges.get(element.getId()).markPropertyHiddenInternal(property, visibility);
         }
 
         if (hasEventListeners()) {
@@ -200,9 +198,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
 
         if (element instanceof Vertex) {
-            this.vertices.get(element.getId()).markPropertyVisibleInternal(property, visibility, authorizations);
+            this.vertices.get(element.getId()).markPropertyVisibleInternal(property, visibility);
         } else if (element instanceof Edge) {
-            this.edges.get(element.getId()).markPropertyVisibleInternal(property, visibility, authorizations);
+            this.edges.get(element.getId()).markPropertyVisibleInternal(property, visibility);
         }
 
         if (hasEventListeners()) {
@@ -259,7 +257,18 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             hiddenVisibilities = ((InMemoryEdge) existingEdge).getHiddenVisibilities();
         }
 
-        InMemoryEdge edge = new InMemoryEdge(InMemoryGraph.this, edgeBuilder.getEdgeId(), outVertexId, inVertexId, edgeBuilder.getLabel(), edgeBuilder.getVisibility(), properties, hiddenVisibilities, authorizations);
+        InMemoryEdge edge = new InMemoryEdge(
+                InMemoryGraph.this,
+                edgeBuilder.getEdgeId(),
+                outVertexId,
+                inVertexId,
+                edgeBuilder.getLabel(),
+                edgeBuilder.getVisibility(),
+                properties,
+                edgeBuilder.getPropertyRemoves(),
+                hiddenVisibilities,
+                authorizations
+        );
         edges.put(edgeBuilder.getEdgeId(), edge);
 
         if (edgeBuilder.getIndexHint() != IndexHint.DO_NOT_INDEX) {
@@ -270,6 +279,9 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             fireGraphEvent(new AddEdgeEvent(InMemoryGraph.this, edge));
             for (Property property : edgeBuilder.getProperties()) {
                 fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, edge, property));
+            }
+            for (PropertyRemoveMutation propertyRemoveMutation : edgeBuilder.getPropertyRemoves()) {
+                fireGraphEvent(new RemovePropertyEvent(InMemoryGraph.this, edge, propertyRemoveMutation));
             }
         }
 
@@ -429,19 +441,50 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return authorizations.canRead(visibility);
     }
 
-    public void saveProperties(Element element, Iterable<Property> properties, IndexHint indexHint, Authorizations authorizations) {
+    public void saveProperties(
+            Element element,
+            Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoves,
+            IndexHint indexHint,
+            Authorizations authorizations
+    ) {
         if (element instanceof Vertex) {
             InMemoryVertex vertex = vertices.get(element.getId());
-            vertex.updatePropertiesInternal(properties);
+            vertex.updatePropertiesInternal(properties, propertyRemoves);
         } else if (element instanceof Edge) {
             InMemoryEdge edge = edges.get(element.getId());
-            edge.updatePropertiesInternal(properties);
+            edge.updatePropertiesInternal(properties, propertyRemoves);
         } else {
             throw new IllegalArgumentException("Unexpected element type: " + element.getClass().getName());
         }
 
         if (indexHint != IndexHint.DO_NOT_INDEX) {
+            for (PropertyRemoveMutation propertyRemoveMutation : propertyRemoves) {
+                getSearchIndex().removeProperty(
+                        this,
+                        element,
+                        propertyRemoveMutation.getKey(),
+                        propertyRemoveMutation.getName(),
+                        propertyRemoveMutation.getVisibility(),
+                        authorizations
+                );
+            }
             getSearchIndex().addElement(this, element, authorizations);
+        }
+
+        if (hasEventListeners()) {
+            InMemoryElement inMemoryElement;
+            if (element instanceof Vertex) {
+                inMemoryElement = vertices.get(element.getId());
+            } else {
+                inMemoryElement = edges.get(element.getId());
+            }
+            for (Property property : properties) {
+                fireGraphEvent(new AddPropertyEvent(InMemoryGraph.this, inMemoryElement, property));
+            }
+            for (PropertyRemoveMutation propertyRemoveMutation : propertyRemoves) {
+                fireGraphEvent(new RemovePropertyEvent(InMemoryGraph.this, inMemoryElement, propertyRemoveMutation));
+            }
         }
     }
 
@@ -469,19 +512,19 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         String label = edge.getLabel();
         Visibility visibility = edge.getVisibility();
         Iterable<Visibility> hiddenVisibilities = edge.getHiddenVisibilities();
-        List<Property> properties = filterProperties(edge, edge.getProperties(), includeHidden, authorizations);
-        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, hiddenVisibilities, authorizations);
+        List<Property> properties = filterProperties(edge.getProperties(), includeHidden, authorizations);
+        return new InMemoryEdge(this, edgeId, outVertexId, inVertexId, label, visibility, properties, edge.getPropertyRemoveMutations(), hiddenVisibilities, authorizations);
     }
 
     private Vertex filteredVertex(InMemoryVertex vertex, boolean includeHidden, Authorizations authorizations) {
         String vertexId = vertex.getId();
         Visibility visibility = vertex.getVisibility();
         Iterable<Visibility> hiddenVisibilities = vertex.getHiddenVisibilities();
-        List<Property> properties = filterProperties(vertex, vertex.getProperties(), includeHidden, authorizations);
-        return new InMemoryVertex(this, vertexId, visibility, properties, hiddenVisibilities, authorizations);
+        List<Property> properties = filterProperties(vertex.getProperties(), includeHidden, authorizations);
+        return new InMemoryVertex(this, vertexId, visibility, properties, vertex.getPropertyRemoveMutations(), hiddenVisibilities, authorizations);
     }
 
-    private List<Property> filterProperties(InMemoryElement element, Iterable<Property> properties, boolean includeHidden, Authorizations authorizations) {
+    private List<Property> filterProperties(Iterable<Property> properties, boolean includeHidden, Authorizations authorizations) {
         List<Property> filteredProperties = new ArrayList<>();
         for (Property p : properties) {
             if (canRead(p.getVisibility(), authorizations) && (includeHidden || !p.isHidden(authorizations))) {
@@ -491,10 +534,12 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         return filteredProperties;
     }
 
+    @SuppressWarnings("unused")
     public Map<String, InMemoryVertex> getAllVertices() {
         return this.vertices;
     }
 
+    @SuppressWarnings("unused")
     public Map<String, InMemoryEdge> getAllEdges() {
         return this.edges;
     }

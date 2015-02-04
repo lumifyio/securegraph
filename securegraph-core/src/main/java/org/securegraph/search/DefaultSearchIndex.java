@@ -10,8 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DefaultSearchIndex implements SearchIndex {
-    private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<String, PropertyDefinition>();
+    private Map<String, PropertyDefinition> propertyDefinitions = new HashMap<>();
 
+    @SuppressWarnings("unused")
     public DefaultSearchIndex(GraphConfiguration configuration) {
 
     }
@@ -32,7 +33,12 @@ public class DefaultSearchIndex implements SearchIndex {
     }
 
     @Override
-    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
+    public void removeProperty(Graph graph, Element element, String propertyKey, String propertyName, Visibility propertyVisibility, Authorizations authorizations) {
+
+    }
+
+    @Override
+    public void addElements(Graph graph, Iterable<? extends Element> elements, Authorizations authorizations) {
         for (Element element : elements) {
             addElement(graph, element, authorizations);
         }

@@ -7,6 +7,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.accumulo.serializer.ValueSerializer;
+import org.securegraph.mutation.PropertyPropertyRemoveMutation;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.util.LimitOutputStream;
 import org.securegraph.util.StreamUtils;
@@ -46,6 +48,9 @@ public abstract class ElementMutationBuilder {
         String vertexRowKey = AccumuloConstants.VERTEX_ROW_KEY_PREFIX + vertex.getId();
         Mutation m = new Mutation(vertexRowKey);
         m.put(AccumuloVertex.CF_SIGNAL, EMPTY_TEXT, visibilityToAccumuloVisibility(vertex.getVisibility()), EMPTY_VALUE);
+        for (PropertyRemoveMutation propertyRemoveMutation : vertex.getPropertyRemoveMutations()) {
+            addPropertyRemoveToMutation(m, propertyRemoveMutation);
+        }
         for (Property property : vertex.getProperties()) {
             addPropertyToMutation(m, vertexRowKey, property);
         }
@@ -78,14 +83,17 @@ public abstract class ElementMutationBuilder {
 
     private Mutation createMutationForEdge(AccumuloEdge edge, ColumnVisibility edgeColumnVisibility) {
         String edgeRowKey = AccumuloConstants.EDGE_ROW_KEY_PREFIX + edge.getId();
-        Mutation addEdgeMutation = new Mutation(edgeRowKey);
-        addEdgeMutation.put(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
-        addEdgeMutation.put(AccumuloEdge.CF_OUT_VERTEX, new Text(edge.getVertexId(Direction.OUT)), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
-        addEdgeMutation.put(AccumuloEdge.CF_IN_VERTEX, new Text(edge.getVertexId(Direction.IN)), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
-        for (Property property : edge.getProperties()) {
-            addPropertyToMutation(addEdgeMutation, edgeRowKey, property);
+        Mutation m = new Mutation(edgeRowKey);
+        m.put(AccumuloEdge.CF_SIGNAL, new Text(edge.getLabel()), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+        m.put(AccumuloEdge.CF_OUT_VERTEX, new Text(edge.getVertexId(Direction.OUT)), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+        m.put(AccumuloEdge.CF_IN_VERTEX, new Text(edge.getVertexId(Direction.IN)), edgeColumnVisibility, ElementMutationBuilder.EMPTY_VALUE);
+        for (PropertyRemoveMutation propertyRemoveMutation : edge.getPropertyRemoveMutations()) {
+            addPropertyRemoveToMutation(m, propertyRemoveMutation);
         }
-        return addEdgeMutation;
+        for (Property property : edge.getProperties()) {
+            addPropertyToMutation(m, edgeRowKey, property);
+        }
+        return m;
     }
 
     public boolean alterElementVisibility(Mutation m, AccumuloElement element, Visibility newVisibility) {
@@ -153,6 +161,17 @@ public abstract class ElementMutationBuilder {
         addPropertyMetadataToMutation(m, property);
     }
 
+    public void addPropertyRemoveToMutation(Mutation m, PropertyRemoveMutation propertyRemove) {
+        Text columnQualifier = getPropertyColumnQualifier(propertyRemove);
+        ColumnVisibility columnVisibility = visibilityToAccumuloVisibility(propertyRemove.getVisibility());
+        m.putDelete(AccumuloElement.CF_PROPERTY, columnQualifier, columnVisibility);
+        addPropertyRemoveMetadataToMutation(m, propertyRemove);
+    }
+
+    static Text getPropertyColumnQualifier(PropertyRemoveMutation propertyRemove) {
+        return new Text(propertyRemove.getName() + VALUE_SEPARATOR + propertyRemove.getKey());
+    }
+
     static Text getPropertyColumnQualifier(Property property) {
         return new Text(property.getName() + VALUE_SEPARATOR + property.getKey());
     }
@@ -175,6 +194,18 @@ public abstract class ElementMutationBuilder {
             } else {
                 Value metadataValue = new Value(valueSerializer.objectToValue(metadataItem.getValue()));
                 m.put(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, metadataVisibility, metadataValue);
+            }
+        }
+    }
+
+    public void addPropertyRemoveMetadataToMutation(Mutation m, PropertyRemoveMutation propertyRemoveMutation) {
+        if (propertyRemoveMutation instanceof PropertyPropertyRemoveMutation) {
+            Property property = ((PropertyPropertyRemoveMutation) propertyRemoveMutation).getProperty();
+            Metadata metadata = property.getMetadata();
+            for (Metadata.Entry metadataItem : metadata.entrySet()) {
+                Text columnQualifier = getPropertyMetadataColumnQualifier(property, metadataItem.getKey());
+                ColumnVisibility metadataVisibility = visibilityToAccumuloVisibility(metadataItem.getVisibility());
+                m.putDelete(AccumuloElement.CF_PROPERTY_METADATA, columnQualifier, metadataVisibility);
             }
         }
     }

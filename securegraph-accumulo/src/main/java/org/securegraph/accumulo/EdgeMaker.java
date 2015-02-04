@@ -67,6 +67,7 @@ public class EdgeMaker extends ElementMaker<Edge> {
                 this.label,
                 this.getVisibility(),
                 this.getProperties(includeHidden),
+                null,
                 this.getHiddenVisibilities(),
                 this.getAuthorizations(),
                 this.timestamp

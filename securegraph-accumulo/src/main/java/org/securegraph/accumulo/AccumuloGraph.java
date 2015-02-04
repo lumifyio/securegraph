@@ -17,6 +17,7 @@ import org.securegraph.accumulo.serializer.ValueSerializer;
 import org.securegraph.event.*;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.mutation.AlterPropertyVisibility;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.mutation.SetPropertyMetadata;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
@@ -216,6 +217,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                         getVertexId(),
                         getVisibility(),
                         getProperties(),
+                        getPropertyRemoves(),
                         null,
                         authorizations,
                         System.currentTimeMillis()
@@ -232,6 +234,9 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                     for (Property property : getProperties()) {
                         queueEvent(new AddPropertyEvent(AccumuloGraph.this, vertex, property));
                     }
+                    for (PropertyRemoveMutation propertyRemoveMutation : getPropertyRemoves()) {
+                        queueEvent(new RemovePropertyEvent(AccumuloGraph.this, vertex, propertyRemoveMutation));
+                    }
                 }
 
                 return vertex;
@@ -245,12 +250,16 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
-    void saveProperties(AccumuloElement element, Iterable<Property> properties, IndexHint indexHint, Authorizations authorizations) {
+    void saveProperties(AccumuloElement element, Iterable<Property> properties, Iterable<PropertyRemoveMutation> propertyRemoves, IndexHint indexHint, Authorizations authorizations) {
         String rowPrefix = getRowPrefixForElement(element);
 
         String elementRowKey = rowPrefix + element.getId();
         Mutation m = new Mutation(elementRowKey);
         boolean hasProperty = false;
+        for (PropertyRemoveMutation propertyRemove : propertyRemoves) {
+            hasProperty = true;
+            elementMutationBuilder.addPropertyRemoveToMutation(m, propertyRemove);
+        }
         for (Property property : properties) {
             hasProperty = true;
             elementMutationBuilder.addPropertyToMutation(m, elementRowKey, property);
@@ -260,7 +269,26 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
 
         if (indexHint != IndexHint.DO_NOT_INDEX) {
+            for (PropertyRemoveMutation propertyRemoveMutation : propertyRemoves) {
+                getSearchIndex().removeProperty(
+                        this,
+                        element,
+                        propertyRemoveMutation.getKey(),
+                        propertyRemoveMutation.getName(),
+                        propertyRemoveMutation.getVisibility(),
+                        authorizations
+                );
+            }
             getSearchIndex().addElement(this, element, authorizations);
+        }
+
+        if (hasEventListeners()) {
+            for (Property property : properties) {
+                queueEvent(new AddPropertyEvent(AccumuloGraph.this, element, property));
+            }
+            for (PropertyRemoveMutation propertyRemoveMutation : propertyRemoves) {
+                queueEvent(new RemovePropertyEvent(AccumuloGraph.this, element, propertyRemoveMutation));
+            }
         }
     }
 
@@ -502,6 +530,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 edgeBuilder.getLabel(),
                 edgeBuilder.getVisibility(),
                 edgeBuilder.getProperties(),
+                edgeBuilder.getPropertyRemoves(),
                 null,
                 authorizations,
                 System.currentTimeMillis()
@@ -520,6 +549,9 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
             queueEvent(new AddEdgeEvent(AccumuloGraph.this, edge));
             for (Property property : edgeBuilder.getProperties()) {
                 queueEvent(new AddPropertyEvent(AccumuloGraph.this, edge, property));
+            }
+            for (PropertyRemoveMutation propertyRemoveMutation : edgeBuilder.getPropertyRemoves()) {
+                queueEvent(new RemovePropertyEvent(AccumuloGraph.this, edge, propertyRemoveMutation));
             }
         }
 
@@ -635,6 +667,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    @SuppressWarnings("unused")
     public void markPropertyHidden(AccumuloElement element, Property property, Visibility visibility, Authorizations authorizations) {
         checkNotNull(element);
 
@@ -658,6 +691,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         return m;
     }
 
+    @SuppressWarnings("unused")
     public void markPropertyVisible(AccumuloElement element, Property property, Visibility visibility, Authorizations authorizations) {
         checkNotNull(element);
 
@@ -1129,6 +1163,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         };
     }
 
+    @SuppressWarnings("unused")
     private void printTable(Authorizations authorizations) {
         String[] tables = new String[]{getEdgesTableName(), getVerticesTableName(), getDataTableName()};
         System.out.println("---------------------------------------------- BEGIN printTable ----------------------------------------------");
@@ -1348,7 +1383,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         Set<String> vertexIdsSet = toSet(vertexIds);
 
         if (vertexIdsSet.size() == 0) {
-            return new HashSet<String>();
+            return new HashSet<>();
         }
 
         List<Range> ranges = new ArrayList<>();

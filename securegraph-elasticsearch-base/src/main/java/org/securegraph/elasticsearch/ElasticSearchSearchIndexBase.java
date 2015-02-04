@@ -154,6 +154,7 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         }
     }
 
+    @SuppressWarnings("unused")
     protected void createIndex(String indexName, boolean storeSourceData) throws IOException {
         CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).execute().actionGet();
         LOGGER.debug(createResponse.toString());
@@ -300,11 +301,16 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
 
     @Override
     public void removeProperty(Graph graph, Element element, Property property, Authorizations authorizations) {
+        removeProperty(graph, element, property.getKey(), property.getName(), property.getVisibility(), authorizations);
+    }
+
+    @Override
+    public void removeProperty(Graph graph, Element element, String propertyKey, String propertyName, Visibility propertyVisibility, Authorizations authorizations) {
         addElement(graph, element, authorizations);
     }
 
     @Override
-    public void addElements(Graph graph, Iterable<Element> elements, Authorizations authorizations) {
+    public void addElements(Graph graph, Iterable<? extends Element> elements, Authorizations authorizations) {
         // TODO change this to use elastic search bulk import
         int count = 0;
         for (Element element : elements) {
@@ -379,12 +385,14 @@ public abstract class ElasticSearchSearchIndexBase implements SearchIndex {
         }
     }
 
+    @SuppressWarnings("unused")
     protected Iterable<String> getIndexNames(PropertyDefinition propertyDefinition) {
         List<String> indexNames = new ArrayList<>();
         indexNames.add(getConfig().getDefaultIndexName());
         return indexNames;
     }
 
+    @SuppressWarnings("unused")
     protected String getIndexName(Element element) {
         return getConfig().getDefaultIndexName();
     }

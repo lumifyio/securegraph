@@ -1,6 +1,9 @@
 package org.securegraph;
 
 import org.securegraph.mutation.ElementMutation;
+import org.securegraph.mutation.KeyNameVisibilityPropertyRemoveMutation;
+import org.securegraph.mutation.PropertyPropertyRemoveMutation;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.property.MutablePropertyImpl;
 import org.securegraph.search.IndexHint;
 
@@ -10,7 +13,8 @@ import java.util.List;
 import static org.securegraph.util.Preconditions.checkNotNull;
 
 public abstract class ElementBuilder<T extends Element> implements ElementMutation<T> {
-    private final List<Property> properties = new ArrayList<Property>();
+    private final List<Property> properties = new ArrayList<>();
+    private final List<PropertyRemoveMutation> propertyRemoves = new ArrayList<>();
     private IndexHint indexHint = IndexHint.INDEX;
 
     /**
@@ -82,6 +86,21 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
         return this;
     }
 
+    public ElementBuilder<T> removeProperty(Property property) {
+        propertyRemoves.add(new PropertyPropertyRemoveMutation(property));
+        return this;
+    }
+
+    public ElementBuilder<T> removeProperty(String name, Visibility visibility) {
+        return removeProperty(ElementMutation.DEFAULT_KEY, name, visibility);
+    }
+
+    public ElementBuilder<T> removeProperty(String key, String name, Visibility visibility) {
+        checkNotNull(name, "property name cannot be null for property: " + name + ":" + key);
+        propertyRemoves.add(new KeyNameVisibilityPropertyRemoveMutation(key, name, visibility));
+        return this;
+    }
+
     /**
      * saves the element to the graph.
      *
@@ -91,6 +110,10 @@ public abstract class ElementBuilder<T extends Element> implements ElementMutati
 
     public Iterable<Property> getProperties() {
         return properties;
+    }
+
+    public Iterable<PropertyRemoveMutation> getPropertyRemoves() {
+        return propertyRemoves;
     }
 
     public IndexHint getIndexHint() {

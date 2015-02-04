@@ -4,10 +4,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.PropertyRemoveMutation;
 
 import java.io.Serializable;
 
-public abstract class AccumuloElement<T extends Element> extends ElementBase<T> implements Serializable, HasTimestamp {
+public abstract class AccumuloElement extends ElementBase implements Serializable, HasTimestamp {
     private static final long serialVersionUID = 1L;
     public static final Text CF_HIDDEN = new Text("H");
     public static final Text CQ_HIDDEN = new Text("H");
@@ -22,11 +23,12 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
             String id,
             Visibility visibility,
             Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
             Iterable<Visibility> hiddenVisibilities,
             Authorizations authorizations,
             long timestamp
     ) {
-        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
+        super(graph, id, visibility, properties, propertyRemoveMutations, hiddenVisibilities, authorizations);
         this.timestamp = timestamp;
     }
 
@@ -70,9 +72,10 @@ public abstract class AccumuloElement<T extends Element> extends ElementBase<T> 
         // altering properties comes next because alterElementVisibility may alter the vertex and we won't find it
         getGraph().alterElementPropertyVisibilities((AccumuloElement) mutation.getElement(), mutation.getAlterPropertyVisibilities());
 
+        Iterable<PropertyRemoveMutation> propertyRemoves = mutation.getPropertyRemoves();
         Iterable<Property> properties = mutation.getProperties();
-        updatePropertiesInternal(properties);
-        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties, mutation.getIndexHint(), authorizations);
+        updatePropertiesInternal(properties, propertyRemoves);
+        getGraph().saveProperties((AccumuloElement) mutation.getElement(), properties, propertyRemoves, mutation.getIndexHint(), authorizations);
 
         if (mutation.getNewElementVisibility() != null) {
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());

@@ -1,5 +1,9 @@
 package org.securegraph.inmemory;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.securegraph.Authorizations;
 import org.securegraph.Graph;
 import org.securegraph.GraphConfiguration;
@@ -7,10 +11,6 @@ import org.securegraph.GraphFactory;
 import org.securegraph.id.UUIDIdGenerator;
 import org.securegraph.search.DefaultSearchIndex;
 import org.securegraph.test.GraphTestBase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class InMemoryGraphTest extends GraphTestBase {
     @Override
     protected Graph createGraph() {
-        Map config = new HashMap();
+        Map<String, String> config = new HashMap<>();
         config.put("", InMemoryGraph.class.getName());
         config.put(GraphConfiguration.IDGENERATOR_PROP_PREFIX, UUIDIdGenerator.class.getName());
         config.put(GraphConfiguration.SEARCH_INDEX_PROP_PREFIX, DefaultSearchIndex.class.getName());

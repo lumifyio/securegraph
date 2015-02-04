@@ -87,6 +87,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
                         getVertexId(),
                         getVisibility(),
                         getProperties(),
+                        getPropertyRemoves(),
                         null,
                         authorizations,
                         System.currentTimeMillis()
@@ -117,6 +118,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
                         getLabel(),
                         getVisibility(),
                         getProperties(),
+                        getPropertyRemoves(),
                         null,
                         authorizations,
                         System.currentTimeMillis()
@@ -143,6 +145,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
                         getLabel(),
                         getVisibility(),
                         getProperties(),
+                        getPropertyRemoves(),
                         null,
                         authorizations,
                         System.currentTimeMillis()

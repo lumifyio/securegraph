@@ -2,15 +2,24 @@ package org.securegraph.inmemory;
 
 import org.securegraph.*;
 import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.property.MutableProperty;
 import org.securegraph.property.StreamingPropertyValue;
 import org.securegraph.util.StreamUtils;
 
 import java.io.IOException;
 
-public abstract class InMemoryElement<T extends Element> extends ElementBase<T> {
-    protected InMemoryElement(Graph graph, String id, Visibility visibility, Iterable<Property> properties, Iterable<Visibility> hiddenVisibilities, Authorizations authorizations) {
-        super(graph, id, visibility, properties, hiddenVisibilities, authorizations);
+public abstract class InMemoryElement extends ElementBase {
+    protected InMemoryElement(
+            Graph graph,
+            String id,
+            Visibility visibility,
+            Iterable<Property> properties,
+            Iterable<PropertyRemoveMutation> propertyRemoveMutations,
+            Iterable<Visibility> hiddenVisibilities,
+            Authorizations authorizations
+    ) {
+        super(graph, id, visibility, properties, propertyRemoveMutations, hiddenVisibilities, authorizations);
     }
 
     @Override
@@ -45,7 +54,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     @Override
-    protected void updatePropertiesInternal(Iterable<Property> properties) {
+    protected void updatePropertiesInternal(Iterable<Property> properties, Iterable<PropertyRemoveMutation> propertyRemoveMutations) {
         try {
             for (Property property : properties) {
                 if (property.getValue() instanceof StreamingPropertyValue) {
@@ -54,7 +63,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
                     ((MutableProperty) property).setValue(new InMemoryStreamingPropertyValue(valueData, value.getValueType()));
                 }
             }
-            super.updatePropertiesInternal(properties);
+            super.updatePropertiesInternal(properties, propertyRemoveMutations);
         } catch (IOException ex) {
             throw new SecureGraphException(ex);
         }
@@ -72,8 +81,9 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
 
     protected <TElement extends Element> void saveExistingElementMutation(ExistingElementMutationImpl<TElement> mutation, Authorizations authorizations) {
         Iterable<Property> properties = mutation.getProperties();
-        updatePropertiesInternal(properties);
-        getGraph().saveProperties(mutation.getElement(), properties, mutation.getIndexHint(), authorizations);
+        Iterable<PropertyRemoveMutation> propertyRemoves = mutation.getPropertyRemoves();
+        updatePropertiesInternal(properties, propertyRemoves);
+        getGraph().saveProperties(mutation.getElement(), properties, propertyRemoves, mutation.getIndexHint(), authorizations);
 
         if (mutation.getElement() instanceof Edge) {
             if (mutation.getNewElementVisibility() != null) {
@@ -113,7 +123,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         return true;
     }
 
-    void markPropertyHiddenInternal(Property property, Visibility visibility, Authorizations authorizations) {
+    void markPropertyHiddenInternal(Property property, Visibility visibility) {
         if (property instanceof MutableProperty) {
             ((MutableProperty) property).addHiddenVisibility(visibility);
         } else {
@@ -121,7 +131,7 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
         }
     }
 
-    void markPropertyVisibleInternal(Property property, Visibility visibility, Authorizations authorizations) {
+    void markPropertyVisibleInternal(Property property, Visibility visibility) {
         if (property instanceof MutableProperty) {
             ((MutableProperty) property).removeHiddenVisibility(visibility);
         } else {
@@ -130,6 +140,6 @@ public abstract class InMemoryElement<T extends Element> extends ElementBase<T> 
     }
 
     protected void updateExisting(InMemoryVertex newVertex) {
-        updatePropertiesInternal(newVertex.getProperties());
+        updatePropertiesInternal(newVertex.getProperties(), newVertex.getPropertyRemoveMutations());
     }
 }
