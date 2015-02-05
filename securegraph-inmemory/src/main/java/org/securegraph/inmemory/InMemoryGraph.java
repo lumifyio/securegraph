@@ -257,12 +257,17 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
             hiddenVisibilities = ((InMemoryEdge) existingEdge).getHiddenVisibilities();
         }
 
+        String edgeLabel = edgeBuilder.getNewEdgeLabel();
+        if (edgeLabel == null) {
+            edgeLabel = edgeBuilder.getLabel();
+        }
+
         InMemoryEdge edge = new InMemoryEdge(
                 InMemoryGraph.this,
                 edgeBuilder.getEdgeId(),
                 outVertexId,
                 inVertexId,
-                edgeBuilder.getLabel(),
+                edgeLabel,
                 edgeBuilder.getVisibility(),
                 properties,
                 edgeBuilder.getPropertyRemoves(),
@@ -603,5 +608,13 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         this.vertices.clear();
         this.edges.clear();
         getSearchIndex().clearData();
+    }
+
+    public void alterEdgeLabel(String edgeId, String newEdgeLabel) {
+        InMemoryEdge edge = this.edges.get(edgeId);
+        if (edge == null) {
+            throw new SecureGraphException("Could not find edge " + edgeId);
+        }
+        edge.setLabel(newEdgeLabel);
     }
 }

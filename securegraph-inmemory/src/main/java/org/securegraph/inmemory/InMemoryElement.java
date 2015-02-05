@@ -1,6 +1,7 @@
 package org.securegraph.inmemory;
 
 import org.securegraph.*;
+import org.securegraph.mutation.EdgeMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
 import org.securegraph.mutation.PropertyRemoveMutation;
 import org.securegraph.property.MutableProperty;
@@ -91,6 +92,10 @@ public abstract class InMemoryElement extends ElementBase {
             }
             getGraph().alterEdgePropertyVisibilities(mutation.getElement().getId(), mutation.getAlterPropertyVisibilities(), authorizations);
             getGraph().alterEdgePropertyMetadata(mutation.getElement().getId(), mutation.getSetPropertyMetadatas());
+            if(mutation instanceof EdgeMutation) {
+                EdgeMutation edgeMutation = (EdgeMutation) mutation;
+                getGraph().alterEdgeLabel(mutation.getElement().getId(), edgeMutation.getNewEdgeLabel());
+            }
         } else if (mutation.getElement() instanceof Vertex) {
             if (mutation.getNewElementVisibility() != null) {
                 getGraph().alterVertexVisibility(mutation.getElement().getId(), mutation.getNewElementVisibility());

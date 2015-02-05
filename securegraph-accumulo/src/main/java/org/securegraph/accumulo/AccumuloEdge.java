@@ -2,8 +2,7 @@ package org.securegraph.accumulo;
 
 import org.apache.hadoop.io.Text;
 import org.securegraph.*;
-import org.securegraph.mutation.ExistingElementMutation;
-import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.ExistingEdgeMutation;
 import org.securegraph.mutation.PropertyRemoveMutation;
 
 import java.util.EnumSet;
@@ -15,6 +14,7 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
     private final String outVertexId;
     private final String inVertexId;
     private final String label;
+    private final String newEdgeLabel;
 
     public AccumuloEdge(
             Graph graph,
@@ -22,6 +22,7 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
             String outVertexId,
             String inVertexId,
             String label,
+            String newEdgeLabel,
             Visibility visibility,
             Iterable<Property> properties,
             Iterable<PropertyRemoveMutation> propertyRemoveMutations,
@@ -33,6 +34,11 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
         this.outVertexId = outVertexId;
         this.inVertexId = inVertexId;
         this.label = label;
+        this.newEdgeLabel = newEdgeLabel;
+    }
+
+    String getNewEdgeLabel() {
+        return newEdgeLabel;
     }
 
     @Override
@@ -84,8 +90,8 @@ public class AccumuloEdge extends AccumuloElement implements Edge {
 
     @Override
     @SuppressWarnings("unchecked")
-    public ExistingElementMutation<Edge> prepareMutation() {
-        return new ExistingElementMutationImpl<Edge>(this) {
+    public ExistingEdgeMutation prepareMutation() {
+        return new ExistingEdgeMutation(this) {
             @Override
             public Edge save(Authorizations authorizations) {
                 saveExistingElementMutation(this, authorizations);

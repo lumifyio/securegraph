@@ -1,9 +1,12 @@
 package org.securegraph;
 
-public abstract class EdgeBuilderBase extends ElementBuilder<Edge> {
+import org.securegraph.mutation.EdgeMutation;
+
+public abstract class EdgeBuilderBase extends ElementBuilder<Edge> implements EdgeMutation {
     private final String edgeId;
     private final String label;
     private final Visibility visibility;
+    private String newEdgeLabel;
 
     protected EdgeBuilderBase(String edgeId, String label, Visibility visibility) {
         this.edgeId = edgeId;
@@ -21,6 +24,17 @@ public abstract class EdgeBuilderBase extends ElementBuilder<Edge> {
 
     public Visibility getVisibility() {
         return visibility;
+    }
+
+    @Override
+    public EdgeMutation alterEdgeLabel(String newEdgeLabel) {
+        this.newEdgeLabel = newEdgeLabel;
+        return this;
+    }
+
+    @Override
+    public String getNewEdgeLabel() {
+        return newEdgeLabel;
     }
 
     /**

@@ -74,6 +74,10 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
 
     protected abstract void saveVertexMutation(Context context, Text verticesTableName, Mutation m) throws IOException, InterruptedException;
 
+    public VertexBuilder prepareVertex(Vertex vertex) {
+        return prepareVertex(vertex.getId(), vertex.getVisibility());
+    }
+
     public VertexBuilder prepareVertex(String vertexId, Visibility visibility) {
         if (vertexId == null) {
             vertexId = getIdGenerator().nextId();
@@ -102,6 +106,16 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
         return prepareEdge(edgeId, outVertex, inVertex, label, visibility).save(authorizations);
     }
 
+    public EdgeBuilderByVertexId prepareEdge(Edge edge) {
+        return prepareEdge(
+                edge.getId(),
+                edge.getVertexId(Direction.OUT),
+                edge.getVertexId(Direction.IN),
+                edge.getLabel(),
+                edge.getVisibility()
+        );
+    }
+
     public EdgeBuilderByVertexId prepareEdge(String edgeId, String outVertexId, String inVertexId, String label, Visibility visibility) {
         if (edgeId == null) {
             edgeId = getIdGenerator().nextId();
@@ -116,6 +130,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
                         getOutVertexId(),
                         getInVertexId(),
                         getLabel(),
+                        getNewEdgeLabel(),
                         getVisibility(),
                         getProperties(),
                         getPropertyRemoves(),
@@ -143,6 +158,7 @@ public abstract class ElementMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Ma
                         getOutVertex().getId(),
                         getInVertex().getId(),
                         getLabel(),
+                        getNewEdgeLabel(),
                         getVisibility(),
                         getProperties(),
                         getPropertyRemoves(),

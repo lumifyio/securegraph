@@ -1,5 +1,6 @@
 package org.securegraph;
 
+import org.securegraph.mutation.ExistingEdgeMutation;
 import org.securegraph.mutation.ExistingElementMutation;
 
 import java.util.EnumSet;
@@ -57,5 +58,5 @@ public interface Edge extends Element {
      *
      * @return The mutation builder.
      */
-    ExistingElementMutation<Edge> prepareMutation();
+    ExistingEdgeMutation prepareMutation();
 }

@@ -1004,6 +1004,52 @@ public abstract class GraphTestBase {
     }
 
     @Test
+    public void testAlterEdgeLabel() {
+        Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
+        Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);
+        graph.prepareEdge("e1", v1, v2, "label1", VISIBILITY_A)
+                .setProperty("propA", "valueA", VISIBILITY_A)
+                .save(AUTHORIZATIONS_A);
+
+        Edge e = graph.getEdge("e1", AUTHORIZATIONS_A);
+        assertEquals("label1", e.getLabel());
+        assertEquals(1, count(e.getProperties()));
+        assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
+        assertEquals(1, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals("label1", single(v1.getEdgeLabels(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals(1, count(v2.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals("label1", single(v2.getEdgeLabels(Direction.IN, AUTHORIZATIONS_A)));
+
+        e.prepareMutation()
+                .alterEdgeLabel("label2")
+                .save(AUTHORIZATIONS_A);
+        e = graph.getEdge("e1", AUTHORIZATIONS_A);
+        assertEquals("label2", e.getLabel());
+        assertEquals(1, count(e.getProperties()));
+        assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals("label2", single(v1.getEdgeLabels(Direction.OUT, AUTHORIZATIONS_A)));
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
+        assertEquals(1, count(v2.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals("label2", single(v2.getEdgeLabels(Direction.IN, AUTHORIZATIONS_A)));
+
+        graph.prepareEdge(e.getId(), e.getVertexId(Direction.OUT), e.getVertexId(Direction.IN), e.getLabel(), e.getVisibility())
+                .alterEdgeLabel("label3")
+                .save(AUTHORIZATIONS_A);
+        e = graph.getEdge("e1", AUTHORIZATIONS_A);
+        assertEquals("label3", e.getLabel());
+        assertEquals(1, count(e.getProperties()));
+        assertEquals("valueA", e.getPropertyValues("propA").iterator().next());
+        v1 = graph.getVertex("v1", AUTHORIZATIONS_A);
+        assertEquals(1, count(v1.getEdges(Direction.OUT, AUTHORIZATIONS_A)));
+        assertEquals("label3", single(v1.getEdgeLabels(Direction.OUT, AUTHORIZATIONS_A)));
+        v2 = graph.getVertex("v2", AUTHORIZATIONS_A);
+        assertEquals(1, count(v2.getEdges(Direction.IN, AUTHORIZATIONS_A)));
+        assertEquals("label3", single(v2.getEdgeLabels(Direction.IN, AUTHORIZATIONS_A)));
+    }
+
+    @Test
     public void testRemoveEdge() {
         Vertex v1 = graph.addVertex("v1", VISIBILITY_A, AUTHORIZATIONS_A);
         Vertex v2 = graph.addVertex("v2", VISIBILITY_A, AUTHORIZATIONS_A);

@@ -65,6 +65,7 @@ public class EdgeMaker extends ElementMaker<Edge> {
                 this.outVertexId,
                 this.inVertexId,
                 this.label,
+                null,
                 this.getVisibility(),
                 this.getProperties(includeHidden),
                 null,

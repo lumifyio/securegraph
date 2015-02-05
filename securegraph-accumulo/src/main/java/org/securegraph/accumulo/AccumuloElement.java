@@ -3,6 +3,7 @@ package org.securegraph.accumulo;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.securegraph.*;
+import org.securegraph.mutation.EdgeMutation;
 import org.securegraph.mutation.ExistingElementMutationImpl;
 import org.securegraph.mutation.PropertyRemoveMutation;
 
@@ -79,6 +80,15 @@ public abstract class AccumuloElement extends ElementBase implements Serializabl
 
         if (mutation.getNewElementVisibility() != null) {
             getGraph().alterElementVisibility((AccumuloElement) mutation.getElement(), mutation.getNewElementVisibility());
+        }
+
+        if (mutation instanceof EdgeMutation) {
+            EdgeMutation edgeMutation = (EdgeMutation) mutation;
+
+            String newEdgeLabel = edgeMutation.getNewEdgeLabel();
+            if (newEdgeLabel != null) {
+                getGraph().alterEdgeLabel((AccumuloEdge) mutation.getElement(), newEdgeLabel);
+            }
         }
     }
 

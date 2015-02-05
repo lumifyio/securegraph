@@ -528,6 +528,7 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
                 outVertexId,
                 inVertexId,
                 edgeBuilder.getLabel(),
+                edgeBuilder.getNewEdgeLabel(),
                 edgeBuilder.getVisibility(),
                 edgeBuilder.getProperties(),
                 edgeBuilder.getPropertyRemoves(),
@@ -1303,6 +1304,10 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         if (elementMutationBuilder.alterElementVisibility(m, element, newVisibility)) {
             addMutations(elementWriter, m);
         }
+    }
+
+    public void alterEdgeLabel(AccumuloEdge edge, String newEdgeLabel) {
+        elementMutationBuilder.alterEdgeLabel(edge, newEdgeLabel);
     }
 
     void alterElementPropertyVisibilities(AccumuloElement element, List<AlterPropertyVisibility> alterPropertyVisibilities) {

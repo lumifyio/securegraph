@@ -1,8 +1,7 @@
 package org.securegraph.inmemory;
 
 import org.securegraph.*;
-import org.securegraph.mutation.ExistingElementMutation;
-import org.securegraph.mutation.ExistingElementMutationImpl;
+import org.securegraph.mutation.ExistingEdgeMutation;
 import org.securegraph.mutation.PropertyRemoveMutation;
 
 import java.util.EnumSet;
@@ -10,7 +9,7 @@ import java.util.EnumSet;
 public class InMemoryEdge extends InMemoryElement implements Edge {
     private final String outVertexId;
     private final String inVertexId;
-    private final String label;
+    private String label;
 
     protected InMemoryEdge(
             Graph graph,
@@ -79,13 +78,17 @@ public class InMemoryEdge extends InMemoryElement implements Edge {
 
     @Override
     @SuppressWarnings("unchecked")
-    public ExistingElementMutation<Edge> prepareMutation() {
-        return new ExistingElementMutationImpl<Edge>(this) {
+    public ExistingEdgeMutation prepareMutation() {
+        return new ExistingEdgeMutation(this) {
             @Override
             public Edge save(Authorizations authorizations) {
                 saveExistingElementMutation(this, authorizations);
                 return getElement();
             }
         };
+    }
+
+    void setLabel(String newEdgeLabel) {
+        this.label = newEdgeLabel;
     }
 }
