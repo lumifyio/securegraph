@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -2097,7 +2098,8 @@ public abstract class GraphTestBase {
 
         graph.prepareVertex("v1", VISIBILITY_A)
                 .setProperty("int", 5, VISIBILITY_A)
-                .setProperty("bigDecimal", new BigDecimal(10), VISIBILITY_A)
+                .setProperty("bigInteger", BigInteger.valueOf(10), VISIBILITY_A)
+                .setProperty("bigDecimal", BigDecimal.valueOf(1.1), VISIBILITY_A)
                 .setProperty("double", 5.6, VISIBILITY_A)
                 .setProperty("float", 6.4f, VISIBILITY_A)
                 .setProperty("string", "test", VISIBILITY_A)
@@ -2118,7 +2120,10 @@ public abstract class GraphTestBase {
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("boolean", true).vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("short", 5).vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("date", date).vertices()));
-        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("bigDecimal", 10).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("bigInteger", BigInteger.valueOf(10)).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("bigInteger", 10).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("bigDecimal", BigDecimal.valueOf(1.1)).vertices()));
+        assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("bigDecimal", 1.1).vertices()));
         assertEquals(1, count(graph.query(AUTHORIZATIONS_A).has("geopoint", GeoCompare.WITHIN, new GeoCircle(77, -33, 1)).vertices()));
     }
 
