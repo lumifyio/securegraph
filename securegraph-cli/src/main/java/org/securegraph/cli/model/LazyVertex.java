@@ -19,7 +19,7 @@ public class LazyVertex extends ModelBase {
 
     @Override
     public String toString() {
-        Vertex v = getVertex();
+        Vertex v = getV();
         if (v == null) {
             return null;
         }
@@ -65,11 +65,11 @@ public class LazyVertex extends ModelBase {
         return out.toString();
     }
 
-    private Vertex getVertex() {
-        return getGraph().getVertex(getVertexId(), getAuthorizations());
+    private Vertex getV() {
+        return getGraph().getVertex(getId(), getAuthorizations());
     }
 
-    public String getVertexId() {
+    public String getId() {
         return vertexId;
     }
 }

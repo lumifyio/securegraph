@@ -19,12 +19,12 @@ public class LazyVertexProperty extends LazyProperty {
     }
 
     @Override
-    protected Property getProperty() {
+    protected Property getP() {
         Vertex vertex = getGraph().getVertex(getVertexId(), getAuthorizations());
         if (vertex == null) {
             return null;
         }
-        return vertex.getProperty(getPropertyKey(), getPropertyName(), getPropertyVisibility());
+        return vertex.getProperty(getKey(), getName(), getVisibility());
     }
 
     public String getVertexId() {

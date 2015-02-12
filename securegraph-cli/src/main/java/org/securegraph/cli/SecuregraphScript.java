@@ -44,7 +44,7 @@ public class SecuregraphScript extends Script {
     }
 
     private Object invokeGetAuths() {
-        return getAuthorizations().getAuthorizations();
+        return getAuthorizations();
     }
 
     private Object invokeSetAuths(Object args) {
@@ -73,6 +73,10 @@ public class SecuregraphScript extends Script {
 
         if ("e".equals(property)) {
             return new LazyEdgeMap(this);
+        }
+
+        if ("g".equals(property)) {
+            return getGraph();
         }
 
         if ("setauths".equalsIgnoreCase(property)) {

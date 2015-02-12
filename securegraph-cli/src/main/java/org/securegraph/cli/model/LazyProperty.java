@@ -26,7 +26,7 @@ public abstract class LazyProperty extends ModelBase {
 
     @Override
     public String toString() {
-        Property prop = getProperty();
+        Property prop = getP();
         if (prop == null) {
             return null;
         }
@@ -34,9 +34,9 @@ public abstract class LazyProperty extends ModelBase {
         StringWriter out = new StringWriter();
         PrintWriter writer = new PrintWriter(out);
         writer.println(getToStringHeaderLine());
-        writer.println("  @|bold key:|@ " + getPropertyKey());
-        writer.println("  @|bold name:|@ " + getPropertyName());
-        writer.println("  @|bold visibility:|@ " + getPropertyVisibility());
+        writer.println("  @|bold key:|@ " + getKey());
+        writer.println("  @|bold name:|@ " + getName());
+        writer.println("  @|bold visibility:|@ " + getVisibility());
 
         writer.println("  @|bold metadata:|@");
         for (Metadata.Entry m : prop.getMetadata().entrySet()) {
@@ -69,17 +69,17 @@ public abstract class LazyProperty extends ModelBase {
 
     protected abstract String getToStringHeaderLine();
 
-    protected abstract Property getProperty();
+    protected abstract Property getP();
 
-    public String getPropertyKey() {
+    public String getKey() {
         return propertyKey;
     }
 
-    public String getPropertyName() {
+    public String getName() {
         return propertyName;
     }
 
-    public Visibility getPropertyVisibility() {
+    public Visibility getVisibility() {
         return propertyVisibility;
     }
 }

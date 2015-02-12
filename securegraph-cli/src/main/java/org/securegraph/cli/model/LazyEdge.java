@@ -18,7 +18,7 @@ public class LazyEdge extends ModelBase {
 
     @Override
     public String toString() {
-        Edge e = getEdge();
+        Edge e = getE();
         if (e == null) {
             return null;
         }
@@ -61,11 +61,11 @@ public class LazyEdge extends ModelBase {
         return out.toString();
     }
 
-    private Edge getEdge() {
-        return getGraph().getEdge(getEdgeId(), getAuthorizations());
+    private Edge getE() {
+        return getGraph().getEdge(getId(), getAuthorizations());
     }
 
-    public String getEdgeId() {
+    public String getId() {
         return edgeId;
     }
 }
