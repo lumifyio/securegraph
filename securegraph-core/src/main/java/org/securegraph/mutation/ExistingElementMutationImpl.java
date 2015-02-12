@@ -54,6 +54,7 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     @Override
     public ElementMutation<T> removeProperty(Property property) {
+        checkNotNull(property, "property cannot be null");
         propertyRemoves.add(new PropertyPropertyRemoveMutation(property));
         return this;
     }
@@ -76,13 +77,19 @@ public abstract class ExistingElementMutationImpl<T extends Element> implements 
 
     @Override
     public ElementMutation<T> removeProperty(String name, Visibility visibility) {
-        removeProperty(this.element.getProperty(name, visibility));
+        Property property = this.element.getProperty(name, visibility);
+        if (property != null) {
+            removeProperty(property);
+        }
         return this;
     }
 
     @Override
     public ElementMutation<T> removeProperty(String key, String name, Visibility visibility) {
-        removeProperty(this.element.getProperty(key, name, visibility));
+        Property property = this.element.getProperty(key, name, visibility);
+        if (property != null) {
+            removeProperty(property);
+        }
         return this;
     }
 

@@ -1,6 +1,7 @@
 package org.securegraph.accumulo.mapreduce;
 
 import org.securegraph.*;
+import org.securegraph.accumulo.AccumuloAuthorizations;
 import org.securegraph.id.IdGenerator;
 import org.securegraph.query.GraphQuery;
 
@@ -131,5 +132,10 @@ public class ElementMapperGraph extends GraphBase {
     @Override
     public void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations) {
         throw new SecureGraphException("Not supported");
+    }
+
+    @Override
+    public Authorizations createAuthorizations(String... auths) {
+        return new AccumuloAuthorizations(auths);
     }
 }

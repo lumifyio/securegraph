@@ -549,4 +549,12 @@ public interface Graph {
      * @param authorizations The authorizations used.
      */
     void markEdgeVisible(Edge edge, Visibility visibility, Authorizations authorizations);
+
+    /**
+     * Creates an authorizations object.
+     *
+     * @param auths The authorizations granted.
+     * @return A new authorizations object
+     */
+    Authorizations createAuthorizations(String... auths);
 }

@@ -223,6 +223,7 @@
         <module>securegraph-elasticsearch-plugin</module>
         <module>securegraph-examples</module>
         <module>securegraph-accumulo-migrations</module>
+        <module>securegraph-cli</module>
     </modules>
 
     <profiles>

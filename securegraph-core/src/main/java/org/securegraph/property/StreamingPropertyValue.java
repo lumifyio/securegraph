@@ -46,4 +46,12 @@ public class StreamingPropertyValue extends PropertyValue {
         InputStream data = new ByteArrayInputStream(value.getBytes());
         return new StreamingPropertyValue(data, String.class);
     }
+
+    @Override
+    public String toString() {
+        return "StreamingPropertyValue{" +
+                "valueType=" + valueType +
+                ", length=" + length +
+                '}';
+    }
 }

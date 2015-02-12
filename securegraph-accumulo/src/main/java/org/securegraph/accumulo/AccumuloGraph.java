@@ -668,6 +668,11 @@ public class AccumuloGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    @Override
+    public Authorizations createAuthorizations(String... auths) {
+        return new AccumuloAuthorizations(auths);
+    }
+
     @SuppressWarnings("unused")
     public void markPropertyHidden(AccumuloElement element, Property property, Visibility visibility, Authorizations authorizations) {
         checkNotNull(element);

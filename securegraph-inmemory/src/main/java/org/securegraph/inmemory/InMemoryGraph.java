@@ -397,6 +397,11 @@ public class InMemoryGraph extends GraphBaseWithSearchIndex {
         }
     }
 
+    @Override
+    public Authorizations createAuthorizations(String... auths) {
+        return new InMemoryAuthorizations(auths);
+    }
+
     public Iterable<Edge> getEdgesFromVertex(final String vertexId, EnumSet<FetchHint> fetchHints, final Authorizations authorizations) {
         final boolean includeHidden = fetchHints.contains(FetchHint.INCLUDE_HIDDEN);
 
