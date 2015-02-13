@@ -1,10 +1,14 @@
 package org.securegraph.cli;
 
 import groovy.lang.Script;
-import org.securegraph.Authorizations;
-import org.securegraph.Graph;
+import org.apache.commons.io.IOUtils;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.securegraph.*;
 import org.securegraph.cli.model.*;
+import org.securegraph.property.StreamingPropertyValue;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +25,7 @@ public class SecuregraphScript extends Script {
         SecuregraphScript.graph = graph;
     }
 
-    public Graph getGraph() {
+    public static Graph getGraph() {
         return graph;
     }
 
@@ -68,11 +72,11 @@ public class SecuregraphScript extends Script {
     @Override
     public Object getProperty(String property) {
         if ("v".equals(property)) {
-            return new LazyVertexMap(this);
+            return new LazyVertexMap();
         }
 
         if ("e".equals(property)) {
-            return new LazyEdgeMap(this);
+            return new LazyEdgeMap();
         }
 
         if ("g".equals(property)) {
@@ -105,7 +109,7 @@ public class SecuregraphScript extends Script {
         return super.getProperty(property);
     }
 
-    public Authorizations getAuthorizations() {
+    public static Authorizations getAuthorizations() {
         if (authorizations == null) {
             authorizations = getGraph().createAuthorizations();
         }
@@ -116,15 +120,49 @@ public class SecuregraphScript extends Script {
         SecuregraphScript.authorizations = authorizations;
     }
 
-    public Map<String, LazyProperty> getContextProperties() {
+    public static Map<String, LazyProperty> getContextProperties() {
         return contextProperties;
     }
 
-    public Map<String, LazyEdge> getContextEdges() {
+    public static Map<String, LazyEdge> getContextEdges() {
         return contextEdges;
     }
 
-    public Map<String, LazyVertex> getContextVertices() {
+    public static Map<String, LazyVertex> getContextVertices() {
         return contextVertices;
+    }
+
+    public static String valueToString(Object value, boolean expanded) {
+        if (value == null) {
+            return null;
+        }
+        if (expanded) {
+            if (value instanceof StreamingPropertyValue) {
+                StreamingPropertyValue spv = (StreamingPropertyValue) value;
+                if (spv.getValueType() == String.class) {
+                    try {
+                        try (InputStream in = spv.getInputStream()) {
+                            return IOUtils.toString(in);
+                        }
+                    } catch (IOException e) {
+                        throw new SecurityException("Could not get StreamingPropertyValue input stream", e);
+                    }
+                }
+            }
+        }
+        return value.toString();
+    }
+
+    public static String resultToString(Object obj) {
+        if (obj instanceof Vertex) {
+            return LazyVertex.toString((Vertex) obj, getAuthorizations());
+        }
+        if (obj instanceof Edge) {
+            return LazyEdge.toString((Edge) obj);
+        }
+        if (obj instanceof Property) {
+            return LazyProperty.toString((Property) obj, "property");
+        }
+        return InvokerHelper.toString(obj);
     }
 }

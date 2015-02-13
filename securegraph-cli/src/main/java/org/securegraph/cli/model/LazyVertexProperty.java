@@ -3,13 +3,12 @@ package org.securegraph.cli.model;
 import org.securegraph.Property;
 import org.securegraph.Vertex;
 import org.securegraph.Visibility;
-import org.securegraph.cli.SecuregraphScript;
 
 public class LazyVertexProperty extends LazyProperty {
     private final String vertexId;
 
-    public LazyVertexProperty(SecuregraphScript script, String vertexId, String key, String name, Visibility visibility) {
-        super(script, key, name, visibility);
+    public LazyVertexProperty(String vertexId, String key, String name, Visibility visibility) {
+        super(key, name, visibility);
         this.vertexId = vertexId;
     }
 

@@ -3,6 +3,7 @@ package org.securegraph.cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import groovy.lang.Binding;
+import groovy.lang.Closure;
 import groovy.lang.GroovyShell;
 import jline.TerminalFactory;
 import jline.UnixTerminal;
@@ -15,6 +16,7 @@ import org.codehaus.groovy.tools.shell.IO;
 import org.codehaus.groovy.tools.shell.Interpreter;
 import org.codehaus.groovy.tools.shell.util.Logger;
 import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager;
+import org.codehaus.groovy.tools.shell.util.Preferences;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 import org.securegraph.Graph;
@@ -62,7 +64,7 @@ public class SecuregraphShell {
 
         // IO must be constructed AFTER calling setTerminalType()/AnsiConsole.systemInstall(),
         // else wrapped System.out does not work on Windows.
-        IO io = new IO();
+        final IO io = new IO();
 
         Logger.io = io;
 
@@ -76,9 +78,23 @@ public class SecuregraphShell {
         Binding binding = new Binding();
 
         GroovyShell groovyShell = new GroovyShell(this.getClass().getClassLoader(), binding, compilerConfiguration);
+        Closure<Object> resultHook = new Closure<Object>(this) {
+            @Override
+            public Object call(Object... args) {
+                Object obj = args[0];
+                boolean showLastResult = !io.isQuiet() && (io.isVerbose() || Preferences.getShowLastResult());
+                if (showLastResult) {
+                    // avoid String.valueOf here because it bypasses pretty-printing of Collections,
+                    // e.g. String.valueOf( ['a': 42] ) != ['a': 42].toString()
+                    io.out.println("@|bold ===>|@ " + SecuregraphScript.resultToString(obj));
+                }
+                return null;
+            }
+        };
 
         groovysh = new Groovysh(io);
         setGroovyShell(groovysh, groovyShell);
+        setResultHook(groovysh, resultHook);
 
         startGroovysh(evalString, fileNames);
     }
@@ -121,6 +137,13 @@ public class SecuregraphShell {
 
         Interpreter interpreter = (Interpreter) interpField.get(groovysh);
         shellField.set(interpreter, groovyShell);
+    }
+
+    private void setResultHook(Groovysh groovysh, Closure<Object> resultHook) throws NoSuchFieldException, IllegalAccessException {
+        Field resultHookField = Groovysh.class.getDeclaredField("resultHook");
+        resultHookField.setAccessible(true);
+
+        resultHookField.set(groovysh, resultHook);
     }
 
     public Groovysh getGroovysh() {

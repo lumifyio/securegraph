@@ -3,13 +3,12 @@ package org.securegraph.cli.model;
 import org.securegraph.Edge;
 import org.securegraph.Property;
 import org.securegraph.Visibility;
-import org.securegraph.cli.SecuregraphScript;
 
 public class LazyEdgeProperty extends LazyProperty {
     private final String edgeId;
 
-    public LazyEdgeProperty(SecuregraphScript script, String edgeId, String key, String name, Visibility visibility) {
-        super(script, key, name, visibility);
+    public LazyEdgeProperty(String edgeId, String key, String name, Visibility visibility) {
+        super(key, name, visibility);
         this.edgeId = edgeId;
     }
 
