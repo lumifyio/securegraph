@@ -112,7 +112,7 @@ public class SecuregraphScript extends Script {
         return authorizations;
     }
 
-    public void setAuthorizations(Authorizations authorizations) {
+    public static void setAuthorizations(Authorizations authorizations) {
         SecuregraphScript.authorizations = authorizations;
     }
 

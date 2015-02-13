@@ -45,6 +45,9 @@ public class SecuregraphShell {
     @Parameter(names = {"-cp"}, description = "Configuration property prefix")
     private String configPropertyPrefix = null;
 
+    @Parameter(names = {"-a"}, description = "Authorizations")
+    private String authorizations = null;
+
     @Parameter(description = "File names to execute")
     private List<String> fileNames = new ArrayList<>();
 
@@ -65,6 +68,9 @@ public class SecuregraphShell {
 
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
         SecuregraphScript.setGraph(graph);
+        if (authorizations != null) {
+            SecuregraphScript.setAuthorizations(graph.createAuthorizations(authorizations.split(",")));
+        }
         compilerConfiguration.setScriptBaseClass(SecuregraphScript.class.getName());
 
         Binding binding = new Binding();
