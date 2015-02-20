@@ -38,7 +38,7 @@ public class LazyEdge extends ModelBase {
         for (Property prop : e.getProperties()) {
             String propertyIndexString = "p" + propIndex;
             String valueString = SecuregraphScript.valueToString(prop.getValue(), false);
-            writer.println("    @|bold " + propertyIndexString + ":|@ " + prop.getName() + "[" + prop.getVisibility().getVisibilityString() + "] = " + valueString);
+            writer.println("    @|bold " + propertyIndexString + ":|@ " + prop.getName() + ":" + prop.getKey() + "[" + prop.getVisibility().getVisibilityString() + "] = " + valueString);
             LazyProperty lazyProperty = new LazyEdgeProperty(e.getId(), prop.getKey(), prop.getName(), prop.getVisibility());
             SecuregraphScript.getContextProperties().put(propertyIndexString, lazyProperty);
             propIndex++;
