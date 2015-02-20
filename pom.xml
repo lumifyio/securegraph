@@ -10,7 +10,7 @@
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.0</version>
+    <version>0.9.1-SNAPSHOT</version>
     <name>SecureGraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
@@ -35,7 +35,7 @@
         <url>scm:git:git@github.com:altamiracorp/securegraph.git</url>
         <connection>scm:git:git@github.com:altamiracorp/securegraph.git</connection>
         <developerConnection>scm:git:git@github.com:altamiracorp/securegraph.git</developerConnection>
-        <tag>securegraph-root-0.9.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
