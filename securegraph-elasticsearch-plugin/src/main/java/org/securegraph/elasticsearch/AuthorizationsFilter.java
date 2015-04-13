@@ -15,11 +15,12 @@ import org.securegraph.inmemory.security.VisibilityParseException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthorizationsFilter extends Filter {
     public static String VISIBILITY_FIELD_NAME = "__visibility";
     private final VisibilityEvaluator visibilityEvaluator;
-    private static final Map<BytesRef, ColumnVisibility> columnVisibilityCache = new HashMap<BytesRef, ColumnVisibility>();
+    private static final Map<BytesRef, ColumnVisibility> columnVisibilityCache = new ConcurrentHashMap<>();
 
     public AuthorizationsFilter(Authorizations authorizations) {
         this.visibilityEvaluator = new VisibilityEvaluator(authorizations);

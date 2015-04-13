@@ -10,7 +10,7 @@
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.0</version>
+    <version>0.9.1</version>
     <name>SecureGraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
@@ -35,7 +35,7 @@
         <url>scm:git:git@github.com:altamiracorp/securegraph.git</url>
         <connection>scm:git:git@github.com:altamiracorp/securegraph.git</connection>
         <developerConnection>scm:git:git@github.com:altamiracorp/securegraph.git</developerConnection>
-        <tag>securegraph-root-0.9.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
@@ -253,6 +253,27 @@
                         </executions>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+        <!-- Disable JDK8 doclint in javadoc plugin -->
+        <profile>
+            <id>no-doclint</id>
+            <activation>
+                <jdk>[1.8,]</jdk>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <version>${maven.plugin.javadoc.version}</version>
+                            <configuration>
+                                <additionalparam>-Xdoclint:none</additionalparam>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
     </profiles>
