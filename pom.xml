@@ -49,8 +49,8 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>bits.lumify.io.snapshots</id>
-            <url>https://bits.lumify.io/nexus/content/repositories/snapshots</url>
+            <id>ossrh.lumify</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
