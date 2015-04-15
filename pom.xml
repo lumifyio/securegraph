@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-    </parent>
 
     <groupId>org.securegraph</groupId>
     <artifactId>securegraph-root</artifactId>
-    <packaging>pom</packaging>
     <version>0.9.1</version>
+    <packaging>pom</packaging>
+
     <name>SecureGraph</name>
     <description>
         Secure Graph is an API to manipulate graphs, similar to blueprints. Unlike blueprints, every Secure graph method
@@ -32,15 +28,14 @@
     </licenses>
 
     <scm>
-        <url>scm:git:git@github.com:altamiracorp/securegraph.git</url>
-        <connection>scm:git:git@github.com:altamiracorp/securegraph.git</connection>
-        <developerConnection>scm:git:git@github.com:altamiracorp/securegraph.git</developerConnection>
-        <tag>HEAD</tag>
+        <url>scm:git:git@github.com:lumifyio/securegraph.git</url>
+        <connection>scm:git:git@github.com:lumifyio/securegraph.git</connection>
+        <developerConnection>scm:git:git@github.com:lumifyio/securegraph.git</developerConnection>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/altamiracorp/securegraph/issues</url>
+        <url>https://github.com/lumifyio/securegraph/issues</url>
     </issueManagement>
 
     <developers>
@@ -51,6 +46,13 @@
             <email>joe.m.ferner@gmail.com</email>
         </developer>
     </developers>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>bits.lumify.io.snapshots</id>
+            <url>https://bits.lumify.io/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <properties>
         <java.compiler.showWarnings>true</java.compiler.showWarnings>
@@ -155,34 +157,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${maven.plugin.source.version}</version>
-                <executions>
-                    <execution>
-                        <id>source-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${maven.plugin.javadoc.version}</version>
-                <executions>
-                    <execution>
-                        <id>javadocs-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${maven.plugin.release.version}</version>
                 <configuration>
@@ -227,21 +201,53 @@
     </modules>
 
     <profiles>
+        <!-- Execute a release -->
         <profile>
-            <id>release-tasks</id>
-            <activation>
-                <!-- mvn release:perform sets this to true -->
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
+            <id>release</id>
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh.lumify</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>2.4</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven.plugin.javadoc.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.plugin.gpg.version}</version>
+                        <version>1.6</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -249,6 +255,10 @@
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
+                                <configuration>
+                                    <keyname>${gpg.keyname}</keyname>
+                                    <passphraseServerId>${gpg.keyname}</passphraseServerId>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
